@@ -189,7 +189,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.12 | 为 net8.0+ 目标标注裁剪 / AOT 兼容，并为资源解析路径加注 | 发布 AOT 测试应用成功，且枚举显示名仍可解析 | ⬜ | AOT 发布 + 冒烟测试 |
+| RM-0.0.12 | 为 net8.0+ 目标标注裁剪 / AOT 兼容，并为资源解析路径加注 | 发布 AOT 测试应用成功，且枚举显示名仍可解析 | 🟡 | Directory.Build.props 对 `net8.0` / `net9.0` / `net10.0` 三个 TFM 设置 `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial`；props 内 XML 注释约束「枚举显示名解析须用 `IsDynamicCodeSupported` 守卫」；AOT publish + 冒烟测试待 0.1.0 重建 Core（含 enum 显示名解析实现）后执行 |
 
 两个 netstandard 目标不承载 AOT 元数据：它们承担兼容面，`net8.0` 及以后承担 AOT 面。
 

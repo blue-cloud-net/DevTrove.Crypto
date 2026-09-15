@@ -189,7 +189,7 @@ Enum display names resolve through `[Display(ResourceType = typeof(RS))]` and a 
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.12 | Mark the net8.0+ targets as trim/AOT compatible and annotate the resource lookup path | Publishing an AOT test app succeeds and enum display names still resolve | ⬜ | AOT publish + smoke test |
+| RM-0.0.12 | Mark the net8.0+ targets as trim/AOT compatible and annotate the resource lookup path | Publishing an AOT test app succeeds and enum display names still resolve | 🟡 | `Directory.Build.props` sets `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial` for the `net8.0` / `net9.0` / `net10.0` TFMs via an `IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')` condition; an in-props XML comment constrains the enum-display-name lookup to use an `IsDynamicCodeSupported` guard. AOT publish + smoke test land once RM-0.1.0-01 restores Core (which carries the enum display name resolver) |
 
 The two netstandard targets carry no AOT metadata: they serve the compatibility surface, while `net8.0` and later serve the AOT surface.
 
