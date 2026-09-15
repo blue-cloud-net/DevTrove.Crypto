@@ -179,7 +179,7 @@
 |---|---|---|---|---|
 | RM-0.0.11a | 修正 polyfill 守卫（`NETSTANDARD2_0_OR_GREATER`） | `netstandard2.1` 可编译 | ⬜ | `dotnet build -f netstandard2.1` |
 | RM-0.0.11b | 为两个 netstandard 目标补齐缺失的 polyfill / 包引用 | `dotnet build -f netstandard2.0` 与 `-f netstandard2.1` 均成功 | ⬜ | 构建输出 |
-| RM-0.0.11c | 修正把 polyfill 写成位于 `Compat/`（实际不存在）的文档 | 文档与实际文件布局一致 | ⬜ | `grep -rn 'Compat/' docs/` 无输出 |
+| RM-0.0.11c | 修正把 polyfill 写成位于 `Compat/`（实际不存在）的文档 | 文档与实际文件布局一致；`Compat/` 仅在 roadmap §4.1 目标布局与本子项描述中出现 | 🟡 | architecture / architecture.zh-CN / development-guide / development-guide.zh-CN 中旧"polyfill 在 Compat/"叙述段已清理；roadmap §4.1 与 architecture §4.1 表中保留 `Compat/`（0.1.0 内部目标目录）。11a/11b 代码动作待 RM-0.1.0-01 重建 Core 后执行 |
 
 在 `RM-0.1.0-03` 移除 SM4 实现中 .NET 8 专属的 `TryEncryptEcbCore` / `TryEncryptCbcCore` 重写之前，先用 `#if NET8_0_OR_GREATER` 作为临时桥接。
 

@@ -109,8 +109,6 @@ src/DevTrove.Crypto.Core/
 └─ Resources/                           zh-hans + en-us resx
 ```
 
-> **Known deviation** (`RM-0.0.11`): the two `netstandard` targets **have never produced an assembly**. The claim that polyfills live in `Compat/` is wrong twice over — the real polyfill is `Extensions/ArgumentNullExceptionExtensions.cs`, and its guard `#if NETSTANDARD2_0` does not cover `netstandard2.1`. Only three target frameworks build today.
-
 ### 4.1 Target layout (`0.1.0` and later)
 
 Everything under `Crypto/` becomes `Algorithms/` (split into `Asymmetric/`, `Symmetric/`, `Hash/`), every algorithm proxy is named `<Algorithm>Crypto`, BouncyCastle types leave the public surface, and further directories appear as capabilities land.

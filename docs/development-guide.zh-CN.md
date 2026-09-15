@@ -76,9 +76,7 @@ DevTrove.Crypto/
 
 ### 两个 `netstandard` 目标的现状
 
-两个 `netstandard` 目标**从未产出过程序集**，而 README 对此的解释错了两处：polyfill 不在 `Compat/` 目录（它其实是 `Extensions/ArgumentNullExceptionExtensions.cs`），且它的守卫 `#if NETSTANDARD2_0` 并未覆盖 `netstandard2.1`。此外，`Convert.FromHexString`、`RandomNumberGenerator.GetBytes(int)` 与 `AsSpan` 在这两个目标上都没有保护。
-
-两个目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。推进项：`RM-0.0.11`。
+两个目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。`RM-0.0.11b` 落地后，新 Core 的 polyfill 将落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下。
 
 ---
 

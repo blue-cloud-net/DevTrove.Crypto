@@ -76,9 +76,7 @@ Each csproj either inherits this baseline or overrides it. Today all csproj file
 
 ### The `netstandard` targets
 
-The two `netstandard` targets **have never produced an assembly**, and the story the README told about why was wrong twice over: the polyfill is not in a `Compat/` directory (it is `Extensions/ArgumentNullExceptionExtensions.cs`), and its guard `#if NETSTANDARD2_0` does not cover `netstandard2.1`. On top of that, `Convert.FromHexString`, `RandomNumberGenerator.GetBytes(int)` and `AsSpan` are used without guards on those targets.
-
-Both targets are **staying** — this is a NuGet library and the compatibility surface is part of the product. Work is tracked as `RM-0.0.11`.
+Both targets are **staying** — this is a NuGet library and the compatibility surface is part of the product. Once `RM-0.0.11b` lands, the polyfills in the new Core land under the path the `0.1.0` target layout names `Compat/`.
 
 ---
 

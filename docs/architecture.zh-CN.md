@@ -110,8 +110,6 @@ src/DevTrove.Crypto.Core/
 └─ Resources/                           zh-hans + en-us resx
 ```
 
-> **已知偏差**（`RM-0.0.11`）：两个 `netstandard` 目标**从未产出过程序集**。「polyfill 在 `Compat/`」这句话错了两处 —— 真实 polyfill 是 `Extensions/ArgumentNullExceptionExtensions.cs`，且它的守卫 `#if NETSTANDARD2_0` 并未覆盖 `netstandard2.1`。当前只有三个 TFM 能构建。
-
 ### 4.1 目标布局（`0.1.0` 及以后）
 
 `Crypto/` 下的内容将改为 `Algorithms/`（拆分为 `Asymmetric/`、`Symmetric/`、`Hash/`），每个算法代理统一命名为 `<Algorithm>Crypto`，BouncyCastle 类型退出公开面，其余目录随能力落地逐步出现。
