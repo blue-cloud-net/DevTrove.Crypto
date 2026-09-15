@@ -11,12 +11,16 @@
 | 动作 | 命令 |
 |---|---|
 | 全部构建（Release） | `dotnet build DevTrove.Crypto.slnx -c Release` |
-| 全部测试 | `dotnet test DevTrove.Crypto.slnx -c Release` |
-| 仅单元测试（跳过互操作） | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` |
-| 仅互操作测试 | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category=Integration'` |
+| 跑契约测试（Linux） | `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0` |
+| 跑针对 `netstandard2.0` 资产的契约测试（Windows） | `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net48` |
+| 仅单元测试（跳过互操作） | `dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0 --filter 'Category!=Integration'` |
+| 仅互操作测试 | `dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0 --filter 'Category=Integration'` |
+| 打包 Abstractions | `dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts` |
 | 打包 Core | `dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts` |
 | 打包门面包 | `dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -o ./artifacts` |
 | 生成 PFX 夹具（CI 也跑） | `./scripts/generate-test-pfx.sh` |
+
+> **明确指出项目与框架是有意为之。** 测试项目的 `net48` 目标只在 Windows 上存在（见 §2），因此不带 `--framework` 的 `dotnet test DevTrove.Crypto.slnx` 在 Linux 上无法完成。两者都写明，才能使本文档的每条命令在两个平台上都可执行。
 
 外部依赖：**tongsuo**。缺失时测试**直接失败而非跳过**。见 §5.2。
 
@@ -27,20 +31,34 @@
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/         门面包（无源码 —— 见 roadmap `RM-0.0.2`）
-│  ├─ DevTrove.Crypto.Core/    实现
-│  └─ DevTrove.Crypto.Tls/     TLS 探测引擎（计划中 `0.4.0` —— 尚不存在）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 计划中，`0.1.0`）
+│  ├─ DevTrove.Crypto/              门面包（无源码 —— 见 roadmap `RM-0.0.2`）
+│  ├─ DevTrove.Crypto.Core/         实现
+│  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0` —— 尚不存在）
 ├─ tests/
+│  ├─ DevTrove.Crypto.Abstractions.Tests/  契约测试；仅在 Windows 上包含 `net48`
 │  ├─ DevTrove.Crypto.Core.Tests/
-│  └─ DevTrove.Crypto.TestSupport/   CLI 封装（tongsuo）
+│  └─ DevTrove.Crypto.TestSupport/         CLI 封装（tongsuo）
 ├─ scripts/                     夹具生成
-├─ .github/workflows/build.yml  CI
+├─ .github/workflows/ci.yml     分支 CI + 抽象测试矩阵
+├─ .github/workflows/release.yml tag 触发的发布
 ├─ Directory.Build.props        全局编译属性 + NuGet 元数据
 ├─ Directory.Packages.props     CPM
 ├─ DevTrove.Crypto.slnx         解决方案
 ├─ global.json                  SDK 锁定
 └─ docs/                        本文档集
 ```
+
+### 测试项目的目标框架
+
+`DevTrove.Crypto.Abstractions.Tests` 就是使 `netstandard2.0` 资产获得**运行验证**的宿主：`net48` 项目解析 `lib/netstandard2.0/`，而 `net8.0` 及以后的项目解析自己的资产。由于 .NET Framework 无法在 Linux 上运行，`net48` 目标**按操作系统条件声明**：
+
+```xml
+<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net48;net8.0;net9.0;net10.0</TargetFrameworks>
+<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0;net9.0;net10.0</TargetFrameworks>
+```
+
+这样 `dotnet build DevTrove.Crypto.slnx` 在 Linux 上仍可工作，且不需要 `Microsoft.NETFramework.ReferenceAssemblies` 包 —— 否则在 Linux 上连构建 `net48` 目标都做不到。
 
 ---
 
@@ -69,14 +87,26 @@ DevTrove.Crypto/
 <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
 <!-- 目标框架（由基线声明；每个 csproj 必须一致） -->
-<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
+<TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
-各 csproj 继承基线或自行覆盖。当前所有 csproj 都继承此 5 TFM 基线声明。
+各 csproj 继承基线或自行覆盖。当前所有 csproj 都继承此 4 TFM 基线声明。
 
-### 两个 `netstandard` 目标的现状
+### 额外的包引用
 
-两个目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。`RM-0.0.11b` 落地后，新 Core 的 polyfill 将落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下。
+`DevTrove.Crypto.Abstractions` 在它唯一的 `netstandard` 目标上需要 `Span<T>`，因此带一个条件引用：
+
+```xml
+<PackageReference Include="System.Memory" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+```
+
+版本号与其他所有包一样，只在 `Directory.Packages.props` 声明一次（见 [standards.md §2.2](standards.md)）。
+
+### `netstandard2.0` 目标
+
+该目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。`netstandard2.1` 已移除：没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证（见 [nuget.md §5](nuget.md)）。
+
+polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫符号**按 API 分别选取** —— `Convert.FromHexString` 需要 `NETSTANDARD2_0`，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致。见 `RM-0.0.11`。
 
 ---
 
@@ -84,7 +114,7 @@ DevTrove.Crypto/
 
 消费方如何引用这些包 —— 开发期用 `ProjectReference`、从 feed 用 `PackageReference`，或对未发布版本用本地文件夹 feed —— 属消费方决策。本仓库不提供这样的切换，也不测试它。
 
-有一个后果值得写下来，因为它会在打包时咬人：`ProjectReference` 不会变成 NuGet 依赖。基于项目引用打出的包会缺少依赖声明，使用方将还原失败。见 [nuget.md §10](nuget.md)。
+有一个后果值得写下来，因为它会在打包时咬人：`ProjectReference` 并不总能变成 NuGet 依赖。基于项目引用打出的包可能缺少依赖声明，使用方因此还原失败。`DevTrove.Crypto.Abstractions` 是本仓第一个把这件事变具体的地方 —— `DevTrove.Crypto.Core` 必须声明它。务必解包 `.nupkg` 读 `.nuspec`；清单项见 [nuget.md §8](nuget.md)。
 
 ---
 
@@ -103,6 +133,20 @@ DevTrove.Crypto/
 
 > **已知偏差**（`RM-0.0.7`）：`DevTrove.Crypto.TestSupport.csproj` 未声明 `net9.0`，而测试项目声明了。升级到 xUnit v3 已在考虑，但未排期。
 
+### 5.1.1 抽象层的契约测试
+
+`DevTrove.Crypto.Abstractions.Tests` 不携带任何外部依赖 —— 没有 BouncyCastle，也没有 tongsuo —— 因此跑得快，也不需要生成夹具。它的 stub 类型放在 `_TestStubs/`；这是测试 `abstract` 基类的唯一手段，且它们的目的是验证基类**真正实现的逻辑**，而不是 `abstract` 关键字本身：
+
+| 测试对象 | 理由 |
+|---|---|
+| 默认 `Cbc` / `Pkcs7` | 默认值是真实交付的行为 |
+| ECB 使 `Encrypt` 抛错 | 基类里的守卫，只能通过具体子类触发 |
+| 四种 BCL 兼容模式经 `AsSymmetricAlgorithm()` | 适配器是全 concrete 的，也是 `RM-0.1.0-05` 的交付物 |
+| GCM / CTR 抛 `NotSupportedException` | 明确 BCL 桥接的边界 |
+| `DigestBase` 分块 `Update` 等于一次性 `ComputeHash` | 缓冲区管理是被继承的逻辑 |
+| `AsymmetricKeyBase.Dispose` 清零密钥材料 | `standards.md §3.8` 把它定成了硬规则 |
+| 四个 X.509 接口被单一 stub 实现 | 在 `0.5.0` 锁定它们之前证明接口可实现 |
+
 ### 5.2 `TongsuoCli`
 
 互操作测试（密钥 / 证书 / CSR / CRL / PKCS#12 的生成与解析，以及国密系列）调用 **tongsuo** —— 携带中国国密算法的 OpenSSL 发行版。它是本仓库**唯一**的外部工具依赖。
@@ -113,7 +157,7 @@ DevTrove.Crypto/
 | 版本要求 | 需支持 SM2 / SM3 / SM4 |
 | 用途 | ① 互操作测试：用 tongsuo 生成 → 用本库解析（反向亦然）；② 夹具兜底生成 |
 
-**不再使用上游 OpenSSL。** tongsuo 是其分支且命令兼容，但并非同一实现 —— 因此不再断言与上游 OpenSSL 的互操作。这一取舍已记为 [roadmap.md §8](roadmap.md) 的风险 R2；针对上游 OpenSSL 的可选、非阻塞交叉校验是备选出路。`RM-0.1.0-06` 会把原先的 `OpenSslCli` 助手并入 `TongsuoCli`。
+**不再使用上游 OpenSSL。** tongsuo 是其分支且命令兼容，但并非同一实现 —— 因此不再断言与上游 OpenSSL 的互操作。这一取舍已记为 [roadmap.md §8](roadmap.md) 的风险 R2；针对上游 OpenSSL 的可选、非阻塞交叉校验是备选出路。原先的 `OpenSslCli` 助手将并入 `TongsuoCli` —— 作为无版本基线条目跟踪，见 [roadmap.md §5](roadmap.md)。
 
 ### 5.3 工具缺失时的行为（重要）
 
@@ -151,7 +195,7 @@ CI 拆为两个 workflow，使分支检查与 tag 触发的发布相互独立、
 
 `.github/workflows/ci.yml`。触发器：**仅** `main` 的 push / pull_request，外加 `workflow_call`（被 `release.yml` 复用）和 `workflow_dispatch`（手动预热 tongsuo 缓存或在 feature 分支上做一次性验证）。
 
-> **`dev` 故不覆盖。** dev 是集成/开发分支，CI 责任集中在 `main`。开发者需在本地用 `dotnet build DevTrove.Crypto.slnx -c Release` 与 `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` 自行验证后再开 PR 进 `main`；也可在 feature 分支上手动 `workflow_dispatch` 跑一次。完整流水线（需 `tongsuo` 的集成测试与 `release.yml` 标签流程）只走另外两条路径。
+> **`dev` 故不覆盖。** dev 是集成/开发分支，CI 责任集中在 `main`。开发者需在本地用 `dotnet build DevTrove.Crypto.slnx -c Release` 与 `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0` 自行验证后再开 PR 进 `main`；也可在 feature 分支上手动 `workflow_dispatch` 跑一次。完整流水线（需 `tongsuo` 的集成测试与 `release.yml` 标签流程）只走另外两条路径。
 
 顶部 `permissions: contents: read`。`concurrency: ci-<workflow>-<ref> cancel-in-progress: true`：同分支再次 push 时取消正在跑的旧实例。
 
@@ -161,6 +205,9 @@ Job：
 |---|---|---|
 | `tongsuo` | 从源码编译并安装 Tongsuo 8.4.0，按 OS + 版本缓存（`actions/cache@v4`） | 见 `RM-0.0.9f`，`build` 必须等它完成 |
 | `build` | 构建 + 单元测试 + 互操作测试 + 覆盖率；`push` 时（不含 PR）还会打包至 `./artifacts/` | `ubuntu-latest`，.NET 8.x / 9.x / 10.x |
+| `test-abstractions` | 按目标框架矩阵跑契约测试 | `os ∈ {ubuntu-latest, windows-latest}` × `tfm ∈ {net8.0, net9.0, net10.0, net48}`，排除无效组合（`net48` 只在 Windows，其余只在 Linux）。**不需要 tongsuo** —— 契约测试无外部依赖 |
+
+其中 `net48` 那一格就是使 `netstandard2.0` 资产获得**运行验证**的关键：`net48` 项目会解析 `lib/netstandard2.0/`。没有它，该资产就永远只能停在构建验证。
 
 pack 步骤仅把 `*.nupkg` + `*.snupkg` 落到 `./artifacts/` 供本地检查；**不**推送到 nuget.org —— 推送由 `release.yml` 负责。
 
@@ -174,9 +221,9 @@ workflow 含三个 job，严格按序依赖：
 
    | 不变量 | 期望 |
    |---|---|
-   | `<Version>` | 与标签版本一致（如 `v0.4.0` 对应 `<Version>0.4.0</Version>`） |
+   | `<Version>` | 与标签版本一致（如 `v0.6.0` 对应 `<Version>0.6.0</Version>`） |
    | `<PackageLicenseExpression>` | `Apache-2.0`（与仓库 `LICENSE` 一致） |
-   | `<TargetFrameworks>` | 包含全部 `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+   | `<TargetFrameworks>` | 包含全部 `netstandard2.0;net8.0;net9.0;net10.0` |
    | `<RepositoryUrl>` | 包含 `DevTrove.Crypto` |
 
    该 job 同时识别预发布标签（版本段含 `-`，如 `v1.0.0-rc.1`），把 `is-prerelease` 作为 job 输出暴露给下游。
@@ -189,20 +236,25 @@ workflow 含三个 job，严格按序依赖：
 
    顺序执行：
 
-   1. `dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg`（Core 先发 —— Metapackage 依赖它）
-   2. `dotnet nuget push ./artifacts/DevTrove.Crypto.[0-9]*.nupkg`（Metapackage）
-   3. `softprops/action-gh-release@v2` 把 `artifacts/*.nupkg` + `artifacts/*.snupkg` 作为 GitHub Release 的附件上传；`fail_on_unmatched_files: true` 让缺失立即报错；`prerelease` 取自 `verify-version.outputs.is-prerelease`。
+   1. `dotnet nuget push ./artifacts/DevTrove.Crypto.Abstractions.*.nupkg`（Abstractions 最先 —— Core 依赖它）
+   2. `dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg`（Core —— 门包依赖它）
+   3. `dotnet nuget push ./artifacts/DevTrove.Crypto.[0-9]*.nupkg`（门包）
+   4. `softprops/action-gh-release@v2` 把 `artifacts/*.nupkg` + `artifacts/*.snupkg` 作为 GitHub Release 的附件上传；`fail_on_unmatched_files: true` 让缺失立即报错；`prerelease` 取自 `verify-version.outputs.is-prerelease`。
 
 ### 6.3 NuGet 发布顺序
 
-1. `DevTrove.Crypto.Core`
-2. `DevTrove.Crypto`
-3. `DevTrove.Crypto.Tls`
+（`DevTrove.Crypto.Core` 依赖 `DevTrove.Crypto.Abstractions`；`DevTrove.Crypto.Tls` 依赖 `DevTrove.Crypto`。）
+
+1. `DevTrove.Crypto.Abstractions`
+2. `DevTrove.Crypto.Core`
+3. `DevTrove.Crypto`
+4. `DevTrove.Crypto.Tls`
 
 NuGet 不支持原子多包发布。为避免"依赖已升级但被依赖包尚未发布"的窗口期，应**先发被依赖包、后更新消费方**，或在 CI 中按上述顺序依次推送。
 
 ### 6.4 CI 已知偏差
 
+- （`RM-0.0.6`）：release workflow 的 tag 触发端到端流程尚未用真实 tag 跑过
 - （`RM-0.0.9f`，部分）：新增 `tongsuo` job，从源码编译并缓存 Tongsuo 8.4.0；集成步骤改用 tongsuo。端到端验证仍待 CI 实跑
 - （`RM-0.0.9b` / `RM-0.0.9c`）：生成脚本中的 SM2 自签证书段与 SM2 CRL 段待 0.1.0 重建 Core 后的 SM2 生成流程落地
 
@@ -213,6 +265,7 @@ NuGet 不支持原子多包发布。为避免"依赖已升级但被依赖包尚�
 ### 本地打包
 
 ```
+dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts --include-symbols
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts --include-symbols
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts --include-symbols
 ```
@@ -232,6 +285,7 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 - `.nupkg` 根目录含 README
 - 所有声明的 TFM 都有 `lib/<tfm>/` 目录
 - 不含 `runtimes/*/native/` 内容
+- `DevTrove.Crypto.Core` 的 `.nuspec` 声明了 `<dependency id="DevTrove.Crypto.Abstractions" />`。解包看，不要假定 `ProjectReference` 已经变成了依赖。
 
 ---
 
@@ -282,7 +336,7 @@ scripts/
 └── pull-website-certs.sh        抓取公开站点链到 tests/data/certs/
 ```
 
-目前 `generate-test-certs.sh` 与 `generate-test-crl.sh` **完全没有 SM2 段**，但这两类 SM2 夹具确实存在于工作区 —— 说明它们由某个已不在仓库里的东西产生，今天无法复现。`TestDataGenerator` 仍然引用一个不存在的 `generate-test-sm-certs.sh`。两者均见 `RM-0.0.9`。
+目前 `generate-test-certs.sh` 与 `generate-test-crl.sh` **完全没有 SM2 段**，但这两类 SM2 夹具确实存在于工作区 —— 说明它们由某个已不在仓库里的东西产生，今天无法复现。这就是 `RM-0.0.9b` / `RM-0.0.9c`。
 
 ### 8.4 NTLS 握手字节夹具（关键）
 
@@ -325,11 +379,13 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 ./scripts/generate-test-pfx.sh
 
 # 4. 构建 + 测试
-#    在 RM-0.0.1 与 RM-0.0.11 落地前，预期会失败
+#    契约测试不需任何其他依赖；互操作测试需 tongsuo。
+#    `netstandard2.0` 仍受 RM-0.0.11 阻塞。
 dotnet build DevTrove.Crypto.slnx -c Release
-dotnet test  DevTrove.Crypto.slnx -c Release
+dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 
-# 5. 打包
+# 5. 打包（按依赖顺序）
+dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts
 ```

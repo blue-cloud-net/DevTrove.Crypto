@@ -11,12 +11,16 @@ Build, test, pack, and CI conventions for `DevTrove.Crypto`.
 | Action | Command |
 |---|---|
 | Build all (Release) | `dotnet build DevTrove.Crypto.slnx -c Release` |
-| Run all tests | `dotnet test DevTrove.Crypto.slnx -c Release` |
-| Run unit tests only (skip interop) | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` |
-| Run interop tests only | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category=Integration'` |
+| Run contract tests (Linux) | `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0` |
+| Run contract tests against the `netstandard2.0` asset (Windows) | `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net48` |
+| Run unit tests only (skip interop) | `dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0 --filter 'Category!=Integration'` |
+| Run interop tests only | `dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0 --filter 'Category=Integration'` |
+| Pack Abstractions | `dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts` |
 | Pack Core | `dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts` |
 | Pack Metapackage | `dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -o ./artifacts` |
 | Generate PFX fixtures (CI also runs) | `./scripts/generate-test-pfx.sh` |
+
+> **Naming the project and the framework is deliberate.** The `net48` target of the test project only exists on Windows (see §2), so `dotnet test DevTrove.Crypto.slnx` without `--framework` cannot complete on Linux. Naming both keeps every documented command runnable on both platforms.
 
 External dependency: **tongsuo**. Tests fail (not skip) when it is missing. See §5.2.
 
@@ -27,20 +31,34 @@ External dependency: **tongsuo**. Tests fail (not skip) when it is missing. See 
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/         metapackage (no source — see roadmap `RM-0.0.2`)
-│  ├─ DevTrove.Crypto.Core/    implementation
-│  └─ DevTrove.Crypto.Tls/     TLS probe engine (planned, `0.4.0` — not present yet)
+│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — planned, `0.1.0`)
+│  ├─ DevTrove.Crypto/               metapackage (no source — see roadmap `RM-0.0.2`)
+│  ├─ DevTrove.Crypto.Core/          implementation
+│  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned, `0.6.0` — not present yet)
 ├─ tests/
+│  ├─ DevTrove.Crypto.Abstractions.Tests/  contract tests; targets `net48` on Windows only
 │  ├─ DevTrove.Crypto.Core.Tests/
-│  └─ DevTrove.Crypto.TestSupport/   CLI helpers (tongsuo)
+│  └─ DevTrove.Crypto.TestSupport/         CLI helpers (tongsuo)
 ├─ scripts/                     fixture generation
-├─ .github/workflows/build.yml  CI
+├─ .github/workflows/ci.yml     branch CI + the abstraction test matrix
+├─ .github/workflows/release.yml tag-driven publish
 ├─ Directory.Build.props        global build props + NuGet metadata
 ├─ Directory.Packages.props     CPM
 ├─ DevTrove.Crypto.slnx         solution
 ├─ global.json                  SDK lock
 └─ docs/                        this documentation
 ```
+
+### Test project target frameworks
+
+`DevTrove.Crypto.Abstractions.Tests` is the host that makes the `netstandard2.0` asset runtime-verified: a `net48` project resolves `lib/netstandard2.0/`, while a `net8.0`+ project resolves its own asset. Because .NET Framework cannot run on Linux, the `net48` target is declared **conditionally on the operating system**:
+
+```xml
+<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net48;net8.0;net9.0;net10.0</TargetFrameworks>
+<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0;net9.0;net10.0</TargetFrameworks>
+```
+
+This keeps `dotnet build DevTrove.Crypto.slnx` working on Linux without the `Microsoft.NETFramework.ReferenceAssemblies` package, which would otherwise be required to even build a `net48` target there.
 
 ---
 
@@ -69,14 +87,26 @@ DevTrove.Crypto/
 <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
 <!-- Target frameworks (declared in the baseline; every csproj must agree) -->
-<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
+<TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
-Each csproj either inherits this baseline or overrides it. Today all csproj files inherit the 5-TFM baseline declared here.
+Each csproj either inherits this baseline or overrides it. Today all csproj files inherit the 4-TFM baseline declared here.
 
-### The `netstandard` targets
+### Additional package references
 
-Both targets are **staying** — this is a NuGet library and the compatibility surface is part of the product. Once `RM-0.0.11b` lands, the polyfills in the new Core land under the path the `0.1.0` target layout names `Compat/`.
+`DevTrove.Crypto.Abstractions` needs `Span<T>` on its only `netstandard` target, so it carries a conditional reference:
+
+```xml
+<PackageReference Include="System.Memory" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+```
+
+The version is declared once in `Directory.Packages.props`, like every other package (see [standards.md §2.2](standards.md)).
+
+### The `netstandard2.0` target
+
+This target is **staying** — this is a NuGet library and the compatibility surface is part of the product. `netstandard2.1` is gone: no non-EOL host resolves that asset, so it could never be runtime-verified (see [nuget.md §5](nuget.md)).
+
+Polyfills land under the path the `0.1.0` target layout names `Compat/`, and the guard symbol is chosen **per API** — `Convert.FromHexString` needs `NETSTANDARD2_0`, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0`. See `RM-0.0.11`.
 
 ---
 
@@ -84,7 +114,7 @@ Both targets are **staying** — this is a NuGet library and the compatibility s
 
 How a consumer references the packages — `ProjectReference` during development, `PackageReference` from a feed, or a local folder feed for unreleased builds — is a consumer decision. This repository does not ship a switch for it and does not test one.
 
-One consequence is worth stating because it bites at pack time: a `ProjectReference` does not turn into a NuGet dependency. A package built from project references will be missing its dependency declaration, and consumers will fail to restore. See [nuget.md §10](nuget.md).
+One consequence is worth stating because it bites at pack time: a `ProjectReference` does not reliably turn into a NuGet dependency. A package built from project references can end up missing its dependency declaration, and consumers then fail to restore. `DevTrove.Crypto.Abstractions` is the first package in this repository to make that concrete — `DevTrove.Crypto.Core` must declare it. Always unpack the `.nupkg` and read the `.nuspec`; see [nuget.md §8](nuget.md) for the checklist entry.
 
 ---
 
@@ -103,6 +133,20 @@ One consequence is worth stating because it bites at pack time: a `ProjectRefere
 
 > **Known deviation** (`RM-0.0.7`): `DevTrove.Crypto.TestSupport.csproj` does not declare `net9.0`, while the test project does. An xUnit v3 upgrade is under consideration but is not scheduled.
 
+### 5.1.1 Contract tests for the abstractions
+
+`DevTrove.Crypto.Abstractions.Tests` carries no external dependency at all — no BouncyCastle, no tongsuo — so it runs fast and needs no fixture generation. Its stub types live in `_TestStubs/`; they are the only way to exercise an `abstract` base class, and they exist to test the behaviour the base class actually implements rather than the `abstract` keyword:
+
+| Tested | Why |
+|---|---|
+| Default `Cbc` / `Pkcs7` | The defaults are real, shipped behaviour |
+| ECB makes `Encrypt` throw | A guard in the base class, exercised only through a concrete subclass |
+| The four BCL-compatible modes through `AsSymmetricAlgorithm()` | The adapter is fully concrete and is the deliverable of `RM-0.1.0-05` |
+| GCM / CTR throw `NotSupportedException` | Documents where the BCL bridge stops |
+| `DigestBase` chunked `Update` equals one-shot `ComputeHash` | Buffer management is inherited logic |
+| `AsymmetricKeyBase.Dispose` clears key material | `standards.md §3.8` makes this a hard rule |
+| All four X.509 interfaces implemented by one stub | Proves the interfaces are implementable before `0.5.0` commits to them |
+
 ### 5.2 `TongsuoCli`
 
 Interop tests (key / certificate / CSR / CRL / PKCS#12 generation and parsing, plus the ShangMi family) shell out to **tongsuo**, an OpenSSL distribution that carries the Chinese national algorithms. It is the **only** external tool this repository depends on.
@@ -113,7 +157,7 @@ Interop tests (key / certificate / CSR / CRL / PKCS#12 generation and parsing, p
 | Version requirement | a build supporting SM2 / SM3 / SM4 |
 | Purpose | (a) interop test: generate with tongsuo → parse with this library, and the reverse; (b) fallback generation for fixtures |
 
-**Upstream OpenSSL is no longer used.** Tongsuo is a fork and is command-compatible, but it is not the same implementation — so interoperability against upstream OpenSSL is no longer asserted. That trade-off is recorded as risk R2 in [roadmap.md §8](roadmap.md). An optional, non-blocking cross-check against upstream OpenSSL is the documented escape hatch. `RM-0.1.0-06` merges the former `OpenSslCli` helper into `TongsuoCli`.
+**Upstream OpenSSL is no longer used.** Tongsuo is a fork and is command-compatible, but it is not the same implementation — so interoperability against upstream OpenSSL is no longer asserted. That trade-off is recorded as risk R2 in [roadmap.md §8](roadmap.md). An optional, non-blocking cross-check against upstream OpenSSL is the documented escape hatch. The former `OpenSslCli` helper is merged into `TongsuoCli` — tracked as an unversioned baseline item in [roadmap.md §5](roadmap.md).
 
 ### 5.3 Tools-missing behavior (important)
 
@@ -151,7 +195,7 @@ CI is split across two workflows so that branch checks and tag-driven releases s
 
 `.github/workflows/ci.yml`. Triggers: push / pull_request on **`main` only**, plus `workflow_call` (re-used by `release.yml`) and `workflow_dispatch` (manual warm-up of the tongsuo cache or ad-hoc verification on a feature branch).
 
-> **`dev` is intentionally not covered.** `dev` is the integration / development branch; CI responsibility lives on `main`. Developers verify their work locally with `dotnet build DevTrove.Crypto.slnx -c Release` and `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` before opening a PR against `main`, or use `workflow_dispatch` for a one-off check on a feature branch. The integration tests (which require `tongsuo`) and the tag-driven `release.yml` flow are the only other paths that exercise the full pipeline.
+> **`dev` is intentionally not covered.** `dev` is the integration / development branch; CI responsibility lives on `main`. Developers verify their work locally with `dotnet build DevTrove.Crypto.slnx -c Release` and `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0` before opening a PR against `main`, or use `workflow_dispatch` for a one-off check on a feature branch. The integration tests (which require `tongsuo`) and the tag-driven `release.yml` flow are the only other paths that exercise the full pipeline.
 
 Top-level `permissions: contents: read`. `concurrency: ci-<workflow>-<ref> cancel-in-progress: true` cancels a stale in-flight run when the same branch is pushed again.
 
@@ -161,6 +205,9 @@ Jobs:
 |---|---|---|
 | `tongsuo` | Build & install Tongsuo 8.4.0 from source, cached by OS + version (`actions/cache@v4`) | See `RM-0.0.9f`. Must finish before `build` |
 | `build` | Build + unit tests + interop tests + coverage; on `push` (not PR), also pack to `./artifacts/` | `ubuntu-latest`, .NET 8.x / 9.x / 10.x |
+| `test-abstractions` | Matrix job running the contract tests per target framework | `os ∈ {ubuntu-latest, windows-latest}` × `tfm ∈ {net8.0, net9.0, net10.0, net48}`, with invalid combinations excluded (`net48` only on Windows, the rest only on Linux). **Needs no tongsuo** — the contract tests have no external dependency |
+
+The `net48` leg is what makes the `netstandard2.0` asset runtime-verified: a `net48` project resolves `lib/netstandard2.0/`. Without it, that asset would only ever be build-verified.
 
 The pack step writes `*.nupkg` + `*.snupkg` to `./artifacts/` for local inspection only. **It does not push to nuget.org** — pushing is `release.yml`'s job.
 
@@ -176,7 +223,7 @@ The workflow has three jobs with strict ordering:
    |---|---|
    | `<Version>` | equals the tag version (e.g. tag `v0.4.0` → `<Version>0.4.0</Version>`) |
    | `<PackageLicenseExpression>` | `Apache-2.0` (matches repo `LICENSE`) |
-   | `<TargetFrameworks>` | contains all of `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+   | `<TargetFrameworks>` | contains all of `netstandard2.0;net8.0;net9.0;net10.0` |
    | `<RepositoryUrl>` | contains `DevTrove.Crypto` |
 
    The job also detects prerelease tags (any `-` in the version segment, e.g. `v1.0.0-rc.1`) and exposes `is-prerelease` as a job output.
@@ -203,6 +250,7 @@ NuGet does not support atomic multi-package publishing. To avoid "dependency bum
 
 ### 6.4 CI known deviations
 
+- (`RM-0.0.6`): the release workflow's tag-triggered end-to-end run has not been exercised against a real tag yet.
 - (`RM-0.0.9f`, partial): the `tongsuo` job builds and installs Tongsuo 8.4.0 with caching; the integration step now uses tongsuo. End-to-end verification still pending a CI run.
 - (`RM-0.0.9b` / `RM-0.0.9c`): the SM2 self-signed-cert and SM2 CRL fixture sections in the generator scripts will land once the rebuilt Core ships the corresponding helpers.
 
@@ -213,6 +261,7 @@ NuGet does not support atomic multi-package publishing. To avoid "dependency bum
 ### Local pack
 
 ```
+dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts --include-symbols
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts --include-symbols
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts --include-symbols
 ```
@@ -232,6 +281,7 @@ After pack, verify:
 - The `.nupkg` contains the README at the root.
 - All declared TFM have `lib/<tfm>/` directories.
 - No `runtimes/*/native/` content.
+- `DevTrove.Crypto.Core`'s `.nuspec` declares `<dependency id="DevTrove.Crypto.Abstractions" />`. Unpack and read it — do not assume a `ProjectReference` became a dependency.
 
 ---
 
@@ -282,7 +332,7 @@ scripts/
 └── pull-website-certs.sh        capture published site chains into tests/data/certs/
 ```
 
-Today `generate-test-certs.sh` and `generate-test-crl.sh` have no SM2 sections at all, even though SM2 fixtures of both kinds exist in the working tree — meaning they were produced by something no longer in the repository, and cannot be reproduced today. `TestDataGenerator` also still references a `generate-test-sm-certs.sh` that does not exist. Both are `RM-0.0.9`.
+Today `generate-test-certs.sh` and `generate-test-crl.sh` have no SM2 sections at all, even though SM2 fixtures of both kinds exist in the working tree — meaning they were produced by something no longer in the repository, and cannot be reproduced today. That is `RM-0.0.9b` / `RM-0.0.9c`.`
 
 ### 8.4 NTLS handshake byte fixtures (key)
 
@@ -325,11 +375,13 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 ./scripts/generate-test-pfx.sh
 
 # 4. Build + test
-#    Expect failures until RM-0.0.1 and RM-0.0.11 land
+#    Contract tests need nothing else; interop tests need tongsuo.
+#    RM-0.0.11 still gates `netstandard2.0`.
 dotnet build DevTrove.Crypto.slnx -c Release
-dotnet test  DevTrove.Crypto.slnx -c Release
+dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 
-# 5. Pack
+# 5. Pack (dependency order)
+dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts
 ```
