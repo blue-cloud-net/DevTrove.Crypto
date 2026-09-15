@@ -122,7 +122,7 @@ No `<Version>`, `<PackageId>` or SourceLink exists, although `nuget.md §4` call
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.5 | Remove the stale reference; list the current document set | Every path in the solution file resolves | ⬜ | Solution parses; no missing file |
+| RM-0.0.5 | Remove the stale reference; list the current document set | Every path in the solution file resolves | ✅ | Removed the stale `docs\v0.1\core-roadmap.md` reference; the `/docs/` folder now lists all 14 current documents; `dotnet sln DevTrove.Crypto.slnx list` parses and reports 4 projects |
 
 ### 6.6 `RM-0.0.6` — CI workflow
 
