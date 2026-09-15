@@ -1,0 +1,42 @@
+# Line-ending normalisation (standards.md §2.1 + §2.4)
+
+# Declare the text attribute on everything except the explicit binary list
+# below; this lets Git normalize line endings on checkout per `eol` and
+# stops editors from re-introducing CRLF when a contributor is on Windows.
+
+*               text=auto eol=lf
+
+# Force these file families to LF on checkout, regardless of platform.
+*.cs            text eol=lf
+*.csproj        text eol=lf
+*.props         text eol=lf
+*.targets       text eol=lf
+*.slnx          text eol=lf
+*.sln           text eol=lf
+*.xml           text eol=lf
+*.json          text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.sh            text eol=lf
+*.md            text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.editorconfig   text eol=lf
+
+# Markdown keeps trailing whitespace semantics (line break = two spaces);
+# the editorconfig sets trim_trailing_whitespace=false for *.md, so Git
+# does not need a separate `whitespace` rule here.
+
+# Binary blobs: no text attribute, no normalisation, no diff at all.
+*.pfx           binary
+*.p12           binary
+*.der           binary
+*.bin           binary
+*.pdb           binary
+*.snupkg        binary
+*.nupkg         binary
+*.png           binary
+*.jpg           binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
