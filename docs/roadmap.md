@@ -126,11 +126,11 @@ No `<Version>`, `<PackageId>` or SourceLink exists, although `nuget.md §4` call
 
 ### 6.6 `RM-0.0.6` — CI workflow
 
-The `publish` job runs `dotnet pack --no-build` without a preceding build, the metapackage push glob `DevTrove.Crypto.*.nupkg` also matches the Core package, the workflow triggers on `main` only, and `actions/checkout` still requests `submodules: recursive` although this repository has none.
+The `publish` job ran `dotnet pack --no-build` without a preceding build, the metapackage push glob `DevTrove.Crypto.*.nupkg` also matched the Core package, the workflow triggered on `main` only, and `actions/checkout` requested `submodules: recursive` although this repository has none. The single-workflow design was also hard to audit — branch checks and tag-driven publishes could not be reviewed in isolation.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.6 | Add a build step to `publish`; narrow the push glob; trigger on the integration branch; drop `submodules` | Tag-triggered run builds, packs and publishes both packages correctly | 🟡 | All four fixes applied in `.github/workflows/build.yml` (push/PR trigger on `dev` too; dropped `submodules: recursive`; publish job restored + rebuilt; push globs split into `DevTrove.Crypto.Core.*.nupkg` and `DevTrove.Crypto.[0-9]*.nupkg`); full tag-triggered verification still pending a CI run |
+| RM-0.0.6 | Split into a branch-CI workflow + a tag-release workflow; verify `<Version>` / `<PackageLicenseExpression>` / `<TargetFrameworks>` / `<RepositoryUrl>` against the pushed tag before any pack or push; `uses` the CI workflow from release; narrow the push globs; drop `submodules` | A pushed `vX.Y.Z` tag builds, packs and publishes both packages correctly, and a tag whose version does not match `<Version>` is refused before any artifact is produced | ✅ | `.github/workflows/build.yml` is gone; `.github/workflows/ci.yml` keeps the `tongsuo` + `build` jobs and declares `workflow_call` (re-used by release) plus `workflow_dispatch`; `.github/workflows/release.yml` triggers on `v*` tag push with `concurrency: release-<ref> cancel-in-progress: false`; its `verify-version` job reads `Directory.Build.props` and refuses to proceed unless `<Version>` matches the tag version, `<PackageLicenseExpression>` is `Apache-2.0`, `<TargetFrameworks>` contains all five TFMs, and `<RepositoryUrl>` contains `DevTrove.Crypto`; push globs split into `DevTrove.Crypto.Core.*.nupkg` and `DevTrove.Crypto.[0-9]*.nupkg`; `softprops/action-gh-release@v2` attaches the `.nupkg` + `.snupkg` artifacts with `fail_on_unmatched_files: true`; full tag-triggered end-to-end verification still pending a real CI run |
 
 ### 6.7 `RM-0.0.7` — test support targets `net9.0`
 

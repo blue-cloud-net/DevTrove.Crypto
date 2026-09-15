@@ -126,11 +126,11 @@
 
 ### 6.6 `RM-0.0.6` —— CI 工作流
 
-`publish` 任务执行 `dotnet pack --no-build` 却没有前置构建；门包推送 glob `DevTrove.Crypto.*.nupkg` 会同时匹配 Core 包；工作流只在 `main` 触发；`actions/checkout` 仍请求 `submodules: recursive`，而本仓库没有子模块。
+`publish` 任务执行 `dotnet pack --no-build` 却没有前置构建；门包推送 glob `DevTrove.Crypto.*.nupkg` 会同时匹配 Core 包；工作流只在 `main` 触发；`actions/checkout` 仍请求 `submodules: recursive`，而本仓库没有子模块。单工作流设计本身也难以审计——分支检查与 tag 触发的发布无法独立 review。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.6 | publish 增加构建步骤；收窄推送 glob；在集成分支触发；去掉 `submodules` | tag 触发的运行能正确构建、打包并发布两个包 | 🟡 | build.yml 4 项修复已落地（push/PR 加 `dev`、去掉 `submodules: recursive`、publish 加 restore+build、推送 glob 用 `DevTrove.Crypto.Core.*` 与 `DevTrove.Crypto.[0-9]*` 区分）；完整 tag 触发验证待 CI 实跑 |
+| RM-0.0.6 | 拆为分支 CI + tag 发布两个 workflow；在任何 pack/push 前用 pushed tag 校验 `<Version>` / `<PackageLicenseExpression>` / `<TargetFrameworks>` / `<RepositoryUrl>`；release 中复用 CI；收窄推送 glob；去掉 `submodules` | 推送 `vX.Y.Z` tag 能正确构建、打包、发布两个包；与 `<Version>` 不一致的 tag 在任何产物产出前就被拒绝 | ✅ | 已删除 `.github/workflows/build.yml`；`.github/workflows/ci.yml` 保留 `tongsuo` + `build` 任务，新增 `workflow_call`（供 release 复用）与 `workflow_dispatch`；`.github/workflows/release.yml` 在 `v*` tag push 时触发，`concurrency: release-<ref> cancel-in-progress: false`；其 `verify-version` 读取 `Directory.Build.props`，除非 `<Version>` 与标签一致、`<PackageLicenseExpression>` 为 `Apache-2.0`、`<TargetFrameworks>` 含全部 5 个 TFM、`<RepositoryUrl>` 含 `DevTrove.Crypto`，否则拒绝继续；推送 glob 拆为 `DevTrove.Crypto.Core.*.nupkg` 与 `DevTrove.Crypto.[0-9]*.nupkg`；`softprops/action-gh-release@v2` 附 `.nupkg` + `.snupkg`，`fail_on_unmatched_files: true`；真实 tag 触发的端到端验证仍待 CI 实跑 |
 
 ### 6.7 `RM-0.0.7` —— TestSupport 目标 `net9.0`
 
