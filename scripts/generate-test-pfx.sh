@@ -12,7 +12,7 @@
 
 set -e
 
-# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+# 唯一外部工具：tongsuo
 : "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
 if [[ ! -x "$TONGSUO_PATH" ]]; then
   echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
