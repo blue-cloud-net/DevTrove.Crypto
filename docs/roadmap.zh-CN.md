@@ -169,7 +169,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.10 | 新增**可入库**的 `tests/fixtures/ntls/` 放抓取的握手字节；把 `ocsp/` 加进生成集；补对应 `TestData` 方法；夹具清单写进 [development-guide.md §8](development-guide.md) 而非被忽略的文件里 | 抓取类夹具位于被忽略目录之外且受版本控制；生成集可由脚本重建 | ⬜ | 对新路径跑 `git check-ignore` + 在干净工作区重跑脚本 |
+| RM-0.0.10 | 新增**可入库**的 `tests/fixtures/ntls/` 放抓取的握手字节；把 `ocsp/` 加进生成集；补对应 `TestData` 方法；夹具清单写进 [development-guide.md §8](development-guide.md) 而非被忽略的文件里 | 抓取类夹具位于被忽略目录之外且受版本控制；生成集可由脚本重建 | 🟡 | 已新增 `tests/fixtures/README.md` 与 `tests/fixtures/ntls/README.md`；`git check-ignore -v tests/fixtures/*` 无匹配，`tests/data/*` 仍被忽略；development-guide §8 已含夹具清单；待 0.1.0 重建 Core 后补 `ocsp/` 生成段与 `TestData` 访问器 |
 
 ### 6.11 `RM-0.0.11` —— 5 个 TFM 真正可构建
 
