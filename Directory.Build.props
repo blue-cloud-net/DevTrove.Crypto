@@ -50,7 +50,7 @@
   </PropertyGroup>
 
   <!-- ========== [AOT / 裁剪兼容] ==========
-       RM-0.0.12：net8.0+ 目标声明裁剪 / AOT 兼容；netstandard 目标不承载
+       net8.0+ 目标声明裁剪 / AOT 兼容；netstandard 目标不承载
        AOT 元数据（它们承担兼容面）。新增枚举显示名解析时需使用
        IsDynamicCodeSupported 守卫，避免反射路径在 AOT 下丢失显示名。 -->
   <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
