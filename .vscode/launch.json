@@ -1,0 +1,71 @@
+{
+  // filepath: .vscode/launch.json
+  // 调试：单元测试 / 当前测试方法 / 互操作测试
+
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run all unit tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: Release (all TFM)",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "DevTrove.Crypto.slnx",
+        "-c",
+        "Release",
+        "--no-build",
+        "--filter",
+        "Category!=Integration"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Run all tests (including interop)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: Release (all TFM)",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "DevTrove.Crypto.slnx",
+        "-c",
+        "Release",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Run current test method",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: Release (all TFM)",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "tests/DevTrove.Crypto.Core.Tests/DevTrove.Crypto.Core.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--filter",
+        "FullyQualifiedName~${input:testMethod}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testMethod",
+      "type": "prompt",
+      "description": "Test method name (e.g. DevTrove.Crypto.Core.Tests.X509.CertificateTests.GenerateSelfSigned_Should_Fail_When_KeyIsNull)",
+      "default": ""
+    }
+  ]
+}

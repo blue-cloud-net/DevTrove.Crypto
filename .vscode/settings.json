@@ -1,0 +1,64 @@
+{
+  // filepath: .vscode/settings.json
+  // DevTrove.Crypto 工作区设置
+  // 行尾/编码遵循 docs/standards.md §2.4（LF / 末尾换行 / 无尾随空白）
+
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "files.detectIndentation": false,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.vs": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/artifacts": true,
+    "**/.idea": true,
+    "**/.vscode/.cortex": true,
+    "**/.vshistory": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/artifacts": true,
+    "**/tests/data": true,
+    "**/.vs": true
+  },
+
+  // Markdown 行尾空白语义由 standards.md §2.4 保留
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false,
+    "editor.wordWrap": "off"
+  },
+  "[json][jsonc][xml][csproj][props][targets][slnx][yml][yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[cs][vb]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[sh]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+
+  // C# 与 .NET —— 与 .editorconfig 一致
+  "omnisharp.useModernNet": true,
+  "dotnet.backgroundRestore": true,
+  "csharp.format.enableEditorConfigSupport": true,
+  "csharp.suggest.dotnetCompletions": true,
+
+  // 测试 / 解决方案
+  "dotnet.testWindow.title": "DevTrove.Crypto",
+
+  // Git
+  "git.enableSmartCommit": true,
+  "git.confirmSync": true,
+
+  // Markdown
+  "markdown.preview.fontSize": 14,
+  "markdown.preview.lineHeight": 1.6
+}

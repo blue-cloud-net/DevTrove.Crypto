@@ -1,0 +1,155 @@
+{
+  // filepath: .vscode/tasks.json
+  // 构建 / 测试 / 打包 / 清理任务
+
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "restore",
+      "command": "dotnet",
+      "args": ["restore", "DevTrove.Crypto.slnx"],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "silent" },
+      "group": "build"
+    },
+    {
+      "label": "build: Release (all TFM)",
+      "command": "dotnet",
+      "args": ["build", "DevTrove.Crypto.slnx", "-c", "Release"],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" },
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "build: per-TFM",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj",
+        "-c",
+        "Release",
+        "-f",
+        "${input:targetFramework}"
+      ],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "test: unit (no interop)",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DevTrove.Crypto.slnx",
+        "-c",
+        "Release",
+        "--filter",
+        "Category!=Integration"
+      ],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" },
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "test: interop only",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DevTrove.Crypto.slnx",
+        "-c",
+        "Release",
+        "--filter",
+        "Category=Integration"
+      ],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "test: all",
+      "command": "dotnet",
+      "args": ["test", "DevTrove.Crypto.slnx", "-c", "Release"],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "pack: Core + Metapackage",
+      "dependsOrder": "sequence",
+      "dependsOn": ["pack: Core", "pack: Metapackage"],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "pack: Core",
+      "command": "dotnet",
+      "args": [
+        "pack",
+        "src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj",
+        "-c",
+        "Release",
+        "-o",
+        "./artifacts",
+        "--include-symbols"
+      ],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "pack: Metapackage",
+      "command": "dotnet",
+      "args": [
+        "pack",
+        "src/DevTrove.Crypto/DevTrove.Crypto.csproj",
+        "-c",
+        "Release",
+        "-o",
+        "./artifacts",
+        "--include-symbols"
+      ],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "clean",
+      "command": "dotnet",
+      "args": ["clean", "DevTrove.Crypto.slnx", "-c", "Release"],
+      "type": "process",
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "label": "clean: artifacts",
+      "type": "shell",
+      "command": "rm -rf artifacts && git clean -xdf tests/data 2>/dev/null || true",
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "label": "fixtures: generate PFX",
+      "type": "shell",
+      "command": "./scripts/generate-test-pfx.sh",
+      "presentation": { "reveal": "always" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "targetFramework",
+      "type": "pick",
+      "description": "Target framework (per-TFM build verification)",
+      "options": [
+        "netstandard2.0",
+        "netstandard2.1",
+        "net8.0",
+        "net9.0",
+        "net10.0"
+      ],
+      "default": "net10.0"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  // filepath: .vscode/extensions.json
+  // 推荐扩展；本地无 Tongsuo 不影响编辑体验
+
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "editorconfig.editorconfig",
+    "davidanson.vscode-markdownlint",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": []
+}
