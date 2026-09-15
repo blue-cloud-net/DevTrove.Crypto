@@ -90,7 +90,7 @@ Each row is one sub-item. `Evidence` names the concrete way the acceptance crite
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.1 | Unify `<TargetFrameworks>` across props and both csproj; verify every TFM separately | `dotnet build -f <tfm>` succeeds for each of the 5 TFMs | ⬜ | Pending; `NU1201` in the previous plan must first be reproduced or disproved |
+| RM-0.0.1 | Unify `<TargetFrameworks>` across props and both csproj; verify every TFM separately | `dotnet build -f <tfm>` succeeds for each of the 5 TFMs | ✅ | `dotnet build -f <tfm>` for Core and the metapackage succeeded for `netstandard2.0` / `netstandard2.1` / `net8.0` / `net9.0` / `net10.0` (0 warnings, 0 errors) |
 
 ### 6.2 `RM-0.0.2` — metapackage is source-free
 
@@ -138,7 +138,7 @@ The `publish` job runs `dotnet pack --no-build` without a preceding build, the m
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.7 | Add `net9.0` to TestSupport | All three TFMs restore and build | ⬜ | `dotnet build DevTrove.Crypto.slnx` |
+| RM-0.0.7 | Add `net9.0` to TestSupport | All three TFMs restore and build | ✅ | `dotnet build tests/DevTrove.Crypto.TestSupport/DevTrove.Crypto.TestSupport.csproj -c Release -f net8.0` / `net9.0` / `net10.0` all succeeded (0 warnings, 0 errors) |
 
 ### 6.8 `RM-0.0.8` — default signature algorithm
 

@@ -90,7 +90,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.1 | 统一 props 与两个 csproj 的 `<TargetFrameworks>`；逐个 TFM 验证 | 5 个 TFM 各自 `dotnet build -f <tfm>` 成功 | ⬜ | 待定；旧计划中的 `NU1201` 必须先被复现或证伪 |
+| RM-0.0.1 | 统一 props 与两个 csproj 的 `<TargetFrameworks>`；逐个 TFM 验证 | 5 个 TFM 各自 `dotnet build -f <tfm>` 成功 | ✅ | Core 与门包对 `netstandard2.0` / `netstandard2.1` / `net8.0` / `net9.0` / `net10.0` 逐个 `dotnet build -f <tfm>` 均成功（0 警告 0 错误） |
 
 ### 6.2 `RM-0.0.2` —— 门包无源码
 
@@ -138,7 +138,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.7 | 为 TestSupport 补上 `net9.0` | 三个 TFM 均可还原与构建 | ⬜ | `dotnet build DevTrove.Crypto.slnx` |
+| RM-0.0.7 | 为 TestSupport 补上 `net9.0` | 三个 TFM 均可还原与构建 | ✅ | `dotnet build tests/DevTrove.Crypto.TestSupport/DevTrove.Crypto.TestSupport.csproj -c Release -f net8.0` / `net9.0` / `net10.0` 均成功（0 警告 0 错误） |
 
 ### 6.8 `RM-0.0.8` —— 默认签名算法
 
