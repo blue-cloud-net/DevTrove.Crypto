@@ -145,24 +145,53 @@ Some scanner determinism checks have to be compared against independent implemen
 
 ## 6. CI
 
-`.github/workflows/build.yml`:
+CI is split across two workflows so that branch checks and tag-driven releases stay independently auditable.
 
-| Trigger | Action |
-|---|---|
-| Push to `main` / `dev` | Build + test |
-| Pull Request into `main` / `dev` | Build + test |
-| Push `v*` tag | Build + test + pack + publish (needs `NUGET_API_KEY` secret in the `nuget` environment) |
+### 6.1 `ci.yml` — branch checks
 
-> The workflow currently triggers on `main` only; the `dev` trigger is part of `RM-0.0.6`.
+`.github/workflows/ci.yml`. Triggers: push / pull_request on `main` / `dev`, plus `workflow_call` (re-used by `release.yml`) and `workflow_dispatch` (manual warm-up of the tongsuo cache).
+
+Top-level `permissions: contents: read`. `concurrency: ci-<workflow>-<ref> cancel-in-progress: true` cancels a stale in-flight run when the same branch is pushed again.
 
 Jobs:
 
 | Job | Purpose | Note |
 |---|---|---|
-| `build` | Build + unit tests + interop tests + coverage + pack to `artifacts/` | Runs on `ubuntu-latest` with .NET 8.x / 9.x / 10.x. Must build tongsuo (pinned version, cached) before the interop stage — see `RM-0.0.9` |
-| `publish` | Pack + push to nuget.org on tag | Tagged-triggered; needs `NUGET_API_KEY` |
+| `tongsuo` | Build & install Tongsuo 8.4.0 from source, cached by OS + version (`actions/cache@v4`) | See `RM-0.0.9f`. Must finish before `build` |
+| `build` | Build + unit tests + interop tests + coverage; on `push` (not PR), also pack to `./artifacts/` | `ubuntu-latest`, .NET 8.x / 9.x / 10.x |
 
-### CI publish order
+The pack step writes `*.nupkg` + `*.snupkg` to `./artifacts/` for local inspection only. **It does not push to nuget.org** — pushing is `release.yml`'s job.
+
+### 6.2 `release.yml` — tag-driven publish
+
+`.github/workflows/release.yml`. Triggers on `push` of `v*` tags only. `concurrency: release-<ref> cancel-in-progress: false` (in-flight publishes must not be cancelled mid-flight).
+
+The workflow has three jobs with strict ordering:
+
+1. **`verify-version`** — guard. Reads `Directory.Build.props` and compares four invariants against the pushed tag (`${{ github.ref_name }}` minus the leading `v`). **Any mismatch fails the run before anything is packed or pushed**:
+
+   | Invariant | Expected |
+   |---|---|
+   | `<Version>` | equals the tag version (e.g. tag `v0.4.0` → `<Version>0.4.0</Version>`) |
+   | `<PackageLicenseExpression>` | `Apache-2.0` (matches repo `LICENSE`) |
+   | `<TargetFrameworks>` | contains all of `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+   | `<RepositoryUrl>` | contains `DevTrove.Crypto` |
+
+   The job also detects prerelease tags (any `-` in the version segment, e.g. `v1.0.0-rc.1`) and exposes `is-prerelease` as a job output.
+
+   **The version is not injected dynamically.** The maintainer edits `<Version>` in `Directory.Build.props`; the machine verifies. See `nuget.md §6.2` for the rationale.
+
+2. **`ci`** — `needs: verify-version`, `uses: ./.github/workflows/ci.yml`. Re-runs the same compile + test gate that branches go through, so a tag cannot reach `release` unless CI is green.
+
+3. **`release`** — `needs: ci`, `environment: nuget`, `permissions: contents: write`. Re-runs `dotnet restore` + `dotnet build` + `dotnet pack` (intentionally — the artifact stream is small enough that re-packing is cheaper than wiring `upload-artifact` / `download-artifact` across workflows). The re-used fact is "CI passed", not the file bytes.
+
+   Then in order:
+
+   1. `dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg` (Core first — Metapackage depends on it)
+   2. `dotnet nuget push ./artifacts/DevTrove.Crypto.[0-9]*.nupkg` (Metapackage)
+   3. `softprops/action-gh-release@v2` attaches `artifacts/*.nupkg` + `artifacts/*.snupkg` to a GitHub Release; `fail_on_unmatched_files: true` so a missing artifact fails loud; `prerelease` is sourced from `verify-version.outputs.is-prerelease`.
+
+### 6.3 NuGet publish order
 
 1. `DevTrove.Crypto.Core`
 2. `DevTrove.Crypto`
@@ -170,9 +199,8 @@ Jobs:
 
 NuGet does not support atomic multi-package publishing. To avoid "dependency bumped but not yet published" windows, either (a) **publish the dependency first**, then update the consumer, or (b) follow the order above in CI.
 
-### CI known deviations
+### 6.4 CI known deviations
 
-- (`RM-0.0.6`, partial): publish-job build step, push globs, branch trigger and submodule checkout have been fixed; full tag-triggered end-to-end verification is still pending a CI run
 - (`RM-0.0.9f`, partial): the `tongsuo` job builds and installs Tongsuo 8.4.0 with caching; the integration step now uses tongsuo. End-to-end verification still pending a CI run.
 - (`RM-0.0.9b` / `RM-0.0.9c`): the SM2 self-signed-cert and SM2 CRL fixture sections in the generator scripts will land once the rebuilt Core ships the corresponding helpers.
 

@@ -148,21 +148,39 @@ dotnet pack <project> -c Release -o ./artifacts --include-symbols
 
 ### 6.2 CI 发布
 
-| 触发 | 动作 |
-|---|---|
-| 推送到 `main` | 构建 + 测试（不发布） |
-| Pull Request | 构建 + 测试（不发布） |
-| 推送 `v*` 标签 | 构建 + 测试 + 打包 + 发布到 nuget.org（`--skip-duplicate`） |
+CI 拆为两个 workflow，使分支检查与 tag 触发的发布相互独立、可分别审计。完整 job 布局见 [development-guide.zh-CN.md §6](development-guide.zh-CN.md)。
 
-**发布顺序**（`DevTrove.Crypto.Tls` 依赖 `DevTrove.Crypto`）：
+| Workflow | 触发 | 动作 |
+|---|---|---|
+| `.github/workflows/ci.yml` | `main` / `dev` 的 `push` / `pull_request`，外加 `workflow_call` 与 `workflow_dispatch` | 构建 + 测试；仅 `push`（非 PR）时打包至 `./artifacts/`（**不**推 nuget.org） |
+| `.github/workflows/release.yml` | `v*` 标签 `push` | 校验不变量 → 重跑 CI → 重新打包 + 推 nuget.org + 创建 GitHub Release |
+
+#### 版本守卫（`release.yml` / `verify-version`）
+
+发布 workflow **不**注入版本号。维护者直接编辑 `Directory.Build.props` 中的 `<Version>`；`verify-version` 读取该文件，与推送的标签逐项比对四项不变量，任一不匹配即拒绝继续：
+
+| 不变量 | 期望 |
+|---|---|
+| `<Version>` | 与标签版本一致（如 `v0.4.0` 对应 `<Version>0.4.0</Version>`） |
+| `<PackageLicenseExpression>` | `Apache-2.0` |
+| `<TargetFrameworks>` | 包含全部 `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+| `<RepositoryUrl>` | 包含 `DevTrove.Crypto` |
+
+任一不匹配通过 `::error::` annotation 立即终止，**绝不**进入 `dotnet pack`、`dotnet nuget push` 或 GitHub Release 步骤。tag 版本段含 `-`（如 `v1.0.0-rc.1`）即判定为预发布。
+
+#### 发布顺序
+
+（`DevTrove.Crypto.Tls` 依赖 `DevTrove.Crypto`。）
 
 1. `DevTrove.Crypto.Core`
 2. `DevTrove.Crypto`
 3. `DevTrove.Crypto.Tls`
 
-由于 NuGet 不支持原子多包发布，新版本发布时应**先发包、后打标签**，或在 CI 中按上述顺序依次推送，避免出现"依赖已升级但被依赖的包尚未发布"的窗口期。
+由于 NuGet 不支持原子多包发布，新版本发布时应**先发包、后打标签**，或在 CI 中按上述顺序依次推送，避免出现"依赖已升级但被依赖的包尚未发布"的窗口期。`release.yml` 的推送 glob 严格拆分：Core 用 `DevTrove.Crypto.Core.*.nupkg`，门包用 `DevTrove.Crypto.[0-9]*.nupkg`。
 
-> **已知偏差**（`RM-0.0.6`，部分）：`publish` job 已修复为 `dotnet restore` + `dotnet build` 后再 `dotnet pack --no-build`，推送 glob 拆分为 Core 的 `DevTrove.Crypto.Core.*.nupkg` 与门包的 `DevTrove.Crypto.[0-9]*.nupkg`。剩余事项为真实 `refs/tags/v*` 触发下的端到端验证。
+#### GitHub Release
+
+`softprops/action-gh-release@v2` 把 `artifacts/*.nupkg` + `artifacts/*.snupkg` 附到 Release；`fail_on_unmatched_files: true` 让缺失立刻报错；`prerelease` 取自 `verify-version` job 的输出。
 
 ### 6.3 密钥管理
 

@@ -145,22 +145,53 @@ DevTrove.Crypto/
 
 ## 6. CI
 
-`.github/workflows/build.yml`：
+CI 拆为两个 workflow，使分支检查与 tag 触发的发布相互独立、可分别审计。
 
-| 触发 | 动作 |
-|---|---|
-| Push 到 `main` / `dev` | 构建 + 测试 |
-| Pull Request → `main` / `dev` | 构建 + 测试 |
-| 推送 `v*` 标签 | 构建 + 测试 + 打包 + 发布（需在 `nuget` environment 中设置 `NUGET_API_KEY`） |
+### 6.1 `ci.yml` —— 分支检查
+
+`.github/workflows/ci.yml`。触发器：`main` / `dev` 的 push / pull_request，外加 `workflow_call`（被 `release.yml` 复用）和 `workflow_dispatch`（手动预热 tongsuo 缓存）。
+
+顶部 `permissions: contents: read`。`concurrency: ci-<workflow>-<ref> cancel-in-progress: true`：同分支再次 push 时取消正在跑的旧实例。
 
 Job：
 
 | Job | 用途 | 说明 |
 |---|---|---|
-| `build` | 构建 + 单元测试 + 互操作测试 + 覆盖率 + 打包至 `artifacts/` | `ubuntu-latest`，.NET 8.x / 9.x / 10.x。互操作阶段前必须先构建 tongsuo（pin 版本 + 缓存）—— 见 `RM-0.0.9` |
-| `publish` | 标签触发：打包 + 推 nuget.org | 需 `NUGET_API_KEY` |
+| `tongsuo` | 从源码编译并安装 Tongsuo 8.4.0，按 OS + 版本缓存（`actions/cache@v4`） | 见 `RM-0.0.9f`，`build` 必须等它完成 |
+| `build` | 构建 + 单元测试 + 互操作测试 + 覆盖率；`push` 时（不含 PR）还会打包至 `./artifacts/` | `ubuntu-latest`，.NET 8.x / 9.x / 10.x |
 
-### CI 发布顺序
+pack 步骤仅把 `*.nupkg` + `*.snupkg` 落到 `./artifacts/` 供本地检查；**不**推送到 nuget.org —— 推送由 `release.yml` 负责。
+
+### 6.2 `release.yml` —— 标签触发的发布
+
+`.github/workflows/release.yml`。仅在 `v*` 标签 push 时触发。`concurrency: release-<ref> cancel-in-progress: false`（发布进行中的运行不能被取消）。
+
+workflow 含三个 job，严格按序依赖：
+
+1. **`verify-version`** —— 守卫。读取 `Directory.Build.props`，与推送的标签（`${{ github.ref_name }}` 去前导 `v`）逐项比对四项不变量。**任一不匹配立即终止运行，绝不进入打包/推送阶段**：
+
+   | 不变量 | 期望 |
+   |---|---|
+   | `<Version>` | 与标签版本一致（如 `v0.4.0` 对应 `<Version>0.4.0</Version>`） |
+   | `<PackageLicenseExpression>` | `Apache-2.0`（与仓库 `LICENSE` 一致） |
+   | `<TargetFrameworks>` | 包含全部 `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+   | `<RepositoryUrl>` | 包含 `DevTrove.Crypto` |
+
+   该 job 同时识别预发布标签（版本段含 `-`，如 `v1.0.0-rc.1`），把 `is-prerelease` 作为 job 输出暴露给下游。
+
+   **版本不动态注入。** 维护者直接编辑 `Directory.Build.props` 中的 `<Version>`，机器负责把关。详见 `nuget.md §6.2`。
+
+2. **`ci`** —— `needs: verify-version`，`uses: ./.github/workflows/ci.yml`。复用分支同等的编译 + 测试门禁，确保 tag 在 CI 通过前走不到 `release`。
+
+3. **`release`** —— `needs: ci`，`environment: nuget`，`permissions: contents: write`。重新跑 `dotnet restore` + `dotnet build` + `dotnet pack`（故意重复 —— pack 几秒成本可控，省去跨 workflow 配 `upload-artifact` / `download-artifact` 的复杂度）。复用的是「CI 通过」这一事实，而非具体文件字节。
+
+   顺序执行：
+
+   1. `dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg`（Core 先发 —— Metapackage 依赖它）
+   2. `dotnet nuget push ./artifacts/DevTrove.Crypto.[0-9]*.nupkg`（Metapackage）
+   3. `softprops/action-gh-release@v2` 把 `artifacts/*.nupkg` + `artifacts/*.snupkg` 作为 GitHub Release 的附件上传；`fail_on_unmatched_files: true` 让缺失立即报错；`prerelease` 取自 `verify-version.outputs.is-prerelease`。
+
+### 6.3 NuGet 发布顺序
 
 1. `DevTrove.Crypto.Core`
 2. `DevTrove.Crypto`
@@ -168,9 +199,8 @@ Job：
 
 NuGet 不支持原子多包发布。为避免"依赖已升级但被依赖包尚未发布"的窗口期，应**先发被依赖包、后更新消费方**，或在 CI 中按上述顺序依次推送。
 
-### CI 已知偏差
+### 6.4 CI 已知偏差
 
-- （`RM-0.0.6`，部分）：publish job 的 build 步、推送 glob、分支触发与子模块 checkout 已修复；真实 `refs/tags/v*` 触发下的端到端验证仍待 CI 实跑
 - （`RM-0.0.9f`，部分）：新增 `tongsuo` job，从源码编译并缓存 Tongsuo 8.4.0；集成步骤改用 tongsuo。端到端验证仍待 CI 实跑
 - （`RM-0.0.9b` / `RM-0.0.9c`）：生成脚本中的 SM2 自签证书段与 SM2 CRL 段待 0.1.0 重建 Core 后的 SM2 生成流程落地
 

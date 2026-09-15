@@ -150,21 +150,39 @@ Produces `*.nupkg` + `*.snupkg`.
 
 ### 6.2 CI release
 
-| Trigger | Action |
-|---|---|
-| Push to `main` | Build + test (no publish) |
-| Pull Request | Build + test (no publish) |
-| Push `v*` tag | Build + test + pack + publish to nuget.org (`--skip-duplicate`) |
+CI is split into two workflows so that branch checks and tag-driven releases are independently auditable. See [development-guide.md §6](development-guide.md) for the full job layout.
 
-**Publish order** (`DevTrove.Crypto.Tls` depends on `DevTrove.Crypto`):
+| Workflow | Trigger | Action |
+|---|---|---|
+| `.github/workflows/ci.yml` | `push` / `pull_request` to `main` / `dev`, plus `workflow_call` + `workflow_dispatch` | Build + test; pack to `./artifacts/` only on `push` (no nuget.org push) |
+| `.github/workflows/release.yml` | `push` of `v*` tags | Verify invariants → re-run CI → repack + push to nuget.org + create GitHub Release |
+
+#### Version guard (`release.yml` / `verify-version`)
+
+The release workflow does **not** inject the version. The maintainer edits `<Version>` in `Directory.Build.props`; `verify-version` reads the file and refuses to proceed unless four invariants match the pushed tag:
+
+| Invariant | Expected |
+|---|---|
+| `<Version>` | equals tag version (e.g. tag `v0.4.0` → `<Version>0.4.0</Version>`) |
+| `<PackageLicenseExpression>` | `Apache-2.0` |
+| `<TargetFrameworks>` | contains all of `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+| `<RepositoryUrl>` | contains `DevTrove.Crypto` |
+
+Any mismatch fails the run via `::error::` annotation before `dotnet pack`, `dotnet nuget push`, or the GitHub Release step ever runs. A `-` in the tag version segment (e.g. `v1.0.0-rc.1`) marks the release as prerelease.
+
+#### Publish order
+
+(`DevTrove.Crypto.Tls` depends on `DevTrove.Crypto`.)
 
 1. `DevTrove.Crypto.Core`
 2. `DevTrove.Crypto`
 3. `DevTrove.Crypto.Tls`
 
-NuGet doesn't support atomic multi-package publishing. New versions should **publish the dependency first**, then update consumers, or follow the order above in CI to avoid "dependency bumped but dependency not yet published" windows.
+NuGet doesn't support atomic multi-package publishing. New versions should **publish the dependency first**, then update consumers, or follow the order above in CI to avoid "dependency bumped but dependency not yet published" windows. The push globs in `release.yml` are deliberately split: `DevTrove.Crypto.Core.*.nupkg` for Core, `DevTrove.Crypto.[0-9]*.nupkg` for the metapackage.
 
-> **Known deviation** (`RM-0.0.6`, partial): the `publish` job has been fixed to run `dotnet restore` + `dotnet build` before `dotnet pack --no-build`, and the push globs are split (`DevTrove.Crypto.Core.*.nupkg` for Core, `DevTrove.Crypto.[0-9]*.nupkg` for the metapackage). The remaining work is end-to-end verification under a real `refs/tags/v*` run.
+#### GitHub Release
+
+`softprops/action-gh-release@v2` attaches `artifacts/*.nupkg` + `artifacts/*.snupkg` to the release; `fail_on_unmatched_files: true` so a missing artifact surfaces immediately. `prerelease` is sourced from the `verify-version` job's output.
 
 ### 6.3 Key management
 
