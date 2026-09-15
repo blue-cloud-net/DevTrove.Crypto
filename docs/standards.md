@@ -37,7 +37,7 @@ See [AGENTS.md](../AGENTS.md) §3 for the canonical language policy. Quick refer
 | `Directory.Packages.props` | Central package version management (CPM) |
 | `.editorconfig` | Code style |
 | `.gitignore` | Ignore rules |
-| `.gitattributes` | Line-ending normalisation — **not present yet**, see `RM-0.0.13` |
+| `.gitattributes` | Line-ending normalisation (`RM-0.0.13`) |
 | `AGENTS.md` | Entry point for agents / contributors: authoritative docs, hard constraints, pre-submission checks |
 
 ### 2.2 Central package management (CPM)
@@ -98,6 +98,8 @@ For library projects (`IsPackable=true`) additionally:
   ```
 
 - The namespace must match the directory structure.
+  - **`DevTrove.Crypto.Abstractions`** is the one assembly that uses a **flat** layout: `Symmetric/`, `Asymmetric/`, `Hash/`, `X509/` directly under the project root, with no intermediate directory layer. `DevTrove.Crypto.Abstractions.Symmetric` maps onto `Symmetric/`, and so on.
+  - BCL adapters live **next to the family they adapt** rather than in a separate `Interop/` directory: `Symmetric/SymmetricBlockCipherInteropExtensions.cs`, `Hash/DigestInteropExtensions.cs`.
 - `using` directives go at the top of the file (no need to repeat with `ImplicitUsings`); `System.*` first.
 
 ### 3.2 Type design
@@ -157,11 +159,11 @@ For library projects (`IsPackable=true`) additionally:
 
 | Rule | Reason |
 |---|---|
-| Do **not** derive from `SymmetricAlgorithm`, `HashAlgorithm`, `AsymmetricAlgorithm` or `HMAC` | `CipherMode` is a closed enum with no CTR and no AEAD concept, and the `netstandard` targets lack the `net8.0` virtuals — inheriting them ties the library's capability set to a target framework. Use the built-in abstractions and expose BCL interop through adapters (see [architecture.md §8](architecture.md), decision D20). |
-| BouncyCastle types must not appear in a public signature | The implementation has to stay replaceable; interop goes through the explicit extensions in `Interop/` (decision D21). |
+| Do **not** derive from `SymmetricAlgorithm`, `HashAlgorithm`, `AsymmetricAlgorithm` or `HMAC` | `CipherMode` is a closed enum with no CTR and no AEAD concept, and the `netstandard` target lacks the `net8.0` virtuals — inheriting them ties the library's capability set to a target framework. Use the built-in abstractions in `DevTrove.Crypto.Abstractions` and expose BCL interop through adapters (see [architecture.md §8](architecture.md), decisions D20 and D24). |
+| BouncyCastle types must not appear in a public signature — **and the place to enforce that is the abstraction assembly** | The implementation has to stay replaceable; interop goes through the explicit extensions in `Interop/` (decision D21). `DevTrove.Crypto.Abstractions` references no package at all, so there is no BouncyCastle type available to leak — the rule becomes structural rather than a review habit. |
 | Algorithm proxies are named `<Algorithm>Crypto` | One rule for every algorithm (decision D23). |
-| Key material is cleared on disposal | It must not outlive the object that owns it; see `SymmetricKey` in [roadmap.md](roadmap.md) §6.15. |
-| Prefer `Span<T>` on hot paths, but keep the `netstandard` targets buildable | `System.Memory` supplies spans there; guard anything that only exists on `net8.0` and later with `#if`. |
+| Key material is cleared on disposal | It must not outlive the object that owns it; `AsymmetricKeyBase` implements this and the contract tests verify it. |
+| Prefer `Span<T>` on hot paths, but keep `netstandard2.0` buildable | `System.Memory` supplies spans there. Choose the guard symbol **per API**, never one blanket symbol: `Convert.FromHexString` is missing from every `netstandard` target, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0` (decision D25). |
 | Code reachable from a trimmed or AOT-compiled consumer must avoid unannotated reflection | See `RM-0.0.12`. |
 
 ---
@@ -215,7 +217,8 @@ For library projects (`IsPackable=true`) additionally:
 - Method naming: `Method_Should_Behavior_When_Condition`.
 - Structure: Arrange–Act–Assert, separated by blank lines.
 - One test verifies one behavior.
-- Test projects **mirror** the directory structure of the project under test.
+- Test projects **mirror** the directory structure of the project under test. Stub implementations used to exercise `abstract` base classes live in a `_TestStubs/` directory — they are fixtures, not tests, so they deliberately do not mirror anything.
+- `DevTrove.Crypto.Abstractions.Tests` targets `net48` **on Windows only** and `net8.0`+ everywhere. The `net48` leg is what makes the `netstandard2.0` asset runtime-verified: a `net48` project resolves `lib/netstandard2.0/`. See [development-guide.md §2](development-guide.md).
 - Test fixtures live under `tests/data/` and are accessed by relative path. That directory is **generated, never committed** (see [architecture.md §8](architecture.md), D18). Captured data that no script can produce goes to `tests/fixtures/`, which is version-controlled.
 - **Do not write** tests that only assert "does not throw".
 - Tests depending on external executables (tongsuo) have explicit failure semantics (see [development-guide.md §5.2](development-guide.md)).
@@ -272,7 +275,7 @@ One commit, one thing. No unrelated formatting changes mixed in.
 
 ### 9.3 Pre-submission checks
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` — expect failures until `RM-0.0.1` and `RM-0.0.11` land; warnings must be zero for new code.
+- `dotnet build DevTrove.Crypto.slnx -c Release` — expect failures until `RM-0.0.11` lands; warnings must be zero for new code.
 - `dotnet test DevTrove.Crypto.slnx -c Release` — green (or documented pre-existing failures).
 - New / modified public members have Chinese XML doc comments.
 - Touched `README.md` / `CHANGELOG.md` ⇒ sync the `.zh-CN.md`.

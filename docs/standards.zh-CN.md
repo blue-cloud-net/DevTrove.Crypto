@@ -37,7 +37,7 @@
 | `Directory.Packages.props` | 集中包版本管理（CPM） |
 | `.editorconfig` | 代码风格 |
 | `.gitignore` | 忽略规则 |
-| `.gitattributes` | 行尾规范化 —— **尚未存在**，见 `RM-0.0.13` |
+| `.gitattributes` | 行尾规范化（`RM-0.0.13`） |
 | `AGENTS.md` | 代理与贡献者入口：权威文档索引、硬性约束、提交前检查 |
 
 ### 2.2 集中包管理（CPM）
@@ -157,11 +157,11 @@
 
 | 规则 | 理由 |
 |---|---|
-| **不得**继承 `SymmetricAlgorithm`、`HashAlgorithm`、`AsymmetricAlgorithm`、`HMAC` | `CipherMode` 是封闭枚举，既无 CTR 也无 AEAD 概念；且两个 `netstandard` 目标没有 `net8.0` 的虚方法 —— 继承它们等于把库的能力集绑死在特定 TFM 上。使用自建抽象，BCL 互操作经适配器提供（见 [architecture.md §8](architecture.md) 决策 D20）。 |
-| BouncyCastle 类型不得出现在公开签名中 | 实现必须可替换；互操作只经 `Interop/` 下的显式扩展方法（决策 D21）。 |
-| 算法代理统一命名为 `<Algorithm>Crypto` | 一套命名规则覆盖全部算法（决策 D23）。 |
-| 密钥材料在释放时清零 | 不得比拥有它的对象活得更久；见 [roadmap.md](roadmap.md) §6.15 的 `SymmetricKey`。 |
-| 热路径优先用 `Span<T>`，但两个 `netstandard` 目标必须仍可构建 | 那里由 `System.Memory` 提供 span；仅存在于 `net8.0` 及以后的内容用 `#if` 包起来。 |
+| **不得**继承 `SymmetricAlgorithm`、`HashAlgorithm`、`AsymmetricAlgorithm`、`HMAC` | `CipherMode` 是封闭枚举，既无 CTR 也无 AEAD 概念；且 `netstandard` 目标没有 `net8.0` 的虚方法 —— 继承它们等于把库的能力集绑死在特定 TFM 上。使用 `DevTrove.Crypto.Abstractions` 中的自建抽象，BCL 互操作经适配器提供（见 [architecture.md §8](architecture.md) 决策 D20 与 D24）。 |
+| BouncyCastle 类型不得出现在公开签名中 —— **而真正落地这条规则的地方是抽象程序集** | 实现包应当可替换；互操作只经 `Interop/` 中的显式扩展（决策 D21）。`DevTrove.Crypto.Abstractions` 不引用任何包，所以它根本没有 BouncyCastle 类型可泄露 —— 这条规则从评审习惯变成了结构约束。 |
+| 算法代理统一命名 `<Algorithm>Crypto` | 一套规则覆盖全部算法（决策 D23）。 |
+| 密钥材料在释放时清零 | 不得比拥有它的对象活得更久；`AsymmetricKeyBase` 实现此约定，契约测试验证它。 |
+| 热路径优先用 `Span<T>`，但 `netstandard2.0` 必须仍可构建 | 该目标上的 span 由 `System.Memory` 提供。守卫符号必须**按 API 分别选取**，绝不用一个笼统符号：`Convert.FromHexString` 在所有 `netstandard` 目标上都不存在，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致（决策 D25）。 |
 | 可能被裁剪或 AOT 编译的消费方触达的代码，须避开未经标注的反射 | 见 `RM-0.0.12`。 |
 
 ---
@@ -215,7 +215,8 @@
 - 命名：`Method_Should_Behavior_When_Condition`
 - 结构：Arrange–Act–Assert，三段用空行分隔
 - 一个测试只验证一个行为
-- 测试项目**镜像**被测项目的目录结构
+- 测试项目**镜像**被测项目的目录结构。用于验证 `abstract` 基类的 stub 实现放在 `_TestStubs/` 目录 —— 它们是夹具不是测试，因此有意不镜像任何东西。
+- `DevTrove.Crypto.Abstractions.Tests` **仅在 Windows 上**包含 `net48`，其余平台为 `net8.0` 及以后。`net48` 那一格就是使 `netstandard2.0` 资产获得**运行验证**的关键：`net48` 项目会解析 `lib/netstandard2.0/`。见 [development-guide.md §2](development-guide.md)。
 - 测试夹具统一放在 `tests/data/`，通过相对路径定位。该目录**只生成、不入库**（见 [architecture.md §8](architecture.md) 的 D18）。脚本产不出的抓取类数据放 `tests/fixtures/`，那里是入库的。
 - **不写**仅断言"不抛异常"的测试
 - 依赖外部可执行文件（tongsuo）的测试必须有明确的失败语义（见 [development-guide.md §5.2](development-guide.md)）
@@ -272,7 +273,7 @@ Conventional Commits，**英文类型前缀 + 中文描述**：
 
 ### 9.3 提交前检查
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.0.1` 与 `RM-0.0.11` 落地前预期会失败；新代码须 0 警告
+- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.0.11` 落地前预期会失败；新代码须 0 警告
 - `dotnet test DevTrove.Crypto.slnx -c Release` —— 全绿（或明确标注为预存缺陷）
 - 新增/修改的 public 成员有中文 XML 文档注释
 - 触及 `README.md` / `CHANGELOG.md` ⇒ 同步 `.zh-CN.md`
