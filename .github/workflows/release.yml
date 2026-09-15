@@ -1,0 +1,171 @@
+# Release
+#
+# 触发：推送形如 vX.Y.Z（或 vX.Y.Z-rc.N 等预发布）的 tag。
+# 流程：
+#   1. verify-version —— 比对 Directory.Build.props 中的不变量与 tag 名；
+#      任一不通过立即终止，绝不进入打包/推送阶段
+#   2. ci —— 复用 ci.yml（workflow_call）走完整的编译+测试
+#   3. release —— 重新 pack + 推 nuget.org + 用 softprops/action-gh-release 创建 GitHub Release
+#
+# 关键约束（与 AGENTS.md §4 + standards.md 一致）：
+#   - 不修改 Directory.Build.props 的 <Version>（即不动态注入版本号）；
+#     人改源码，机器把关。verify-version 任一项不一致即拒绝发布。
+#   - pack 在 release job 内**重新**跑；不复用 ci.yml 的 ./artifacts/
+#     （避免跨 workflow 传 artifact 引入 upload/download 配对复杂度）。
+#     复用的是「编译+测试通过」这一事实。
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# 最小权限：默认只读；release job 内单独声明 write
+permissions:
+  contents: read
+
+concurrency:
+  # 同 tag 重放或并行触发时串行；不取消已有运行（发布未完成的运行不应被中断）
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-version:
+    # 守卫：必须在 pack/打包之前确认所有不变量，避免把错误版本推出去
+    runs-on: ubuntu-latest
+    outputs:
+      tag-version: ${{ steps.parse.outputs.tag-version }}
+      is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse tag and read Directory.Build.props
+        id: parse
+        run: |
+          set -euo pipefail
+
+          # 1. 从 tag 解析目标版本（去掉前导 v）
+          TAG_NAME="${GITHUB_REF_NAME}"
+          TAG_VERSION="${TAG_NAME#v}"
+
+          # 2. 预发布判定：SemVer 约定，tag 含 '-' 即预发布（-rc.1, -preview.2, -dev 等）
+          if [[ "$TAG_VERSION" == *-* ]]; then
+            echo "Tag $TAG_NAME is a prerelease (contains '-')"
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+
+          # 3. 读取 Directory.Build.props 的 <Version>
+          PKG_VERSION="$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1 | tr -d '[:space:]')"
+          if [ -z "$PKG_VERSION" ]; then
+            echo "::error::<Version> not found in Directory.Build.props"
+            exit 1
+          fi
+
+          # 4. 不变量 1：<Version> 必须与 tag 一致
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::<Version> in Directory.Build.props ($PKG_VERSION) does not match tag ($TAG_VERSION). Bump the version in Directory.Build.props first."
+            exit 1
+          fi
+          echo "Version check passed: tag=$TAG_VERSION, Directory.Build.props=$PKG_VERSION"
+
+          # 5. 不变量 2：<PackageLicenseExpression> 必须为 Apache-2.0
+          PKG_LICENSE="$(grep -oP '(?<=<PackageLicenseExpression>)[^<]+' Directory.Build.props | head -1 | tr -d '[:space:]')"
+          if [ "$PKG_LICENSE" != "Apache-2.0" ]; then
+            echo "::error::<PackageLicenseExpression> in Directory.Build.props ($PKG_LICENSE) must be 'Apache-2.0' to match repo LICENSE."
+            exit 1
+          fi
+          echo "License check passed: $PKG_LICENSE"
+
+          # 6. 不变量 3：<TargetFrameworks> 必须包含全部 5 个 TFM
+          PKG_TFM="$(grep -oP '(?<=<TargetFrameworks>)[^<]+' Directory.Build.props | head -1 | tr -d '[:space:]')"
+          REQUIRED_TFMS=("netstandard2.0" "netstandard2.1" "net8.0" "net9.0" "net10.0")
+          MISSING=()
+          for tfm in "${REQUIRED_TFMS[@]}"; do
+            if [[ ";$PKG_TFM;" != *";$tfm;"* ]]; then
+              MISSING+=("$tfm")
+            fi
+          done
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "::error::<TargetFrameworks> in Directory.Build.props is missing: ${MISSING[*]}. Got: $PKG_TFM"
+            exit 1
+          fi
+          echo "TFM check passed: $PKG_TFM"
+
+          # 7. 不变量 4：<RepositoryUrl> 必须指向 DevTrove.Crypto 仓库
+          REPO_URL="$(grep -oP '(?<=<RepositoryUrl>)[^<]+' Directory.Build.props | head -1 | tr -d '[:space:]')"
+          if [[ "$REPO_URL" != *"DevTrove.Crypto"* ]]; then
+            echo "::error::<RepositoryUrl> in Directory.Build.props ($REPO_URL) does not contain 'DevTrove.Crypto'."
+            exit 1
+          fi
+          echo "RepositoryUrl check passed: $REPO_URL"
+
+          # 8. 输出供下游 job 使用
+          echo "tag-version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "is-prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+
+  ci:
+    # 复用 ci.yml 走完整的编译 + 测试（含 tongsuo 集成测试）
+    needs: verify-version
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: write   # 仅此 job 需要写 Release / 推送 tags artifacts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+
+      # release job 重新 build + pack：避免跨 workflow 传 artifact 的复杂度。
+      # 复用的是「ci 已通过编译+测试」这一事实，而非具体产物。
+      - name: Restore
+        run: dotnet restore DevTrove.Crypto.slnx
+
+      - name: Build
+        run: dotnet build DevTrove.Crypto.slnx --no-restore -c Release
+
+      - name: Pack Core
+        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj --no-build -c Release -o ./artifacts
+
+      - name: Pack Metapackage
+        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj --no-build -c Release -o ./artifacts
+
+      # 发布顺序：Core 先，Crypto 后（Crypto 通过 ProjectReference 自动依赖 Core）
+      # glob 必须严格匹配 ——「DevTrove.Crypto.*」会同时匹配 Core 包
+      - name: Push Core
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "./artifacts/DevTrove.Crypto.Core.*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Push Metapackage
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "./artifacts/DevTrove.Crypto.[0-9]*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          # 缺少 nupkg/snupkg 应视为失败，避免掩盖 pack 异常
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          prerelease: ${{ needs.verify-version.outputs.is-prerelease == 'true' }}
+          files: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg

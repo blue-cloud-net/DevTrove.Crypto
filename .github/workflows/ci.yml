@@ -1,3 +1,13 @@
+# CI
+#
+# 触发：
+#   - push / pull_request 到 main 或 dev：完整编译 + 测试（PR 与 push 共用）
+#   - workflow_call：被 release.yml 复用，保证发布版本经过与分支同等的编译/测试把关
+#   - workflow_dispatch：手动触发，用于本地预热 tongsuo 缓存或跑冒烟
+#
+# 包发布由独立的 release.yml 负责；本 workflow 仅在 push（不含 PR）时把 nupkg 写到
+# ./artifacts/ 作为本地兜底，**不**推送到 nuget.org。
+
 name: CI
 
 on:
@@ -5,6 +15,17 @@ on:
     branches: ["main", "dev"]
   pull_request:
     branches: ["main", "dev"]
+  workflow_call:
+  workflow_dispatch:
+
+# 最小权限：只读仓库内容；workflow_call 触发时同样受此约束
+permissions:
+  contents: read
+
+concurrency:
+  # 同分支最近一次运行取消，避免 push 后立刻再 push 时的双跑竞争
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tongsuo:
@@ -78,47 +99,12 @@ jobs:
           $TONGSUO_PATH version
           dotnet test DevTrove.Crypto.slnx --no-build -c Release --filter 'Category=Integration'
 
+      # push 时把 nupkg 落到 ./artifacts/ 作为本地兜底；PR 不写盘。
+      # 不推送 nuget.org —— 推送由 release.yml 独立负责。
       - name: Pack Core (artifacts only, not pushed here)
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'push'
         run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj --no-build -c Release -o ./artifacts
 
       - name: Pack Metapackage (artifacts only, not pushed here)
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'push'
         run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj --no-build -c Release -o ./artifacts
-
-  publish:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-    environment: nuget
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            8.x
-            9.x
-            10.x
-
-      # publish 必须先 build —— 上游 job 仅产出测试与 pack，不复用。
-      - name: Restore
-        run: dotnet restore DevTrove.Crypto.slnx
-
-      - name: Build
-        run: dotnet build DevTrove.Crypto.slnx --no-restore -c Release
-
-      - name: Pack Core
-        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj --no-build -c Release -o ./artifacts
-
-      - name: Pack Metapackage
-        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj --no-build -c Release -o ./artifacts
-
-      # 发布顺序：Core 先，Crypto 后（Crypto 通过 ProjectReference 自动依赖 Core）
-      # glob 必须严格匹配 —— 「DevTrove.Crypto.*」会同时匹配 Core 包
-      - name: Push Core
-        run: dotnet nuget push "./artifacts/DevTrove.Crypto.Core.*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-      - name: Push Metapackage
-        run: dotnet nuget push "./artifacts/DevTrove.Crypto.[0-9]*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
