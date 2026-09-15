@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CRL 测试素材生成脚本（${TONGSUO_BIN}）
+# CRL 测试素材生成脚本（tongsuo）
 # 生成 RSA / EC / DSA 三种算法的 CRL 测试素材，供"素材双方解析对照"测试使用。
 # 输出:
 # - tests/data/crls/test.crl : RSA，颁发者 CN=Test CRL CA，吊销 serial 1111(keyCompromise)/2222(superseded)
@@ -75,7 +75,7 @@ EOF
         -out "$temp_dir/ca.crt" -days 3650 -set_serial 0xCA01 \
         -subj "$issuer" 2>/dev/null
 
-    # CA 私钥（供 ${TONGSUO_BIN} ca 使用）
+    # CA 私钥（供 tongsuo ca 使用）
     cp "$key" "$temp_dir/ca.key"
 
     # 生成叶子证书并吊销

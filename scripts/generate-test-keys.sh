@@ -263,22 +263,22 @@ cd /path/to/DevTrove.Crypto
 
 ### 查看 RSA 密钥信息
 ```bash
-${TONGSUO_BIN} rsa -in rsa-2048-pkcs1.pem -text -noout
+tongsuo rsa -in rsa-2048-pkcs1.pem -text -noout
 ```
 
 ### 查看 EC 密钥信息
 ```bash
-${TONGSUO_BIN} ec -in ec-p256-pkcs8.pem -text -noout
+tongsuo ec -in ec-p256-pkcs8.pem -text -noout
 ```
 
 ### 查看 SM2 密钥信息
 ```bash
-${TONGSUO_BIN} ec -in sm2-pkcs8.pem -text -noout
+tongsuo ec -in sm2-pkcs8.pem -text -noout
 ```
 
 ### 查看 DSA 密钥信息
 ```bash
-${TONGSUO_BIN} dsa -in dsa-2048-private.pem -text -noout
+tongsuo dsa -in dsa-2048-private.pem -text -noout
 ```
 
 ## 文件格式说明

@@ -114,14 +114,8 @@ mkdir -p "$OUTPUT_DIR"
 echo -e "${GREEN}✓${NC} 输出目录: $OUTPUT_DIR"
 echo ""
 
-# 检查 ${TONGSUO_BIN} 是否可用
-if ! command -v ${TONGSUO_BIN} &> /dev/null; then
-    echo -e "${RED}✗${NC} 错误: 未找到 ${TONGSUO_BIN} 命令"
-    echo "请安装 OpenSSL: apt-get install ${TONGSUO_BIN} 或 yum install ${TONGSUO_BIN}"
-    exit 1
-fi
-
-echo -e "${GREEN}✓${NC} OpenSSL 版本: $(${TONGSUO_BIN} version)"
+# tongsuo 可用性已在脚本顶部 guard 中校验过，此处不再重复检查。
+echo -e "${GREEN}✓${NC} tongsuo 版本: $(${TONGSUO_BIN} version)"
 echo ""
 
 # 拉取证书函数
@@ -285,22 +279,22 @@ cd /path/to/DevTrove.Crypto
 
 ### 查看证书详细信息
 ```bash
-${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -text -noout
+tongsuo x509 -in <hostname>_<port>_cert.pem -text -noout
 ```
 
 ### 查看证书主题
 ```bash
-${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -noout -subject
+tongsuo x509 -in <hostname>_<port>_cert.pem -noout -subject
 ```
 
 ### 查看证书有效期
 ```bash
-${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -noout -dates
+tongsuo x509 -in <hostname>_<port>_cert.pem -noout -dates
 ```
 
 ### 验证证书链
 ```bash
-${TONGSUO_BIN} verify -CAfile <hostname>_<port>_chain.pem <hostname>_<port>_cert.pem
+tongsuo verify -CAfile <hostname>_<port>_chain.pem <hostname>_<port>_cert.pem
 ```
 
 ## 证书用途
@@ -353,5 +347,5 @@ echo ""
 echo "提示:"
 echo "  - 查看证书列表: ls -lh $OUTPUT_DIR"
 echo "  - 查看证书说明: cat $OUTPUT_DIR/README.md"
-echo "  - 查看证书信息: ${TONGSUO_BIN} x509 -in $OUTPUT_DIR/<文件名> -text -noout"
+echo "  - 查看证书信息: tongsuo x509 -in $OUTPUT_DIR/<文件名> -text -noout"
 echo ""

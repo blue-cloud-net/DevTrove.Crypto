@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 证书测试素材生成脚本（${TONGSUO_BIN}）
+# 证书测试素材生成脚本（tongsuo）
 # 生成含扩展自签名证书、CA + 叶子证书链、极简自签名证书，用于固定测试。
 # 依赖: generate-test-keys.sh 生成的密钥文件
 #
@@ -38,7 +38,7 @@ if [ ! -f "$KEYS_DIR/rsa-2048-pkcs1.pem" ]; then
     "$SCRIPT_DIR/generate-test-keys.sh"
 fi
 
-# 写入临时 ${TONGSUO_BIN} 配置
+# 写入临时 tongsuo 配置文件
 write_req_ext() {
     cat > "$OUTPUT_DIR/temp_req_ext.cnf" <<EOF
 [req]

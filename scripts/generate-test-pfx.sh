@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PFX / PKCS#12 测试素材生成脚本（${TONGSUO_BIN}）
+# PFX / PKCS#12 测试素材生成脚本（tongsuo）
 # 生成两个 PFX 素材用于固定测试：
 # - key-and-cert.pfx    : RSA 2048 私钥 + 自签名证书，密码 test1234
 # - key-cert-chain.pfx  : RSA 3072 私钥 + 叶子证书 + CA 证书链，密码 test1234
