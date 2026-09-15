@@ -199,10 +199,10 @@ The two netstandard targets carry no AOT metadata: they serve the compatibility 
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.13a | Rewrite `.editorconfig` from `standards.md §2.4`: LF, final newline, UTF-8, sections for every documented file type | Every rule in §2.4 has a matching rule in `.editorconfig` | ⬜ | Side-by-side comparison of the two files |
-| RM-0.0.13b | Add `.gitattributes` | Line endings normalised on checkout for all contributors | ⬜ | `git check-attr` spot checks |
-| RM-0.0.13c | Add `artifacts/` to `.gitignore` | `artifacts/` stays untracked, as `standards.md §10` requires | ⬜ | `git status --ignored` |
-| RM-0.0.13d | Renormalise the existing tree in a **separate commit** | Working tree is clean after renormalisation | ⬜ | `git add --renormalize .` produces an empty diff once committed |
+| RM-0.0.13a | Rewrite `.editorconfig` from `standards.md §2.4`: LF, final newline, UTF-8, sections for every documented file type | Every rule in §2.4 has a matching rule in `.editorconfig` | ✅ | Top-level `[*]` block sets `charset=utf-8`, `end_of_line=lf`, `insert_final_newline=true`, `trim_trailing_whitespace=true`; `[*.md]` keeps trailing whitespace; `[*.{xml,csproj,props,targets,slnx}]` and `[*.{json,yml,yaml}]` set `indent_size=2`; the duplicated `end_of_line = crlf` lines in the `[*.cs]` / `[*.{cs,vb}]` blocks are gone; side-by-side comparison with `standards.md §2.4` passes |
+| RM-0.0.13b | Add `.gitattributes` | Line endings normalised on checkout for all contributors | ✅ | Default `* text=auto eol=lf`; `*.cs` / `*.csproj` / `*.props` / `*.targets` / `*.slnx` / `*.sln` / `*.xml` / `*.json` / `*.yml` / `*.yaml` / `*.sh` / `*.md` / `.gitignore` / `.gitattributes` / `.editorconfig` all `text eol=lf`; `*.pfx` / `*.p12` / `*.der` / `*.bin` / `*.pdb` / `*.snupkg` / `*.nupkg` / `*.png` / `*.jpg` / `*.gif` / `*.webp` / `*.ico` marked binary |
+| RM-0.0.13c | Add `artifacts/` to `.gitignore` | `artifacts/` stays untracked, as `standards.md §10` requires | ✅ | `.gitignore` line 88 already has `artifacts/` |
+| RM-0.0.13d | Renormalise the existing tree in a **separate commit** | Working tree is clean after renormalisation | ✅ | After the 13a/13b commit, `git add --renormalize .` produces no diff; there is no extra renormalisation commit to make |
 
 `standards.md` must be final before this item starts — the document is the source of truth, not the config file.
 

@@ -199,10 +199,10 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.13a | 按 `standards.md §2.4` 改写 `.editorconfig`：LF、末尾换行、UTF-8，并为每种已记录的文件类型补齐段落 | §2.4 的每条规则都能在 `.editorconfig` 中找到对应项 | ⬜ | 两文件逐条比对 |
-| RM-0.0.13b | 新增 `.gitattributes` | 所有贡献者检出时行尾被规范化 | ⬜ | `git check-attr` 抽查 |
-| RM-0.0.13c | `.gitignore` 补 `artifacts/` | `artifacts/` 保持未跟踪，符合 `standards.md §10` | ⬜ | `git status --ignored` |
-| RM-0.0.13d | 存量文件重规范化，**单独一个提交** | 重规范化后工作区干净 | ⬜ | 提交后 `git add --renormalize .` 不再产生差异 |
+| RM-0.0.13a | 按 `standards.md §2.4` 改写 `.editorconfig`：LF、末尾换行、UTF-8，并为每种已记录的文件类型补齐段落 | §2.4 的每条规则都能在 `.editorconfig` 中找到对应项 | ✅ | 顶部 `[*]` 默认段声明 charset=utf-8 / end_of_line=lf / insert_final_newline=true / trim_trailing_whitespace=true；`[*.md]` 关闭 trim_trailing_whitespace；`[*.{xml,csproj,props,targets,slnx}]` 与 `[*.{json,yml,yaml}]` 各 indent_size=2；`[*.cs]` / `[*.{cs,vb}]` 段重复的 `end_of_line = crlf` 已删；与 standards.md §2.4 逐条比对通过 |
+| RM-0.0.13b | 新增 `.gitattributes` | 所有贡献者检出时行尾被规范化 | ✅ | 默认 `* text=auto eol=lf`；`*.cs` / `*.csproj` / `*.props` / `*.targets` / `*.slnx` / `*.sln` / `*.xml` / `*.json` / `*.yml` / `*.yaml` / `*.sh` / `*.md` / `.gitignore` / `.gitattributes` / `.editorconfig` 全部 `text eol=lf`；`*.pfx` / `*.p12` / `*.der` / `*.bin` / `*.pdb` / `*.snupkg` / `*.nupkg` / `*.png` / `*.jpg` / `*.gif` / `*.webp` / `*.ico` 标 binary |
+| RM-0.0.13c | `.gitignore` 补 `artifacts/` | `artifacts/` 保持未跟踪，符合 `standards.md §10` | ✅ | `.gitignore` 第 88 行已有 `artifacts/` 规则 |
+| RM-0.0.13d | 存量文件重规范化，**单独一个提交** | 重规范化后工作区干净 | ✅ | 13a/13b 提交后 `git add --renormalize .` 不再产生差异；不存在需要额外提交的重规范化变更 |
 
 本项必须在 `standards.md` 定稿之后开始 —— 以文档为准，而非以配置文件为准。
 

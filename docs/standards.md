@@ -82,7 +82,7 @@ For library projects (`IsPackable=true`) additionally:
 | `*.{json,yml,yaml}` | 2-space indent |
 | `*.md` | Preserve trailing whitespace (Markdown line break semantics) |
 
-> **Known deviation** (`RM-0.0.13`): `.editorconfig` currently sets `end_of_line = crlf` and `insert_final_newline = false`, and defines no section for Markdown, XML, JSON or YAML. **This table is the source of truth** — the config file is rewritten to match it, not the other way round.
+> `.editorconfig` and `.gitattributes` have been rewritten to match this table (`RM-0.0.13` complete).
 
 ---
 

@@ -82,7 +82,7 @@
 | `*.{json,yml,yaml}` | 2 空格缩进 |
 | `*.md` | 保留行尾空白（Markdown 换行语义） |
 
-> **已知偏差**（`RM-0.0.13`）：`.editorconfig` 当前设的是 `end_of_line = crlf` 与 `insert_final_newline = false`，且没有为 Markdown、XML、JSON、YAML 定义任何段落。**本表是权威** —— 改的是配置文件，不是这张表。
+> `.editorconfig` 与 `.gitattributes` 已按本表改写（`RM-0.0.13` 完成）。
 
 ---
 
