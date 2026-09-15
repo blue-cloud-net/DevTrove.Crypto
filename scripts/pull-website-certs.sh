@@ -5,6 +5,14 @@
 
 set -e
 
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
+
 # 设置颜色输出
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -106,14 +114,14 @@ mkdir -p "$OUTPUT_DIR"
 echo -e "${GREEN}✓${NC} 输出目录: $OUTPUT_DIR"
 echo ""
 
-# 检查 openssl 是否可用
-if ! command -v openssl &> /dev/null; then
-    echo -e "${RED}✗${NC} 错误: 未找到 openssl 命令"
-    echo "请安装 OpenSSL: apt-get install openssl 或 yum install openssl"
+# 检查 ${TONGSUO_BIN} 是否可用
+if ! command -v ${TONGSUO_BIN} &> /dev/null; then
+    echo -e "${RED}✗${NC} 错误: 未找到 ${TONGSUO_BIN} 命令"
+    echo "请安装 OpenSSL: apt-get install ${TONGSUO_BIN} 或 yum install ${TONGSUO_BIN}"
     exit 1
 fi
 
-echo -e "${GREEN}✓${NC} OpenSSL 版本: $(openssl version)"
+echo -e "${GREEN}✓${NC} OpenSSL 版本: $(${TONGSUO_BIN} version)"
 echo ""
 
 # 拉取证书函数
@@ -143,7 +151,7 @@ pull_certificate() {
     echo -e "${YELLOW}正在拉取: ${host}:${port}${NC}"
 
     # 拉取完整证书链
-    if timeout "$TIMEOUT" openssl s_client -connect "${host}:${port}" -servername "$host" -showcerts </dev/null 2>/dev/null | \
+    if timeout "$TIMEOUT" ${TONGSUO_BIN} s_client -connect "${host}:${port}" -servername "$host" -showcerts </dev/null 2>/dev/null | \
        sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${base_filename}_chain.pem"; then
 
         if [ -s "${base_filename}_chain.pem" ]; then
@@ -179,14 +187,14 @@ pull_certificate() {
             echo -e "  ${GREEN}✓${NC} 完整证书链: ${safe_name}_${port}_chain.pem (共 ${cert_count} 个证书)"
 
             # 提取证书信息
-            if openssl x509 -in "${base_filename}_cert.pem" -noout -text > "${base_filename}_info.txt" 2>/dev/null; then
+            if ${TONGSUO_BIN} x509 -in "${base_filename}_cert.pem" -noout -text > "${base_filename}_info.txt" 2>/dev/null; then
                 echo -e "  ${GREEN}✓${NC} 证书信息: ${safe_name}_${port}_info.txt"
             fi
 
             # 获取证书主题和颁发者
-            local subject=$(openssl x509 -in "${base_filename}_cert.pem" -noout -subject 2>/dev/null | sed 's/subject=//')
-            local issuer=$(openssl x509 -in "${base_filename}_cert.pem" -noout -issuer 2>/dev/null | sed 's/issuer=//')
-            local dates=$(openssl x509 -in "${base_filename}_cert.pem" -noout -dates 2>/dev/null)
+            local subject=$(${TONGSUO_BIN} x509 -in "${base_filename}_cert.pem" -noout -subject 2>/dev/null | sed 's/subject=//')
+            local issuer=$(${TONGSUO_BIN} x509 -in "${base_filename}_cert.pem" -noout -issuer 2>/dev/null | sed 's/issuer=//')
+            local dates=$(${TONGSUO_BIN} x509 -in "${base_filename}_cert.pem" -noout -dates 2>/dev/null)
 
             echo -e "  ${BLUE}主题:${NC} $subject"
             echo -e "  ${BLUE}颁发者:${NC} $issuer"
@@ -277,22 +285,22 @@ cd /path/to/DevTrove.Crypto
 
 ### 查看证书详细信息
 ```bash
-openssl x509 -in <hostname>_<port>_cert.pem -text -noout
+${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -text -noout
 ```
 
 ### 查看证书主题
 ```bash
-openssl x509 -in <hostname>_<port>_cert.pem -noout -subject
+${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -noout -subject
 ```
 
 ### 查看证书有效期
 ```bash
-openssl x509 -in <hostname>_<port>_cert.pem -noout -dates
+${TONGSUO_BIN} x509 -in <hostname>_<port>_cert.pem -noout -dates
 ```
 
 ### 验证证书链
 ```bash
-openssl verify -CAfile <hostname>_<port>_chain.pem <hostname>_<port>_cert.pem
+${TONGSUO_BIN} verify -CAfile <hostname>_<port>_chain.pem <hostname>_<port>_cert.pem
 ```
 
 ## 证书用途
@@ -345,5 +353,5 @@ echo ""
 echo "提示:"
 echo "  - 查看证书列表: ls -lh $OUTPUT_DIR"
 echo "  - 查看证书说明: cat $OUTPUT_DIR/README.md"
-echo "  - 查看证书信息: openssl x509 -in $OUTPUT_DIR/<文件名> -text -noout"
+echo "  - 查看证书信息: ${TONGSUO_BIN} x509 -in $OUTPUT_DIR/<文件名> -text -noout"
 echo ""

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CRL 测试素材生成脚本（openssl）
+# CRL 测试素材生成脚本（${TONGSUO_BIN}）
 # 生成 RSA / EC / DSA 三种算法的 CRL 测试素材，供"素材双方解析对照"测试使用。
 # 输出:
 # - tests/data/crls/test.crl : RSA，颁发者 CN=Test CRL CA，吊销 serial 1111(keyCompromise)/2222(superseded)
@@ -9,6 +9,14 @@
 # 吊销时间由生成时刻决定，测试仅断言条目的存在与序列号
 
 set -e
+
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -63,11 +71,11 @@ commonName = supplied
 EOF
 
     # CA 自签名证书
-    openssl req -x509 -new -key "$key" \
+    ${TONGSUO_BIN} req -x509 -new -key "$key" \
         -out "$temp_dir/ca.crt" -days 3650 -set_serial 0xCA01 \
         -subj "$issuer" 2>/dev/null
 
-    # CA 私钥（供 openssl ca 使用）
+    # CA 私钥（供 ${TONGSUO_BIN} ca 使用）
     cp "$key" "$temp_dir/ca.key"
 
     # 生成叶子证书并吊销
@@ -77,20 +85,20 @@ EOF
         cert="$temp_dir/cert-$serial.pem"
         csr="$temp_dir/cert-$serial.csr"
 
-        openssl req -new -key "$key" \
+        ${TONGSUO_BIN} req -new -key "$key" \
             -out "$csr" -subj "/C=CN/O=CRL Org/CN=revoked-$serial" 2>/dev/null
 
         # 指定序列号签发
         echo "$serial" > "$temp_dir/serial"
-        openssl ca -config "$temp_dir/ca.cnf" -batch -in "$csr" -out "$cert" \
+        ${TONGSUO_BIN} ca -config "$temp_dir/ca.cnf" -batch -in "$csr" -out "$cert" \
             -startdate 20250101000000Z -enddate 20350101000000Z 2>/dev/null
 
-        openssl ca -config "$temp_dir/ca.cnf" -batch -revoke "$cert" \
+        ${TONGSUO_BIN} ca -config "$temp_dir/ca.cnf" -batch -revoke "$cert" \
             -crl_reason "$reason" 2>/dev/null
     done
 
     # 生成 CRL
-    openssl ca -config "$temp_dir/ca.cnf" -gencrl -out "$out" 2>/dev/null
+    ${TONGSUO_BIN} ca -config "$temp_dir/ca.cnf" -gencrl -out "$out" 2>/dev/null
 
     rm -rf "$temp_dir"
 }

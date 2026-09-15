@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PFX / PKCS#12 测试素材生成脚本（openssl）
+# PFX / PKCS#12 测试素材生成脚本（${TONGSUO_BIN}）
 # 生成两个 PFX 素材用于固定测试：
 # - key-and-cert.pfx    : RSA 2048 私钥 + 自签名证书，密码 test1234
 # - key-cert-chain.pfx  : RSA 3072 私钥 + 叶子证书 + CA 证书链，密码 test1234
@@ -11,6 +11,14 @@
 # - friendly name: test / leaf
 
 set -e
+
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -31,7 +39,7 @@ if [ ! -f "$CERTS_DIR/rsa-2048-selfsigned-ext.pem" ] || [ ! -f "$CERTS_DIR/ca.cr
 fi
 
 # 1. 私钥 + 自签名证书（无链）
-openssl pkcs12 -export \
+${TONGSUO_BIN} pkcs12 -export \
     -out "$OUTPUT_DIR/key-and-cert.pfx" \
     -inkey "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -in "$CERTS_DIR/rsa-2048-selfsigned-ext.pem" \
@@ -39,7 +47,7 @@ openssl pkcs12 -export \
 echo "  ✓ key-and-cert.pfx"
 
 # 2. 私钥 + 叶子证书 + CA 链
-openssl pkcs12 -export \
+${TONGSUO_BIN} pkcs12 -export \
     -out "$OUTPUT_DIR/key-cert-chain.pfx" \
     -inkey "$KEYS_DIR/rsa-3072-pkcs1.pem" \
     -in "$CERTS_DIR/leaf.crt" \

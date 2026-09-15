@@ -6,6 +6,14 @@
 
 set -e
 
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
+
 # 设置颜色输出
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -59,7 +67,7 @@ generate_config() {
     local email="$7"
     local san="$8"
 
-    cat > "$OUTPUT_DIR/temp_openssl.cnf" << EOF
+    cat > "$OUTPUT_DIR/temp_ext.cnf" << EOF
 [req]
 default_bits = 2048
 prompt = no
@@ -88,7 +96,7 @@ echo -e "${YELLOW}[1/6] 生成 RSA 密钥的 CSR...${NC}"
 
 # 基本 CSR - RSA 2048
 echo "  - 基本 CSR (RSA 2048, CN=test.example.com)"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-basic.csr" \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=Test Corp/OU=IT Department/CN=test.example.com/emailAddress=test@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-basic.csr"
@@ -97,21 +105,21 @@ echo -e "    ${GREEN}✓${NC} rsa-2048-basic.csr"
 echo "  - 带 SAN 的 CSR (RSA 2048, 多个域名)"
 generate_config "multi.example.com" "Test Corp" "IT Department" "CN" "Beijing" "Beijing" "multi@example.com" \
 "subjectAltName = DNS:multi.example.com,DNS:www.multi.example.com,DNS:api.multi.example.com,IP:192.168.1.100"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-san.csr" \
-    -config "$OUTPUT_DIR/temp_openssl.cnf" 2>/dev/null
+    -config "$OUTPUT_DIR/temp_ext.cnf" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-san.csr"
 
 # 通配符域名 CSR - RSA 3072
 echo "  - 通配符域名 CSR (RSA 3072, *.example.com)"
-openssl req -new -key "$KEYS_DIR/rsa-3072-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-3072-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-3072-wildcard.csr" \
     -subj "/C=US/ST=California/L=San Francisco/O=Example Inc/OU=Web Services/CN=*.example.com/emailAddress=wildcard@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-3072-wildcard.csr"
 
 # 长 DN 字段 CSR - RSA 4096
 echo "  - 长 DN 字段 CSR (RSA 4096)"
-openssl req -new -key "$KEYS_DIR/rsa-4096-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-4096-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-4096-long-dn.csr" \
     -subj "/C=CN/ST=Guangdong Province/L=Shenzhen City/O=Technology Innovation Company Ltd/OU=Research and Development Department/CN=secure.technology-innovation.example.com/emailAddress=security@technology-innovation.example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-4096-long-dn.csr"
@@ -125,7 +133,7 @@ echo -e "${YELLOW}[2/6] 生成 EC P-256 密钥的 CSR...${NC}"
 
 # 基本 CSR - EC P-256
 echo "  - 基本 CSR (EC P-256, CN=ec-test.example.com)"
-openssl req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p256-basic.csr" \
     -subj "/C=CN/ST=Shanghai/L=Shanghai/O=EC Test Corp/OU=Security/CN=ec-test.example.com/emailAddress=ec-test@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-basic.csr"
@@ -134,9 +142,9 @@ echo -e "    ${GREEN}✓${NC} ec-p256-basic.csr"
 echo "  - 带 SAN 的 CSR (EC P-256, 包含 IP 地址)"
 generate_config "ec-multi.example.com" "EC Corp" "DevOps" "CN" "Shanghai" "Shanghai" "ec-multi@example.com" \
 "subjectAltName = DNS:ec-multi.example.com,DNS:*.ec-multi.example.com,IP:10.0.0.1,IP:2001:db8::1"
-openssl req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p256-san.csr" \
-    -config "$OUTPUT_DIR/temp_openssl.cnf" 2>/dev/null
+    -config "$OUTPUT_DIR/temp_ext.cnf" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-san.csr"
 
 echo ""
@@ -148,14 +156,14 @@ echo -e "${YELLOW}[3/6] 生成 EC P-384 密钥的 CSR...${NC}"
 
 # 基本 CSR - EC P-384
 echo "  - 基本 CSR (EC P-384, CN=p384.example.com)"
-openssl req -new -key "$KEYS_DIR/ec-p384-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p384-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p384-basic.csr" \
     -subj "/C=JP/ST=Tokyo/L=Shibuya/O=P384 Company/OU=Engineering/CN=p384.example.com/emailAddress=p384@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p384-basic.csr"
 
 # 高安全性 CSR - EC P-384
 echo "  - 高安全性 CSR (EC P-384, 使用 SHA-384)"
-openssl req -new -key "$KEYS_DIR/ec-p384-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p384-pkcs8.pem" \
     -sha384 \
     -out "$OUTPUT_DIR/ec-p384-sha384.csr" \
     -subj "/C=US/ST=New York/L=New York/O=High Security Corp/OU=InfoSec/CN=secure-p384.example.com/emailAddress=security@example.com" 2>/dev/null
@@ -170,14 +178,14 @@ echo -e "${YELLOW}[4/6] 生成 EC P-521 密钥的 CSR...${NC}"
 
 # 基本 CSR - EC P-521
 echo "  - 基本 CSR (EC P-521, CN=p521.example.com)"
-openssl req -new -key "$KEYS_DIR/ec-p521-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p521-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p521-basic.csr" \
     -subj "/C=GB/ST=England/L=London/O=P521 Ltd/OU=Cryptography/CN=p521.example.com/emailAddress=p521@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p521-basic.csr"
 
 # 最高安全性 CSR - EC P-521
 echo "  - 最高安全性 CSR (EC P-521, 使用 SHA-512)"
-openssl req -new -key "$KEYS_DIR/ec-p521-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p521-pkcs8.pem" \
     -sha512 \
     -out "$OUTPUT_DIR/ec-p521-sha512.csr" \
     -subj "/C=CH/ST=Zurich/L=Zurich/O=Maximum Security AG/OU=Cyber Security/CN=max-secure.example.com/emailAddress=max-security@example.com" 2>/dev/null
@@ -192,7 +200,7 @@ echo -e "${YELLOW}生成 DSA 密钥的 CSR...${NC}"
 
 # 基本 CSR - DSA 2048
 echo "  - 基本 CSR (DSA 2048, CN=dsa-csr.example.com)"
-openssl req -new -key "$KEYS_DIR/dsa-2048-private.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/dsa-2048-private.pem" \
     -out "$OUTPUT_DIR/dsa-2048-basic.csr" \
     -subj "/C=CN/O=DSA Test Corp/OU=Security/CN=dsa-csr.example.com/emailAddress=dsa@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} dsa-2048-basic.csr"
@@ -219,7 +227,7 @@ if [ -f "$KEYS_DIR/sm2-pkcs8.pem" ]; then
     # 带 SAN 的 CSR - SM2
     echo "  - 带 SAN 的 CSR (SM2, 多个国密域名)"
     # 注意：tongsuo 的 SM2 签名使用 SM3 摘要，配置中不能使用 default_md=sha256（会导致签名失败）
-    cat > "$OUTPUT_DIR/temp_openssl.cnf" <<EOF
+    cat > "$OUTPUT_DIR/temp_ext.cnf" <<EOF
 [req]
 distinguished_name = dn
 prompt = no
@@ -233,7 +241,7 @@ EOF
     if "$TONGSUO" req -new -key "$KEYS_DIR/sm2-pkcs8.pem" \
         -out "$OUTPUT_DIR/sm2-san.csr" \
         -subj "/C=CN/ST=Beijing/L=Beijing/O=国密科技公司/OU=研发中心/CN=sm2-multi.example.cn/emailAddress=sm2-multi@example.cn" \
-        -config "$OUTPUT_DIR/temp_openssl.cnf" 2>/dev/null; then
+        -config "$OUTPUT_DIR/temp_ext.cnf" 2>/dev/null; then
         echo -e "    ${GREEN}✓${NC} sm2-san.csr"
     else
         echo -e "    ${YELLOW}⚠${NC}  sm2-san.csr (生成可能不完整)"
@@ -253,55 +261,55 @@ echo -e "${YELLOW}[6/6] 生成特殊场景的 CSR...${NC}"
 echo "  - 纯 IP 地址 CSR (无域名)"
 generate_config "192.168.1.1" "IP Only Corp" "Network" "CN" "Beijing" "Beijing" "ip@example.com" \
 "subjectAltName = IP:192.168.1.1,IP:192.168.1.2,IP:10.0.0.1"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-ip-only.csr" \
-    -config "$OUTPUT_DIR/temp_openssl.cnf" 2>/dev/null
+    -config "$OUTPUT_DIR/temp_ext.cnf" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-ip-only.csr"
 
 # 邮件证书 CSR
 echo "  - 邮件证书 CSR (emailAddress in SAN)"
 generate_config "user@example.com" "Mail Corp" "Email Services" "CN" "Shanghai" "Shanghai" "admin@example.com" \
 "subjectAltName = email:user@example.com,email:admin@example.com"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-email.csr" \
-    -config "$OUTPUT_DIR/temp_openssl.cnf" 2>/dev/null
+    -config "$OUTPUT_DIR/temp_ext.cnf" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-email.csr"
 
 # 代码签名 CSR
 echo "  - 代码签名 CSR"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-codesign.csr" \
     -subj "/C=US/ST=Washington/L=Redmond/O=Software Corp/OU=Development/CN=Code Signing Certificate/emailAddress=codesign@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-codesign.csr"
 
 # 客户端认证 CSR
 echo "  - 客户端认证 CSR"
-openssl req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p256-client.csr" \
     -subj "/C=CN/ST=Guangdong/L=Guangzhou/O=Client Corp/OU=Users/CN=client-certificate/emailAddress=client@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-client.csr"
 
 # 多 OU 字段 CSR
 echo "  - 多层组织单位 CSR"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-multi-ou.csr" \
     -subj "/C=CN/ST=Zhejiang/L=Hangzhou/O=Multi-OU Corp/OU=Level 1/OU=Level 2/OU=Level 3/CN=multi-ou.example.com/emailAddress=multi-ou@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-multi-ou.csr"
 
 # 国际化域名 CSR (IDN)
 echo "  - 国际化域名 CSR (中文域名)"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-idn.csr" \
     -subj "/C=CN/ST=北京/L=北京/O=中文测试公司/OU=测试部门/CN=测试.example.com/emailAddress=test@测试.com" \
     -utf8 2>/dev/null || \
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-idn.csr" \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=IDN Test Corp/CN=xn--test.example.com/emailAddress=idn@example.com" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-idn.csr"
 
 # DER 格式 CSR
 echo "  - DER 格式 CSR"
-openssl req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-basic.der" \
     -outform DER \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=DER Test Corp/CN=der-test.example.com/emailAddress=der@example.com" 2>/dev/null
@@ -310,7 +318,7 @@ echo -e "    ${GREEN}✓${NC} rsa-2048-basic.der"
 echo ""
 
 # 清理临时文件
-rm -f "$OUTPUT_DIR/temp_openssl.cnf"
+rm -f "$OUTPUT_DIR/temp_ext.cnf"
 
 # ============================================
 # 生成 CSR 信息文件
@@ -390,32 +398,32 @@ cd /path/to/DevTrove.Crypto
 
 ### 查看 PEM 格式 CSR
 ```bash
-openssl req -in rsa-2048-basic.csr -text -noout
+${TONGSUO_BIN} req -in rsa-2048-basic.csr -text -noout
 ```
 
 ### 查看 DER 格式 CSR
 ```bash
-openssl req -in rsa-2048-basic.der -inform DER -text -noout
+${TONGSUO_BIN} req -in rsa-2048-basic.der -inform DER -text -noout
 ```
 
 ### 验证 CSR 签名
 ```bash
-openssl req -in rsa-2048-basic.csr -verify -noout
+${TONGSUO_BIN} req -in rsa-2048-basic.csr -verify -noout
 ```
 
 ### 查看 CSR 的公钥
 ```bash
-openssl req -in rsa-2048-basic.csr -pubkey -noout
+${TONGSUO_BIN} req -in rsa-2048-basic.csr -pubkey -noout
 ```
 
 ### 提取 CSR 的主题信息
 ```bash
-openssl req -in rsa-2048-basic.csr -subject -noout
+${TONGSUO_BIN} req -in rsa-2048-basic.csr -subject -noout
 ```
 
 ### 查看 SAN (Subject Alternative Names)
 ```bash
-openssl req -in rsa-2048-san.csr -text -noout | grep -A 1 "Subject Alternative Name"
+${TONGSUO_BIN} req -in rsa-2048-san.csr -text -noout | grep -A 1 "Subject Alternative Name"
 ```
 
 ## CSR 格式说明
@@ -489,6 +497,6 @@ echo ""
 echo "提示:"
 echo "  - 查看 CSR 列表: ls -lh $OUTPUT_DIR"
 echo "  - 查看 CSR 说明: cat $OUTPUT_DIR/README.md"
-echo "  - 查看 CSR 内容: openssl req -in $OUTPUT_DIR/rsa-2048-basic.csr -text -noout"
-echo "  - 验证 CSR: openssl req -in $OUTPUT_DIR/rsa-2048-basic.csr -verify -noout"
+echo "  - 查看 CSR 内容: ${TONGSUO_BIN} req -in $OUTPUT_DIR/rsa-2048-basic.csr -text -noout"
+echo "  - 验证 CSR: ${TONGSUO_BIN} req -in $OUTPUT_DIR/rsa-2048-basic.csr -verify -noout"
 echo ""

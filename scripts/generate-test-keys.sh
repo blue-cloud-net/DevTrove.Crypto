@@ -5,6 +5,14 @@
 
 set -e
 
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
+
 # 设置颜色输出
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -33,38 +41,38 @@ echo -e "${YELLOW}[1/5] 生成 RSA 密钥...${NC}"
 
 # RSA 2048 位
 echo "  - RSA 2048 位 (PKCS#1 PEM)"
-openssl genrsa -out "$OUTPUT_DIR/rsa-2048-pkcs1.pem" 2048 2>/dev/null
+${TONGSUO_BIN} genrsa -out "$OUTPUT_DIR/rsa-2048-pkcs1.pem" 2048 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-pkcs1.pem"
 
 echo "  - RSA 2048 位 (PKCS#8 PEM)"
-openssl pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -out "$OUTPUT_DIR/rsa-2048-pkcs8.pem"
+${TONGSUO_BIN} pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -out "$OUTPUT_DIR/rsa-2048-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} rsa-2048-pkcs8.pem"
 
 echo "  - RSA 2048 位公钥"
-openssl rsa -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -pubout -out "$OUTPUT_DIR/rsa-2048-public.pem" 2>/dev/null
+${TONGSUO_BIN} rsa -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -pubout -out "$OUTPUT_DIR/rsa-2048-public.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-public.pem"
 
 # RSA 3072 位
 echo "  - RSA 3072 位 (PKCS#1 PEM)"
-openssl genrsa -out "$OUTPUT_DIR/rsa-3072-pkcs1.pem" 3072 2>/dev/null
+${TONGSUO_BIN} genrsa -out "$OUTPUT_DIR/rsa-3072-pkcs1.pem" 3072 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-3072-pkcs1.pem"
 
 echo "  - RSA 3072 位 (PKCS#8 PEM)"
-openssl pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-3072-pkcs1.pem" -out "$OUTPUT_DIR/rsa-3072-pkcs8.pem"
+${TONGSUO_BIN} pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-3072-pkcs1.pem" -out "$OUTPUT_DIR/rsa-3072-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} rsa-3072-pkcs8.pem"
 
 # RSA 4096 位
 echo "  - RSA 4096 位 (PKCS#1 PEM)"
-openssl genrsa -out "$OUTPUT_DIR/rsa-4096-pkcs1.pem" 4096 2>/dev/null
+${TONGSUO_BIN} genrsa -out "$OUTPUT_DIR/rsa-4096-pkcs1.pem" 4096 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-4096-pkcs1.pem"
 
 echo "  - RSA 4096 位 (PKCS#8 PEM)"
-openssl pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-4096-pkcs1.pem" -out "$OUTPUT_DIR/rsa-4096-pkcs8.pem"
+${TONGSUO_BIN} pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-4096-pkcs1.pem" -out "$OUTPUT_DIR/rsa-4096-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} rsa-4096-pkcs8.pem"
 
 # RSA DER 格式
 echo "  - RSA 2048 位 (PKCS#8 DER)"
-openssl pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -outform DER -out "$OUTPUT_DIR/rsa-2048-pkcs8.der"
+${TONGSUO_BIN} pkcs8 -topk8 -nocrypt -in "$OUTPUT_DIR/rsa-2048-pkcs1.pem" -outform DER -out "$OUTPUT_DIR/rsa-2048-pkcs8.der"
 echo -e "    ${GREEN}✓${NC} rsa-2048-pkcs8.der"
 
 echo ""
@@ -75,15 +83,15 @@ echo ""
 echo -e "${YELLOW}[2/5] 生成 EC 密钥 (secp256r1 / P-256)...${NC}"
 
 echo "  - EC P-256 (PKCS#8 PEM)"
-openssl ecparam -name prime256v1 -genkey -noout -out "$OUTPUT_DIR/ec-p256-pkcs8.pem"
+${TONGSUO_BIN} ecparam -name prime256v1 -genkey -noout -out "$OUTPUT_DIR/ec-p256-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} ec-p256-pkcs8.pem"
 
 echo "  - EC P-256 公钥"
-openssl ec -in "$OUTPUT_DIR/ec-p256-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p256-public.pem" 2>/dev/null
+${TONGSUO_BIN} ec -in "$OUTPUT_DIR/ec-p256-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p256-public.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-public.pem"
 
 echo "  - EC P-256 (DER)"
-openssl ec -in "$OUTPUT_DIR/ec-p256-pkcs8.pem" -outform DER -out "$OUTPUT_DIR/ec-p256-pkcs8.der" 2>/dev/null
+${TONGSUO_BIN} ec -in "$OUTPUT_DIR/ec-p256-pkcs8.pem" -outform DER -out "$OUTPUT_DIR/ec-p256-pkcs8.der" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-pkcs8.der"
 
 echo ""
@@ -94,11 +102,11 @@ echo ""
 echo -e "${YELLOW}[3/5] 生成 EC 密钥 (secp384r1 / P-384)...${NC}"
 
 echo "  - EC P-384 (PKCS#8 PEM)"
-openssl ecparam -name secp384r1 -genkey -noout -out "$OUTPUT_DIR/ec-p384-pkcs8.pem"
+${TONGSUO_BIN} ecparam -name secp384r1 -genkey -noout -out "$OUTPUT_DIR/ec-p384-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} ec-p384-pkcs8.pem"
 
 echo "  - EC P-384 公钥"
-openssl ec -in "$OUTPUT_DIR/ec-p384-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p384-public.pem" 2>/dev/null
+${TONGSUO_BIN} ec -in "$OUTPUT_DIR/ec-p384-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p384-public.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p384-public.pem"
 
 echo ""
@@ -109,11 +117,11 @@ echo ""
 echo -e "${YELLOW}[4/5] 生成 EC 密钥 (secp521r1 / P-521)...${NC}"
 
 echo "  - EC P-521 (PKCS#8 PEM)"
-openssl ecparam -name secp521r1 -genkey -noout -out "$OUTPUT_DIR/ec-p521-pkcs8.pem"
+${TONGSUO_BIN} ecparam -name secp521r1 -genkey -noout -out "$OUTPUT_DIR/ec-p521-pkcs8.pem"
 echo -e "    ${GREEN}✓${NC} ec-p521-pkcs8.pem"
 
 echo "  - EC P-521 公钥"
-openssl ec -in "$OUTPUT_DIR/ec-p521-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p521-public.pem" 2>/dev/null
+${TONGSUO_BIN} ec -in "$OUTPUT_DIR/ec-p521-pkcs8.pem" -pubout -out "$OUTPUT_DIR/ec-p521-public.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p521-public.pem"
 
 echo ""
@@ -152,15 +160,15 @@ echo ""
 echo -e "${YELLOW}[额外] 生成 DSA 密钥...${NC}"
 
 echo "  - DSA 2048 位参数"
-openssl dsaparam -out "$OUTPUT_DIR/dsa-2048-params.pem" 2048 2>/dev/null
+${TONGSUO_BIN} dsaparam -out "$OUTPUT_DIR/dsa-2048-params.pem" 2048 2>/dev/null
 echo -e "    ${GREEN}✓${NC} dsa-2048-params.pem"
 
 echo "  - DSA 2048 位私钥"
-openssl gendsa -out "$OUTPUT_DIR/dsa-2048-private.pem" "$OUTPUT_DIR/dsa-2048-params.pem" 2>/dev/null
+${TONGSUO_BIN} gendsa -out "$OUTPUT_DIR/dsa-2048-private.pem" "$OUTPUT_DIR/dsa-2048-params.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} dsa-2048-private.pem"
 
 echo "  - DSA 2048 位公钥"
-openssl dsa -in "$OUTPUT_DIR/dsa-2048-private.pem" -pubout -out "$OUTPUT_DIR/dsa-2048-public.pem" 2>/dev/null
+${TONGSUO_BIN} dsa -in "$OUTPUT_DIR/dsa-2048-private.pem" -pubout -out "$OUTPUT_DIR/dsa-2048-public.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} dsa-2048-public.pem"
 
 echo ""
@@ -171,11 +179,11 @@ echo ""
 echo -e "${YELLOW}[额外] 生成加密密钥...${NC}"
 
 echo "  - RSA 2048 位 (AES-256-CBC 加密, 密码: test1234)"
-openssl genrsa -aes256 -passout pass:test1234 -out "$OUTPUT_DIR/rsa-2048-encrypted.pem" 2048 2>/dev/null
+${TONGSUO_BIN} genrsa -aes256 -passout pass:test1234 -out "$OUTPUT_DIR/rsa-2048-encrypted.pem" 2048 2>/dev/null
 echo -e "    ${GREEN}✓${NC} rsa-2048-encrypted.pem"
 
 echo "  - EC P-256 (AES-256-CBC 加密, 密码: test1234)"
-openssl ecparam -name prime256v1 -genkey -noout | openssl ec -aes256 -passout pass:test1234 -out "$OUTPUT_DIR/ec-p256-encrypted.pem" 2>/dev/null
+${TONGSUO_BIN} ecparam -name prime256v1 -genkey -noout | ${TONGSUO_BIN} ec -aes256 -passout pass:test1234 -out "$OUTPUT_DIR/ec-p256-encrypted.pem" 2>/dev/null
 echo -e "    ${GREEN}✓${NC} ec-p256-encrypted.pem"
 
 echo ""
@@ -255,22 +263,22 @@ cd /path/to/DevTrove.Crypto
 
 ### 查看 RSA 密钥信息
 ```bash
-openssl rsa -in rsa-2048-pkcs1.pem -text -noout
+${TONGSUO_BIN} rsa -in rsa-2048-pkcs1.pem -text -noout
 ```
 
 ### 查看 EC 密钥信息
 ```bash
-openssl ec -in ec-p256-pkcs8.pem -text -noout
+${TONGSUO_BIN} ec -in ec-p256-pkcs8.pem -text -noout
 ```
 
 ### 查看 SM2 密钥信息
 ```bash
-openssl ec -in sm2-pkcs8.pem -text -noout
+${TONGSUO_BIN} ec -in sm2-pkcs8.pem -text -noout
 ```
 
 ### 查看 DSA 密钥信息
 ```bash
-openssl dsa -in dsa-2048-private.pem -text -noout
+${TONGSUO_BIN} dsa -in dsa-2048-private.pem -text -noout
 ```
 
 ## 文件格式说明

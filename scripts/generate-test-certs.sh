@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 证书测试素材生成脚本（openssl）
+# 证书测试素材生成脚本（${TONGSUO_BIN}）
 # 生成含扩展自签名证书、CA + 叶子证书链、极简自签名证书，用于固定测试。
 # 依赖: generate-test-keys.sh 生成的密钥文件
 #
@@ -11,6 +11,14 @@
 # - ca.crt / leaf.crt           : CA(serial A001, CN=Test Root CA) + 叶子(serial B001, CN=leaf.example.com)
 
 set -e
+
+# 唯一外部工具：tongsuo（roadmap RM-0.0.9a/9e）
+: "${TONGSUO_PATH:=/opt/tongsuo/bin/tongsuo}"
+if [[ ! -x "$TONGSUO_PATH" ]]; then
+  echo "tongsuo not found at $TONGSUO_PATH (override with TONGSUO_PATH)" >&2
+  exit 127
+fi
+TONGSUO_BIN="$TONGSUO_PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -30,7 +38,7 @@ if [ ! -f "$KEYS_DIR/rsa-2048-pkcs1.pem" ]; then
     "$SCRIPT_DIR/generate-test-keys.sh"
 fi
 
-# 写入临时 openssl 配置
+# 写入临时 ${TONGSUO_BIN} 配置
 write_req_ext() {
     cat > "$OUTPUT_DIR/temp_req_ext.cnf" <<EOF
 [req]
@@ -56,7 +64,7 @@ subjectAltName = DNS:test.example.com,DNS:www.test.example.com,IP:192.168.1.100
 subjectKeyIdentifier = hash
 crlDistributionPoints = URI:http://crl.example.com/test.crl"
 
-openssl req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-selfsigned-ext.pem" \
     -days 365 -set_serial 0x1001 \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=Test Corp/OU=IT Department/CN=test.example.com/emailAddress=test@example.com" \
@@ -72,7 +80,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = DNS:ec-test.example.com,DNS:api.ec-test.example.com
 subjectKeyIdentifier = hash"
 
-openssl req -x509 -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
+${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/ec-p256-pkcs8.pem" \
     -out "$OUTPUT_DIR/ec-p256-selfsigned-ext.pem" \
     -days 365 -set_serial 0x2001 \
     -subj "/C=CN/O=EC Corp/CN=ec-test.example.com" \
@@ -84,7 +92,7 @@ echo "  ✓ ec-p256-selfsigned-ext.pem"
 # ============================================
 echo "[3/5] 极简自签名证书 (无扩展)..."
 write_req_ext ""
-openssl req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-minimal.pem" \
     -days 365 -set_serial 0x3001 \
     -subj "/C=CN/CN=minimal.example.com" \
@@ -112,7 +120,7 @@ keyUsage = critical,keyCertSign,cRLSign
 subjectKeyIdentifier = hash
 EOF
 
-openssl req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
+${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/ca.crt" \
     -days 3650 -set_serial 0xA001 \
     -subj "/C=CN/O=Test Org/CN=Test Root CA" \
@@ -120,7 +128,7 @@ openssl req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
 echo "  ✓ ca.crt"
 
 # 叶子证书 CSR
-openssl req -new -key "$KEYS_DIR/rsa-3072-pkcs1.pem" \
+${TONGSUO_BIN} req -new -key "$KEYS_DIR/rsa-3072-pkcs1.pem" \
     -out "$OUTPUT_DIR/leaf.csr" \
     -subj "/C=CN/O=Test Org/CN=leaf.example.com" 2>/dev/null
 
@@ -132,7 +140,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = DNS:leaf.example.com
 EOF
 
-openssl x509 -req -in "$OUTPUT_DIR/leaf.csr" \
+${TONGSUO_BIN} x509 -req -in "$OUTPUT_DIR/leaf.csr" \
     -CA "$OUTPUT_DIR/ca.crt" \
     -CAkey "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -days 365 -set_serial 0xB001 \
@@ -146,7 +154,7 @@ echo "  ✓ leaf.crt"
 echo "[5/6] DSA 自签名证书 (含扩展)..."
 write_req_ext "keyUsage = critical,digitalSignature"
 
-openssl req -x509 -new -key "$KEYS_DIR/dsa-2048-private.pem" \
+${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/dsa-2048-private.pem" \
     -out "$OUTPUT_DIR/dsa-2048-selfsigned.pem" \
     -days 365 -set_serial 0x5001 \
     -subj "/C=CN/O=DSA Corp/CN=dsa-test.example.com" \
