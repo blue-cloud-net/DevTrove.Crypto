@@ -98,7 +98,7 @@ The metapackage project still contains `src/DevTrove.Crypto/Program.cs`, althoug
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.2 | Delete `Program.cs`; keep only `ProjectReference` → Core | Project contains no `.cs` file; package still builds and packs | ⬜ | `find src/DevTrove.Crypto -name '*.cs'` returns nothing |
+| RM-0.0.2 | Delete `Program.cs`; keep only `ProjectReference` → Core | Project contains no `.cs` file; package still builds and packs | ✅ | `find src/DevTrove.Crypto -name '*.cs'` returns nothing; `dotnet build src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -f net10.0` succeeded (0 warnings, 0 errors); `dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -p:TargetFramework=net10.0` produced `DevTrove.Crypto.1.0.0.nupkg` and `.snupkg` |
 
 ### 6.3 `RM-0.0.3` — build baseline properties
 

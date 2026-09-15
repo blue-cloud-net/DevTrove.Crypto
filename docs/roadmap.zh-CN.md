@@ -98,7 +98,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.2 | 删除 `Program.cs`，只保留 `ProjectReference` → Core | 项目内无任何 `.cs` 文件；包仍可构建与打包 | ⬜ | `find src/DevTrove.Crypto -name '*.cs'` 无输出 |
+| RM-0.0.2 | 删除 `Program.cs`，只保留 `ProjectReference` → Core | 项目内无任何 `.cs` 文件；包仍可构建与打包 | ✅ | `find src/DevTrove.Crypto -name '*.cs'` 无输出；`dotnet build src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -f net10.0` 成功（0 警告 0 错误）；`dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -p:TargetFramework=net10.0` 产出 `DevTrove.Crypto.1.0.0.nupkg` 与 `.snupkg` |
 
 ### 6.3 `RM-0.0.3` —— 构建基线属性
 
