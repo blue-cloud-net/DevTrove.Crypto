@@ -100,7 +100,7 @@ Each publishable package **must** declare the following in `Directory.Build.prop
 
 **Recommendation**: enable SourceLink so consumers can jump straight to the source.
 
-> **Known deviation** (`RM-0.0.4`): `<Version>`, `<PackageId>` and SourceLink are **not** declared anywhere today, even though the table above calls them mandatory. Packing without `<Version>` silently produces a `1.0.0` package.
+> `<Version>` (`0.0.1-dev`), per-package `<PackageId>` and SourceLink (Microsoft.SourceLink.GitHub) are now declared. `dotnet pack` produces `DevTrove.Crypto.Core.0.0.1-dev.nupkg` and `DevTrove.Crypto.0.0.1-dev.nupkg`, each shipping README + lib/ + .xml for all 5 TFMs; the matching snupkg embeds SourceLink JSON in its pdb.
 
 ### Common mistakes
 

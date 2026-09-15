@@ -98,7 +98,7 @@ flowchart LR
 
 **建议**：启用 SourceLink，使使用方可直接跳转到源码。
 
-> **已知偏差**（`RM-0.0.4`）：`<Version>`、`<PackageId>` 与 SourceLink **均未声明**，尽管上表称其为必需项。不写 `<Version>` 打包会静默产出 `1.0.0`。
+> `<Version>`（`0.0.1-dev`）、各包显式 `<PackageId>` 与 SourceLink（Microsoft.SourceLink.GitHub）现已声明。`dotnet pack` 产出 `DevTrove.Crypto.Core.0.0.1-dev.nupkg` 与 `DevTrove.Crypto.0.0.1-dev.nupkg`，含 README + 5 TFM 的 lib/ 与 .xml；对应的 snupkg 在 pdb 内嵌入 SourceLink JSON。
 
 ### 常见错误
 

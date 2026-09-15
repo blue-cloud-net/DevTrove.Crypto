@@ -114,7 +114,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.4 | 正确声明 `<Version>`、`<PackageId>`、SourceLink 与 `RepositoryUrl` | `dotnet pack` 产出预期版本号；`.nupkg` 含 README 与 XML 文档 | ⬜ | 检查 `.nupkg` 内容 |
+| RM-0.0.4 | 正确声明 `<Version>`、`<PackageId>`、SourceLink 与 `RepositoryUrl` | `dotnet pack` 产出预期版本号；`.nupkg` 含 README 与 XML 文档 | ✅ | `<Version>0.0.1-dev</Version>` 写入 props；两包各显式 `<PackageId>`；引入 Microsoft.SourceLink.GitHub；`dotnet pack` 产出 `DevTrove.Crypto.Core.0.0.1-dev.nupkg` 与 `DevTrove.Crypto.0.0.1-dev.nupkg`，含 README + 5 TFM 的 lib/ 与 .xml；snupkg 内 pdb 嵌入 SourceLink JSON |
 
 ### 6.5 `RM-0.0.5` —— 解决方案文件
 
@@ -339,4 +339,3 @@
 | [tls-scanner.md](tls-scanner.md) | TLS 探测引擎设计 |
 | [development-guide.md](development-guide.md) | 构建 / 测试 / 打包命令、外部工具、夹具、CI |
 | [library-api.md](library-api.md) | 公开 API 索引 |
-
