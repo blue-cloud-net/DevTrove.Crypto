@@ -8,12 +8,12 @@
 
 ## 特性
 
-- **三个 NuGet 包**：`DevTrove.Crypto`（门面包）、`DevTrove.Crypto.Core`（实现）、`DevTrove.Crypto.Tls`（TLS 探测引擎 —— 计划中，`0.4.0`）
+- **四个 NuGet 包**：`DevTrove.Crypto.Abstractions`（契约，零依赖）、`DevTrove.Crypto.Core`（实现）、`DevTrove.Crypto`（门面包 —— 引用这个）、`DevTrove.Crypto.Tls`（TLS 探测引擎 —— 计划中，`0.6.0`）
 - **纯托管、零原生依赖** —— 可在 BouncyCastle 支持的所有宿主上运行，包括 WebAssembly、裁剪与 AOT 构建
-- **跨平台设计，`net8.0` 及以后兼容 AOT**，并以 `netstandard2.0` / `netstandard2.1` 承担更旧运行时的兼容面
+- **跨平台设计，`net8.0` 及以后兼容 AOT**，并以 `netstandard2.0` 承担更旧运行时的兼容面
 - **算法**：RSA / ECDSA / DSA、AES（CBC / GCM）、SM2 / SM3 / SM4
 - **X.509 / PKCS**：证书、CSR、CRL、PFX / PKCS#12、OCSP（仅解析）
-- **多目标**：`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`
+- **多目标**：`netstandard2.0;net8.0;net9.0;net10.0` —— 每个交付目标都有在 CI 中真正运行它的宿主
 - **Apache-2.0** 许可
 
 ---
@@ -28,7 +28,9 @@ dotnet add package DevTrove.Crypto
 dotnet add package DevTrove.Crypto.Core
 ```
 
-运行时需 .NET 8.0+；旧宿主（.NET Framework、Unity 等）使用 `netstandard2.0` / `netstandard2.1` 版本。
+运行时需 .NET 8.0+；旧宿主（.NET Framework、Unity 等）使用 `netstandard2.0` 版本。
+
+想要契约面而不想要 BouncyCastle 实现时，可单独引用 `DevTrove.Crypto.Abstractions` —— 它不依赖任何包。
 
 ---
 
@@ -59,11 +61,12 @@ sm2.GenerateKeyPair();
 | 目标 | 用途 |
 |---|---|
 | `netstandard2.0` | .NET Framework 4.6.2+、Unity 等 |
-| `netstandard2.1` | .NET Core 3.x 宿主 |
 | `net8.0` / `net9.0` | 当前 LTS / STS |
 | `net10.0` | 最新语言特性 |
 
-两个 `netstandard` 目标**保留**（消费方形态无法预知）。它们当前**从未产出过程序集**；文档里「缺失 API 放在 `Compat/` 手写补丁」的说法既指错位置，也与事实不符 —— 详见 [`docs/development-guide.md`](docs/development-guide.md)。
+`netstandard2.1` 有意不作为目标 —— 没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证。
+
+`netstandard2.0` 上的 `Span<T>` 由 `System.Memory` 包提供；其余缺失 API 在 `Compat/` 中 polyfill（详见 [`docs/development-guide.md`](docs/development-guide.md)）。
 
 ---
 
@@ -72,14 +75,16 @@ sm2.GenerateKeyPair();
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/          门面包（无源码）
-│  ├─ DevTrove.Crypto.Core/     实现
-│  └─ DevTrove.Crypto.Tls/      TLS 探测引擎（计划中 `0.4.0`）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 计划中，`0.1.0`）
+│  ├─ DevTrove.Crypto/              门面包（无源码）
+│  ├─ DevTrove.Crypto.Core/         实现
+│  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0`）
 ├─ tests/
+│  ├─ DevTrove.Crypto.Abstractions.Tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI 封装
 ├─ scripts/                       夹具生成
-└─ docs/                          开发文档（中文）
+└─ docs/                          开发文档（中英对照）
 ```
 
 ---
@@ -93,7 +98,7 @@ DevTrove.Crypto/
 | [docs/architecture.md](docs/architecture.md) | 库内分层、依赖方向、能力边界、已知限制 |
 | [docs/standards.md](docs/standards.md) | 编码规范、命名、Git 流程、评审清单 |
 | [docs/nuget.md](docs/nuget.md) | 包边界、版本策略、发布流程 |
-| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS 探测引擎设计（排期 `0.4.0` / `0.5.0`） |
+| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS 探测引擎设计（排期 `0.6.0` / `0.7.0`） |
 | [docs/roadmap.md](docs/roadmap.md) | 版本线、逐项状态与证据、排除项、风险 |
 | [docs/development-guide.md](docs/development-guide.md) | 构建/测试/打包命令、TFM / polyfill 规则、CI |
 | [docs/library-api.md](docs/library-api.md) | 公开 API 索引 |

@@ -8,12 +8,12 @@ A pure-managed cryptography and certificate library for .NET, built on BouncyCas
 
 ## Highlights
 
-- **Three NuGet packages**: `DevTrove.Crypto` (metapackage), `DevTrove.Crypto.Core` (implementation), `DevTrove.Crypto.Tls` (TLS probe engine — planned, `0.4.0`)
+- **Four NuGet packages**: `DevTrove.Crypto.Abstractions` (contracts, zero dependencies), `DevTrove.Crypto.Core` (implementation), `DevTrove.Crypto` (metapackage — reference this one), `DevTrove.Crypto.Tls` (TLS probe engine — planned, `0.6.0`)
 - **Pure managed, zero native dependencies** — runs on every platform BouncyCastle supports, including WebAssembly, trimmed and AOT-compiled builds
-- **Cross-platform by design, AOT-friendly** on `net8.0` and later, with a `netstandard2.0` / `netstandard2.1` compatibility surface for older runtimes
+- **Cross-platform by design, AOT-friendly** on `net8.0` and later, with a `netstandard2.0` compatibility surface for older runtimes
 - **Algorithms**: RSA / ECDSA / DSA, AES (CBC / GCM), SM2 / SM3 / SM4
 - **X.509 / PKCS**: certificates, CSR, CRL, PFX / PKCS#12, OCSP (parse only)
-- **Multi-targeting**: `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`
+- **Multi-targeting**: `netstandard2.0;net8.0;net9.0;net10.0` — every shipped target has a host that actually runs it in CI
 - **Apache-2.0** licensed
 
 ---
@@ -28,7 +28,9 @@ dotnet add package DevTrove.Crypto
 dotnet add package DevTrove.Crypto.Core
 ```
 
-Requires .NET 8.0 or later at runtime; for older runtimes (e.g. .NET Framework, Unity), the `netstandard2.0` / `netstandard2.1` builds apply.
+Requires .NET 8.0 or later at runtime; for older runtimes (e.g. .NET Framework, Unity), the `netstandard2.0` build applies.
+
+The `DevTrove.Crypto.Abstractions` package can be referenced on its own when you want the contract surface without the BouncyCastle-backed implementation — it depends on nothing.
 
 ---
 
@@ -59,11 +61,12 @@ More examples are provided in the test projects under `tests/DevTrove.Crypto.Cor
 | Target | Purpose |
 |---|---|
 | `netstandard2.0` | .NET Framework 4.6.2+, Unity, etc. |
-| `netstandard2.1` | .NET Core 3.x hosts |
 | `net8.0` / `net9.0` | Current LTS / STS |
 | `net10.0` | Latest features |
 
-Restoring `netstandard2.0` triggers a compilation probe; missing APIs are polyfilled in `Compat/` (see [`docs/development-guide.md`](docs/development-guide.md)).
+`netstandard2.1` is deliberately not a target — no non-EOL host resolves that asset, so it could never be runtime-verified.
+
+`Span<T>` on `netstandard2.0` comes from the `System.Memory` package; anything else missing is polyfilled in `Compat/` (see [`docs/development-guide.md`](docs/development-guide.md)).
 
 ---
 
@@ -72,14 +75,16 @@ Restoring `netstandard2.0` triggers a compilation probe; missing APIs are polyfi
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/          metapackage (no source)
-│  ├─ DevTrove.Crypto.Core/     implementation
-│  └─ DevTrove.Crypto.Tls/      TLS probe engine (planned, `0.4.0`)
+│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — planned, `0.1.0`)
+│  ├─ DevTrove.Crypto/               metapackage (no source)
+│  ├─ DevTrove.Crypto.Core/          implementation
+│  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned, `0.6.0`)
 ├─ tests/
+│  ├─ DevTrove.Crypto.Abstractions.Tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI helpers
 ├─ scripts/                       fixture generation
-└─ docs/                          development documentation (Chinese)
+└─ docs/                          development documentation (bilingual)
 ```
 
 ---
@@ -93,7 +98,7 @@ DevTrove.Crypto/
 | [docs/architecture.md](docs/architecture.md) | Internal layering, dependency direction, capability boundaries, known limitations |
 | [docs/standards.md](docs/standards.md) | Coding standards, naming, Git workflow, review checklist |
 | [docs/nuget.md](docs/nuget.md) | Package boundaries, versioning, release process |
-| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS probe engine design (scheduled for `0.4.0` / `0.5.0`) |
+| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS probe engine design (scheduled for `0.6.0` / `0.7.0`) |
 | [docs/roadmap.md](docs/roadmap.md) | Version line, per-item status and evidence, excluded items, risks |
 | [docs/development-guide.md](docs/development-guide.md) | Build / test / pack commands, TFM / polyfill rules, CI |
 | [docs/library-api.md](docs/library-api.md) | Public API index |
