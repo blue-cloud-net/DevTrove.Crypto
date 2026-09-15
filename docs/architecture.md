@@ -16,9 +16,9 @@ This document describes the internal layering, dependency direction, capability 
 | Chinese national cryptography | SM2, SM3, SM4 (via BouncyCastle) |
 | Key formats | PEM, DER, PKCS#1, PKCS#8, SEC1, encrypted PEM |
 | ASN.1 / X.509 | parse and generate certificates, CSR, CRL, PKCS#12 |
-| PKCS#7 / CMS | SignedData parsing — **planned, `0.3.0`** |
-| OCSP | response parsing — **planned, `0.3.0`** (no request construction, no signature verification; signature verification is evaluated in `0.5.0`) |
-| TLS probe engine | protocol / suite matrices, extension fingerprint, NTLS detection, grading — **planned, `0.4.0`–`0.5.0`** |
+| PKCS#7 / CMS | SignedData parsing — **planned, `0.5.0`** |
+| OCSP | response parsing — **planned, `0.5.0`** (no request construction, no signature verification; signature verification is evaluated in `0.7.0`) |
+| TLS probe engine | protocol / suite matrices, extension fingerprint, NTLS detection, grading — **planned, `0.6.0`–`0.7.0`** |
 
 ### Goals
 
@@ -27,9 +27,10 @@ This document describes the internal layering, dependency direction, capability 
 | G1 | **Pure-managed, zero native dependencies.** One assembly that behaves the same everywhere, with no `runtimes/<rid>/native` payload. |
 | G2 | **Cross-platform.** Server, desktop, embedded and WebAssembly hosts are all first-class; nothing in the library depends on a host OS policy. |
 | G3 | **AOT- and trim-friendly** on `net8.0` and later, so consumers can ship trimmed or ahead-of-time compiled applications. |
-| G4 | **Wide compatibility surface.** `netstandard2.0` / `netstandard2.1` keep older runtimes — including .NET Framework and Unity — usable, while `net8.0`–`net10.0` carry the modern and AOT surface. |
+| G4 | **Wide compatibility surface.** `netstandard2.0` keeps older runtimes — including .NET Framework and Unity — usable, while `net8.0`–`net10.0` carry the modern and AOT surface. Every shipped target has a host that actually resolves and runs it in CI. |
 | G5 | **Framework-free.** No DI, no logging, no ASP.NET Core; the library never decides how a consumer wires it up. |
 | G6 | **Independently published and versioned**, with a self-contained document set. |
+| G7 | **Contracts separable from implementation.** The public contracts live in `DevTrove.Crypto.Abstractions`, a zero-dependency leaf assembly, so a consumer can compile against the interface surface alone. |
 
 The library is published and versioned on its own; nothing in it depends on how or where it is consumed. See [roadmap.md](roadmap.md) for the version line and the current status of each goal.
 
@@ -40,9 +41,10 @@ The library is published and versioned on its own; nothing in it depends on how 
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/         metapackage (no source — see §3)
-│  ├─ DevTrove.Crypto.Core/    implementation
-│  └─ DevTrove.Crypto.Tls/     TLS probe engine (planned — see [roadmap.md](roadmap.md) §6.17)
+│  ├─ DevTrove.Crypto.Abstractions/  contracts: interfaces and abstract base types (zero dependencies)
+│  ├─ DevTrove.Crypto/               metapackage (no source — see §3)
+│  ├─ DevTrove.Crypto.Core/          implementation
+│  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned — see [roadmap.md](roadmap.md) §6.19)
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI helpers
@@ -58,17 +60,17 @@ Each `src/<Project>/` directory corresponds to one NuGet package.
 
 | Package ID | Role | Notes |
 |---|---|---|
-| `DevTrove.Crypto` | **Metapackage (facade)**: only `ProjectReference` → Core; no source code, no public API types | Consumers should reference this. `DevTrove.Crypto.Core` is pulled in transitively. |
-| `DevTrove.Crypto.Core` | **Implementation**: BouncyCastle wrapper — algorithms, keys, ASN.1, X.509, CSR, PKCS#7/#12, CRL, OCSP parse | The library that actually ships code. |
-| `DevTrove.Crypto.Tls` | **TLS probe engine** | **Planned.** The namespace is reserved and the package is scheduled for `0.4.0`; no types exist today (see [roadmap.md](roadmap.md) §6.17). |
-
-> **Known deviation** (see [roadmap.md](roadmap.md) §6.2, item `RM-0.0.2`): the metapackage project at `src/DevTrove.Crypto/` still contains a leftover `Program.cs`, although the design requires a source-free project. The metapackage also pins `net10.0` while Core targets three frameworks. Until the framework sets are unified (`RM-0.0.1`) and the file is removed, builds and pack output for the metapackage cannot be trusted.
+| `DevTrove.Crypto.Abstractions` | **Contracts**: interfaces and abstract base types for the symmetric, asymmetric, hash and X.509 surfaces | **Planned, `0.1.0`.** The leaf of the dependency graph — it references no package at all, BouncyCastle included. |
+| `DevTrove.Crypto.Core` | **Implementation**: BouncyCastle wrapper — algorithms, keys, ASN.1, X.509, CSR, PKCS#7/#12, CRL, OCSP parse | The library that actually ships code. Depends on `DevTrove.Crypto.Abstractions`. |
+| `DevTrove.Crypto` | **Metapackage (facade)**: only `ProjectReference` → Core; no source code, no public API types | Consumers should reference this. Core — and through it Abstractions — is pulled in transitively. |
+| `DevTrove.Crypto.Tls` | **TLS probe engine** | **Planned.** The namespace is reserved and the package is scheduled for `0.6.0`; no types exist today (see [roadmap.md](roadmap.md) §6.19). |
 
 ### Dependency graph
 
 ```mermaid
 flowchart LR
     BC["BouncyCastle.Cryptography"] --> CORE["DevTrove.Crypto.Core"]
+    ABS["DevTrove.Crypto.Abstractions"] --> CORE
     CORE --> FACADE["DevTrove.Crypto"]
     FACADE --> TLS["DevTrove.Crypto.Tls"]
     TLS --> APP["Applications (not published)"]
@@ -76,54 +78,51 @@ flowchart LR
 
 ---
 
-## 4. Source layout (Core)
+## 4. Source layout
+
+Two assemblies carry source. Contracts live in one, implementations in the other, and nothing crosses back.
+
+> **`DevTrove.Crypto.Core` currently holds no source.** The Web-era implementation was removed and is being rebuilt against the contracts below, so the tree that used to be printed here no longer describes anything real. It is deliberately not reproduced.
+
+### 4.1 `DevTrove.Crypto.Abstractions` (lands in `0.1.0`)
+
+A **flat** layout — no intermediate directory layer — so the namespace maps one-to-one onto the directory.
 
 ```
-src/DevTrove.Crypto.Core/
-├─ Crypto/
-│  ├─ AsymmetricKeyPair.cs              RSA / EC / DSA / SM2 key-pair generation
-│  ├─ AsymmetricKeyParameter.cs         PEM/DER import-export base
-│  ├─ AsymmetricPrivateKeyParameter.cs
-│  ├─ AsymmetricPublicKeyParameter.cs
-│  ├─ RsaCrypto.cs                      RSA encryption/signature
-│  ├─ EcdsaCrypto.cs                    ECDSA sign/verify + ECDH
-│  ├─ DsaCrypto.cs                      DSA sign/verify
-│  ├─ AesCrypto.cs                      AES-CBC / CFB / OFB / GCM (ECB supported but default CBC; see D15)
-│  └─ Sm/
-│     ├─ SM2.cs                         Sign/verify, encrypt/decrypt, key exchange
-│     ├─ SM3.cs                         Hash
-│     └─ SM4.cs                         Block cipher (CBC / CTR / GCM)
-├─ X509/
-│  ├─ Certificate.cs                    Parse + generate (self-signed / sign-csr / sign-public-key)
-│  ├─ CertificateSigningRequest.cs      Generate (with extensions) + parse + verify
-│  ├─ CertificateRevocationList.cs      Generate + parse + IsRevoked
-│  ├─ Enums/                            KeyUsage / ExtendedKeyUsage / GeneralNameType / CertificatePolicy / CertificateRevocationReason + helpers
-│  ├─ Extensions/                       X509ExtensionBuilder + helpers
-│  ├─ Models/                           X509DistinguishedName / GeneralName / PfxBundle / X509ExtensionOptions / CertificateExtension / RevokedCertificate
-│  └─ Utils/                            CertificateUtils / PfxUtils / X509NameParser
-├─ BouncyCastle/
-│  ├─ Asn1/X509/                        ASN.1/X.509 extension methods
-│  └─ ObjectIdentifiers/                OID constants
-├─ Common/                              EnumDisplayNameCache
-├─ Extensions/                          ArgumentNullExceptionExtensions
-└─ Resources/                           zh-hans + en-us resx
+src/DevTrove.Crypto.Abstractions/
+├─ Symmetric/    → DevTrove.Crypto.Abstractions.Symmetric
+├─ Asymmetric/   → DevTrove.Crypto.Abstractions.Asymmetric
+├─ Hash/         → DevTrove.Crypto.Abstractions.Hash
+└─ X509/         → DevTrove.Crypto.Abstractions.X509
 ```
 
-### 4.1 Target layout (`0.1.0` and later)
+BCL adapters sit next to the family they adapt rather than in a separate `Interop/` directory.
 
-Everything under `Crypto/` becomes `Algorithms/` (split into `Asymmetric/`, `Symmetric/`, `Hash/`), every algorithm proxy is named `<Algorithm>Crypto`, BouncyCastle types leave the public surface, and further directories appear as capabilities land.
+| Directory | Contracts |
+|---|---|
+| `Symmetric/` | `CipherModeKind`, `PaddingKind`, `ISymmetricBlockCipher`, `SymmetricBlockCipher`, `SymmetricBlockCipherInteropExtensions` |
+| `Asymmetric/` | `ISigner`, `IKeyEncipherment`, `IKeyAgreement`, `IAsymmetricKey`, `IPrivateKey`, `IPublicKey`, `AsymmetricKeyBase`, `SignatureAlgorithmKind` |
+| `Hash/` | `IDigest`, `DigestBase`, `DigestInteropExtensions` |
+| `X509/` | `ICertificate`, `ICertificateReader`, `ICertificateWriter`, `IDistinguishedName` |
+
+### 4.2 `DevTrove.Crypto.Core` — target layout
+
+Everything under the old `Crypto/` directory becomes `Algorithms/`, split by family; the SM proxies are renamed to `Sm2Crypto` / `Sm3Crypto` / `Sm4Crypto`; BouncyCastle types leave the public surface and move behind the `Interop/` extensions.
 
 | Directory | Namespace | Lands in |
 |---|---|---|
-| `Algorithms/` | `DevTrove.Crypto.Algorithms` | `0.1.0` |
 | `Asn1/` | `DevTrove.Crypto.Asn1` | `0.1.0` |
 | `Interop/` | `DevTrove.Crypto.Interop` | `0.1.0` |
 | `Compat/` | internal only | `0.1.0` |
-| `Formats/` | `DevTrove.Crypto.Formats` | `0.3.0` |
-| `X509/Chain/` | `DevTrove.Crypto.X509.Chain` | `0.3.0` |
-| `X509/Ocsp/` | `DevTrove.Crypto.X509.Ocsp` | `0.3.0` |
+| `X509/` | `DevTrove.Crypto.X509` | existing |
+| `Algorithms/Symmetric/` | `DevTrove.Crypto.Algorithms.Symmetric` | `0.2.0` |
+| `Algorithms/Asymmetric/` | `DevTrove.Crypto.Algorithms.Asymmetric` | `0.3.0` |
+| `Algorithms/Hash/` | `DevTrove.Crypto.Algorithms.Hash` | `0.4.0` |
+| `Formats/` | `DevTrove.Crypto.Formats` | `0.5.0` |
+| `X509/Chain/` | `DevTrove.Crypto.X509.Chain` | `0.5.0` |
+| `X509/Ocsp/` | `DevTrove.Crypto.X509.Ocsp` | `0.5.0` |
 
-The tree above describes the code **as it is today**; the table describes where it goes. Per-item status is in [roadmap.md](roadmap.md) §6.
+Each family's concrete algorithms land in the milestone named above, implemented against the `0.1.0` contracts. Per-item status is in [roadmap.md](roadmap.md) §6.
 
 ---
 
@@ -131,9 +130,10 @@ The tree above describes the code **as it is today**; the table describes where 
 
 | From | To | Allowed? |
 |---|---|---|
+| `DevTrove.Crypto.Abstractions` | any package, `BouncyCastle.Cryptography` included | ❌ — it is the leaf |
+| `DevTrove.Crypto.Core` | `DevTrove.Crypto.Abstractions` | ✅ |
 | `DevTrove.Crypto.Core` | `BouncyCastle.Cryptography` | ✅ |
 | `DevTrove.Crypto` (metapackage) | `DevTrove.Crypto.Core` | ✅ (only via `ProjectReference`) |
-| `DevTrove.Crypto.Tls` | `DevTrove.Crypto.Core` | ✅ |
 | `DevTrove.Crypto.Tls` | `DevTrove.Crypto.Core` | ✅ |
 | Any project in this repository | any DI / logging / ASP.NET Core / `Microsoft.Extensions.*` | ❌ |
 
@@ -192,15 +192,16 @@ Two different things live here, and conflating them is what produced the previou
 
 | # | Gap | Impact | Target |
 |---|---|---|---|
-| G1 | No certificate-chain building or path verification at all — only single-step signature checks via `Certificate.IsSignatureVerify` | Callers cannot validate a chain today | `0.3.0` (`RM-0.3.0-01`) |
+| G1 | No certificate-chain building or path verification at all — only single-step signature checks via `Certificate.IsSignatureVerify` | Callers cannot validate a chain today | `0.5.0` (`RM-0.5.0-01`) |
 | G2 | No PKIX path validation (no `AuthorityKeyIdentifier`, `KeyUsage`, `BasicConstraints`, path length, policy or name constraints) | Chains PKIX would reject may be accepted | `1.0.0` (`RM-1.0.0-02`) |
-| G3 | No OCSP code of any kind | No revocation-state verdict | `0.3.0` (`RM-0.3.0-08`); signature verification evaluated in `0.5.0` |
-| G4 | No PKCS#7 / CMS support | Cannot consume CMS SignedData | `0.3.0` (`RM-0.3.0-07`) |
-| G5 | No key-derivation functions (HKDF, PBKDF2, scrypt) | Callers must implement key derivation themselves — the most error-prone step to hand-roll | `0.2.0` (`RM-0.2.0-05`) |
-| G6 | No HMAC of any kind | `0.2.0` (`RM-0.2.0-03`) |
-| G7 | No Ed25519 / X25519 family | Modern signature and key-agreement suites unavailable | `0.2.0` (`RM-0.2.0-01`) |
-| G8 | No format auto-detection (PEM / DER and friends) | Callers must know the format before calling | `0.3.0` (`RM-0.3.0-03`) |
-| G9 | `netstandard2.0` / `netstandard2.1` do not build | The advertised compatibility surface does not exist | `RM-0.0.11` |
+| G3 | No OCSP code of any kind | No revocation-state verdict | `0.5.0` (`RM-0.5.0-08`); signature verification evaluated in `0.7.0` |
+| G4 | No PKCS#7 / CMS support | Cannot consume CMS SignedData | `0.5.0` (`RM-0.5.0-07`) |
+| G5 | No key-derivation functions (HKDF, PBKDF2, scrypt) | Callers must implement key derivation themselves — the most error-prone step to hand-roll | `0.4.0` (`RM-0.4.0-03`) |
+| G6 | No HMAC of any kind | `0.4.0` (`RM-0.4.0-02`) |
+| G7 | No Ed25519 / Ed448 / X25519 family | Modern signature and key-agreement suites unavailable | `0.3.0` (`RM-0.3.0-02`) |
+| G8 | No format auto-detection (PEM / DER and friends) | Callers must know the format before calling | `0.5.0` (`RM-0.5.0-03`) |
+| G9 | `netstandard2.0` does not build | The advertised compatibility surface does not exist | `RM-0.0.11` |
+| G10 | No published contracts — the interface surface does not exist yet | Nothing can be compiled against a stable contract | `0.1.0` (`RM-0.1.0-01`–`-05`) |
 
 ### 7.2 Limitations that stay
 
@@ -208,7 +209,7 @@ Two different things live here, and conflating them is what produced the previou
 |---|---|---|---|
 | L1 | NTLS is **byte-level fingerprinting only**, no full handshake | The complete ShangMi stack cannot be exercised | Requires a TLS 1.2 subset built from scratch (see [tls-scanner.md §6.3](tls-scanner.md)) |
 | L2 | No L3 vulnerability probing (Heartbleed, CCS Injection, Ticketbleed) | No vulnerability verdict for those classes | Explicit non-goal; only ROBOT is in scope |
-| L3 | Asymmetric proxies expose only the capabilities their algorithm actually has | Not every asymmetric type can sign *and* encrypt | X25519 only agrees keys; Ed25519 only signs (see [roadmap.md](roadmap.md) §6.15) |
+| L3 | Asymmetric proxies expose only the capabilities their algorithm actually has | Not every asymmetric type can sign *and* encrypt | X25519 only agrees keys; Ed25519 only signs (see [roadmap.md](roadmap.md) §6.16) |
 
 See [roadmap.md](roadmap.md) for the status of every gap.
 
@@ -241,6 +242,8 @@ See [roadmap.md](roadmap.md) for the status of every gap.
 | D21 | BouncyCastle types stay out of the public API; interop goes through explicit `Interop` extensions | The implementation package is meant to be replaceable without breaking consumers; 9 public members used to leak BouncyCastle types |
 | D22 | Tongsuo is the **single** external tool for fixtures and interop tests | One tool to install, pin and cache; it covers both standard algorithms and ShangMi. Upstream OpenSSL interoperability is no longer asserted — recorded as a risk in [roadmap.md](roadmap.md) §8 |
 | D23 | Algorithm proxies are named `<Algorithm>Crypto` (`RsaCrypto`, `Sm2Crypto`, `Sm4Crypto`, …) | One naming rule for every algorithm; the previous mix of `RsaCrypto` and `SM2` was arbitrary |
+| D24 | **The contracts live in their own assembly**, `DevTrove.Crypto.Abstractions`, which depends on nothing — not even BouncyCastle | A consumer can compile against the interface surface without taking the implementation or the BouncyCastle dependency; it also makes "BouncyCastle types must not appear in a public signature" (D21) mechanically enforceable rather than a review rule, because the abstraction assembly has no BouncyCastle reference to leak |
+| D25 | Guards for `netstandard2.0` are chosen **per API**, not with one blanket symbol | The missing APIs differ: `Convert.FromHexString` is absent from every `netstandard` target, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` exists on `netstandard2.1` but not on `netstandard2.0`. A single symbol would either over- or under-guard |
 
 ### Decisions explicitly rejected
 
@@ -256,9 +259,10 @@ See [roadmap.md](roadmap.md) for the status of every gap.
 
 See [roadmap.md](roadmap.md) for the version line, per-item status and evidence.
 
-- **`DevTrove.Crypto.Core`**: implemented for RSA, ECDSA, DSA, AES, SM2, SM3 and SM4, plus X.509 / CSR / CRL / PKCS#12 parse and generate. It does **not** yet build for the two `netstandard` targets and has no certificate-chain, OCSP, PKCS#7, KDF, MAC or Ed25519 / X25519 support — see §7.1.
-- **`DevTrove.Crypto` (metapackage)**: the project exists, but it still carries a leftover `Program.cs` and pins `net10.0` (`RM-0.0.2`, `RM-0.0.1`).
-- **`DevTrove.Crypto.Tls`**: not started. Namespace reserved; scheduled for `0.4.0`.
+- **`DevTrove.Crypto.Abstractions`**: not started. Scheduled for `0.1.0`; carries the contracts only, with no implementation type.
+- **`DevTrove.Crypto.Core`**: holds no source today. The Web-era RSA / ECDSA / DSA / AES / SM2 / SM3 / SM4 and X.509 / CSR / CRL / PKCS#12 code was removed and is being rebuilt against the contracts above. It does **not** build for `netstandard2.0` yet, and has no certificate-chain, OCSP, PKCS#7, KDF, MAC or Ed25519 / X25519 support — see §7.1.
+- **`DevTrove.Crypto` (metapackage)**: the project exists and is source-free; it now inherits the shared TFM set instead of pinning one framework.
+- **`DevTrove.Crypto.Tls`**: not started. Namespace reserved; scheduled for `0.6.0`.
 
 Quantitative claims (test counts, build outcomes) are deliberately kept out of this document: they cannot be verified by reading it, and the previous revision proved how quickly such numbers rot. Take them from the build and test output, or from the evidence column in [roadmap.md](roadmap.md).
 
