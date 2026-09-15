@@ -10,13 +10,14 @@ This document describes the package boundaries, versioning strategy and release 
 
 | Package ID | Source repository | Role | Target frameworks |
 |---|---|---|---|
-| `DevTrove.Crypto` | this repo | **Metapackage (facade)**: stable public API | `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` (target) |
+| `DevTrove.Crypto.Abstractions` | this repo | **Contracts**: interfaces and abstract base types; zero package dependencies | `netstandard2.0;net8.0;net9.0;net10.0` |
 | `DevTrove.Crypto.Core` | this repo | **Implementation**: BouncyCastle wrapper — algorithms, keys, ASN.1, X.509, CSR, PKCS#7/#12, CRL, OCSP parse | same as above |
+| `DevTrove.Crypto` | this repo | **Metapackage (facade)**: stable public API | same as above |
 | `DevTrove.Crypto.Tls` | this repo | TLS probe engine: protocol / cipher-suite matrices, extension parsing, grading, raw-byte probing | same as above |
 
 **Note**: applications that consume this library are **not** published — they are `IsPackable=false`. This document covers only the packages produced by this repository.
 
-> **Known deviation** (`RM-0.0.1`): the three framework declarations disagree — `Directory.Build.props` sets five, Core overrides to `net8.0;net9.0;net10.0` and the metapackage pins `net10.0`. Until they are unified, packed output cannot be trusted. See also `RM-0.0.11` for the `netstandard` targets.
+> `netstandard2.1` is deliberately **not** a target. It was dropped during the `0.1.0` work because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Every target that remains has a host that actually runs it in CI. See [roadmap.md](roadmap.md) §6.11.
 
 ---
 
@@ -29,13 +30,15 @@ This document describes the package boundaries, versioning strategy and release 
 | 3 | **No application dependency**: `DevTrove.Crypto.Tls` ships its own result models and depends only on `DevTrove.Crypto` |
 | 4 | **Zero framework dependencies**: no DI, logging, ASP.NET Core; logging is the caller's responsibility |
 | 5 | **Metapackage / implementation split**: consumers reference `DevTrove.Crypto`; `DevTrove.Crypto.Core` is pulled in transitively and may be swapped without breaking the public contract |
-| 6 | **Pure-managed**: no native dependencies, no `runtimes/<rid>/native` packaging |
+| 6 | **Contracts separate from implementation**: interfaces and abstract base types live in `DevTrove.Crypto.Abstractions`, which references no package at all. A consumer can compile against the contract surface alone; it also makes "no BouncyCastle type in a public signature" mechanically checkable |
+| 7 | **Pure-managed**: no native dependencies, no `runtimes/<rid>/native` packaging |
 
 ### Dependency graph
 
 ```mermaid
 flowchart LR
     BC["BouncyCastle.Cryptography"] --> CORE["DevTrove.Crypto.Core"]
+    ABS["DevTrove.Crypto.Abstractions"] --> CORE
     CORE --> FACADE["DevTrove.Crypto"]
     FACADE --> TLS["DevTrove.Crypto.Tls"]
     TLS --> APP["Applications (not published)"]
@@ -47,7 +50,7 @@ flowchart LR
 
 ### 3.1 One version per milestone
 
-The three packages **share a single version number per milestone**. There is no separate version per package: a milestone either ships all of them or ships only those that already exist (`DevTrove.Crypto.Tls` first appears in `0.4.0`).
+The four packages **share a single version number per milestone**. There is no separate version per package: a milestone either ships all of them or ships only those that already exist (`DevTrove.Crypto.Abstractions` and `DevTrove.Crypto.Tls` appear for the first time in `0.1.0` and `0.6.0` respectively).
 
 | Scenario | Version action |
 |---|---|
@@ -60,10 +63,11 @@ Version numbers are independent of any consumer's version. See [roadmap.md §3](
 
 ### 3.2 Dependency version declaration
 
-`DevTrove.Crypto.Tls` declares a **minimum compatible version** of `DevTrove.Crypto`:
+`DevTrove.Crypto.Core` declares a **minimum compatible version** of `DevTrove.Crypto.Abstractions`, and `DevTrove.Crypto.Tls` declares one of `DevTrove.Crypto`:
 
 ```xml
-<PackageReference Include="DevTrove.Crypto" Version="[1.2.0, )" />
+<PackageReference Include="DevTrove.Crypto.Abstractions" Version="[0.1.0, )" />
+<PackageReference Include="DevTrove.Crypto" Version="[0.1.0, )" />
 ```
 
 - Use a **lower-bound constraint** (`[x.y.z, )`) to permit consumers to upgrade to compatible newer versions.
@@ -71,7 +75,7 @@ Version numbers are independent of any consumer's version. See [roadmap.md §3](
 
 ### 3.3 Pre-release versions
 
-Early versions use `-dev` / `-preview` suffixes (e.g. `0.3.0-dev`) to avoid being referenced in production.
+Early versions use `-dev` / `-preview` suffixes (e.g. `0.1.0-dev`) to avoid being referenced in production.
 
 ### 3.4 Where the version line starts
 
@@ -100,7 +104,9 @@ Each publishable package **must** declare the following in `Directory.Build.prop
 
 **Recommendation**: enable SourceLink so consumers can jump straight to the source.
 
-> `<Version>` (`0.0.1-dev`), per-package `<PackageId>` and SourceLink (Microsoft.SourceLink.GitHub) are now declared. `dotnet pack` produces `DevTrove.Crypto.Core.0.0.1-dev.nupkg` and `DevTrove.Crypto.0.0.1-dev.nupkg`, each shipping README + lib/ + .xml for all 5 TFMs; the matching snupkg embeds SourceLink JSON in its pdb.
+> `<Version>` (`0.1.0-dev`), per-package `<PackageId>` and SourceLink (Microsoft.SourceLink.GitHub) are declared. `dotnet pack` produces `DevTrove.Crypto.Abstractions.<version>.nupkg`, `DevTrove.Crypto.Core.<version>.nupkg`, `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every target framework; the matching snupkg embeds SourceLink JSON in its pdb.
+>
+> The packed `DevTrove.Crypto.Core` must declare `<dependency id="DevTrove.Crypto.Abstractions" />` in its `.nuspec`. A `ProjectReference` does not always turn into a NuGet dependency, so this is checked by unpacking the `.nupkg` rather than assumed — see §8.
 
 ### Common mistakes
 
@@ -113,28 +119,27 @@ Each publishable package **must** declare the following in `Directory.Build.prop
 
 ---
 
-## 5. Multi-target frameworks (target)
+## 5. Multi-target frameworks
 
-All three packages target (eventually):
+All four packages target:
 
 ```
-netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0
+netstandard2.0;net8.0;net9.0;net10.0
 ```
 
-| Target | Purpose |
-|---|---|
-| `netstandard2.0` | .NET Framework 4.6.2+, Unity, etc. |
-| `netstandard2.1` | .NET Core 3.x hosts |
-| `net8.0` / `net9.0` | Current LTS / STS |
-| `net10.0` | Application main target; latest API |
+| Target | Purpose | Host that runs it in CI |
+|---|---|---|
+| `netstandard2.0` | .NET Framework 4.6.2+, Unity, etc. | `net48` test project on Windows |
+| `net8.0` / `net9.0` | Current LTS / STS | same-TFM test host |
+| `net10.0` | Application main target; latest API | same-TFM test host |
 
 ### `netstandard2.0` notes
 
 - Some types / APIs are unavailable; need conditional compilation or compatibility packages.
-- Restoring this target enables compilation paths that are currently excluded — **probe first**.
-- The test matrix must cover this target (at least build success).
+- The guard symbol must be chosen **per API**, not with one blanket symbol: `Convert.FromHexString` is missing from every `netstandard` target, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` is absent only from `netstandard2.0`. `Span<T>` comes from the `System.Memory` package on this target.
+- The test matrix must cover this target — and it does: a `net48` host resolves the `netstandard2.0` asset and runs the contract tests against it, so this asset is **runtime-verified**, not merely build-verified.
 
-> The two `netstandard` targets **have never produced an assembly** (`RM-0.0.11`). Until that is fixed, packaging yields a three-framework package, regardless of what the table above says.
+> `netstandard2.1` is intentionally absent. No non-EOL host resolves that asset, so it could never be runtime-verified; it was removed from the target set during `0.1.0`. See [roadmap.md](roadmap.md) §6.11.
 
 ---
 
@@ -163,20 +168,21 @@ The release workflow does **not** inject the version. The maintainer edits `<Ver
 
 | Invariant | Expected |
 |---|---|
-| `<Version>` | equals tag version (e.g. tag `v0.4.0` → `<Version>0.4.0</Version>`) |
+| `<Version>` | equals the tag version (e.g. tag `v0.6.0` → `<Version>0.6.0</Version>`) |
 | `<PackageLicenseExpression>` | `Apache-2.0` |
-| `<TargetFrameworks>` | contains all of `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+| `<TargetFrameworks>` | contains all of `netstandard2.0;net8.0;net9.0;net10.0` |
 | `<RepositoryUrl>` | contains `DevTrove.Crypto` |
 
 Any mismatch fails the run via `::error::` annotation before `dotnet pack`, `dotnet nuget push`, or the GitHub Release step ever runs. A `-` in the tag version segment (e.g. `v1.0.0-rc.1`) marks the release as prerelease.
 
 #### Publish order
 
-(`DevTrove.Crypto.Tls` depends on `DevTrove.Crypto`.)
+(`DevTrove.Crypto.Core` depends on `DevTrove.Crypto.Abstractions`; `DevTrove.Crypto.Tls` depends on `DevTrove.Crypto`.)
 
-1. `DevTrove.Crypto.Core`
-2. `DevTrove.Crypto`
-3. `DevTrove.Crypto.Tls`
+1. `DevTrove.Crypto.Abstractions`
+2. `DevTrove.Crypto.Core`
+3. `DevTrove.Crypto`
+4. `DevTrove.Crypto.Tls`
 
 NuGet doesn't support atomic multi-package publishing. New versions should **publish the dependency first**, then update consumers, or follow the order above in CI to avoid "dependency bumped but dependency not yet published" windows. The push globs in `release.yml` are deliberately split: `DevTrove.Crypto.Core.*.nupkg` for Core, `DevTrove.Crypto.[0-9]*.nupkg` for the metapackage.
 
@@ -212,6 +218,7 @@ Verify before each release:
 - [ ] `PackageLicenseExpression` matches repo `LICENSE`
 - [ ] Every target framework has a `lib/<tfm>/` directory
 - [ ] **No native libraries in the package** (no `runtimes/*/native/`)
+- [ ] Unpacking `DevTrove.Crypto.Core.<version>.nupkg` shows `<dependency id="DevTrove.Crypto.Abstractions" />` in its `.nuspec`
 - [ ] Restores and calls API successfully in a clean environment (e.g. a `netstandard2.0` empty project)
 - [ ] Dependency declared as lower-bound, not exact version
 - [ ] CHANGELOG updated (English + Chinese)
@@ -225,10 +232,9 @@ Consumers reference the metapackage only:
 
 ```
 dotnet add package DevTrove.Crypto     # algorithms + certificates
-dotnet add package DevTrove.Crypto.Tls # TLS probe (auto-pulls DevTrove.Crypto)
 ```
 
-`DevTrove.Crypto.Core` is pulled in as a transitive dependency and rarely needs to be referenced explicitly.
+`DevTrove.Crypto.Core` and `DevTrove.Crypto.Abstractions` are pulled in as transitive dependencies and rarely need to be referenced explicitly. Reference `DevTrove.Crypto.Abstractions` directly only when you want the contract surface without the BouncyCastle-backed implementation — it is the one package in the set that depends on nothing.
 
 ---
 
@@ -239,7 +245,7 @@ dotnet add package DevTrove.Crypto.Tls # TLS probe (auto-pulls DevTrove.Crypto)
 | Referencing the packages | Add a `PackageReference` to `DevTrove.Crypto` (or `DevTrove.Crypto.Tls` for probing); the version constraint uses a lower bound, e.g. `[0.1.0, )` |
 | Working against an unreleased build | Publish to a local folder feed and point the consumer at it |
 
-How a consumer wires up project references versus package references is a consumer-side decision and is deliberately not covered here. **Note**: a `ProjectReference` does not turn into a NuGet dependency — a package must be built from `PackageReference` metadata, or its dependency declaration will be missing and consumers will fail to restore.
+How a consumer wires up project references versus package references is a consumer-side decision and is deliberately not covered here. **Note**: a `ProjectReference` does not reliably turn into a NuGet dependency — verify the packed `.nuspec` (see §8) rather than assuming, or consumers will fail to restore.
 
 ---
 
