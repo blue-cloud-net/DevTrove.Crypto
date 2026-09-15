@@ -106,7 +106,7 @@ The metapackage project still contains `src/DevTrove.Crypto/Program.cs`, althoug
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.3 | Add both properties (or amend the documents) | Config and documents agree; build behaviour matches the documented one | ⬜ | `dotnet build` output |
+| RM-0.0.3 | Add both properties (or amend the documents) | Config and documents agree; build behaviour matches the documented one | ✅ | `Directory.Build.props` now sets `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` and `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`; `dotnet build DevTrove.Crypto.slnx -c Release` succeeded for all 5 TFMs (0 warnings, 0 errors) |
 
 ### 6.4 `RM-0.0.4` — package metadata
 

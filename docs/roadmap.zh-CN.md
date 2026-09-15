@@ -106,7 +106,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.3 | 补上两个属性（或修正文档） | 配置与文档一致；构建行为与文档描述相符 | ⬜ | `dotnet build` 输出 |
+| RM-0.0.3 | 补上两个属性（或修正文档） | 配置与文档一致；构建行为与文档描述相符 | ✅ | Directory.Build.props 补齐 `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` 与 `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`；`dotnet build DevTrove.Crypto.slnx -c Release` 全 5 TFM 成功（0 警告 0 错误） |
 
 ### 6.4 `RM-0.0.4` —— 包元数据
 

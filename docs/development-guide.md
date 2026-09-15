@@ -20,8 +20,6 @@ Build, test, pack, and CI conventions for `DevTrove.Crypto`.
 
 External dependency: **tongsuo**. Tests fail (not skip) when it is missing. See §5.2.
 
-> **Known deviation** (`RM-0.0.1`, `RM-0.0.11`): the three target-framework declarations disagree, and the two `netstandard` targets have never produced an assembly. Expect build failures until those items land.
-
 ---
 
 ## 2. Project layout
@@ -74,7 +72,7 @@ DevTrove.Crypto/
 <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
-Each csproj either inherits this baseline or overrides it. Today Core overrides to three frameworks and the metapackage to one — the three declarations have to be unified (`RM-0.0.1`).
+Each csproj either inherits this baseline or overrides it. Today all csproj files inherit the 5-TFM baseline declared here.
 
 ### The `netstandard` targets
 

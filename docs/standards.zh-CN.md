@@ -72,8 +72,6 @@
 <IsPackable>true</IsPackable>
 ```
 
-> **已知偏差**（`RM-0.0.3`）：本文件写明了 `TreatWarningsAsErrors` 与 `EnforceCodeStyleInBuild`，但 `Directory.Build.props` 中**并不存在**这两个属性。要么补属性，要么改文档 —— 两者不能继续不一致。
-
 ### 2.4 行尾与编码
 
 | 类型 | 设置 |

@@ -65,8 +65,6 @@ Each project writes `<PackageReference Include="..." />` only — **never** with
 <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 ```
 
-> **Known deviation** (`RM-0.0.3`): `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are documented here but are **not present** in `Directory.Build.props` today. Either the properties or this document must change — they cannot keep disagreeing.
-
 For library projects (`IsPackable=true`) additionally:
 
 ```xml

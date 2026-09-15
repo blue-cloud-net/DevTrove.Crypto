@@ -20,8 +20,6 @@
 
 外部依赖：**tongsuo**。缺失时测试**直接失败而非跳过**。见 §5.2。
 
-> **已知偏差**（`RM-0.0.1`、`RM-0.0.11`）：三处目标框架声明彼此不一致，且两个 `netstandard` 目标从未产出过程序集。在这两项落地前，构建预期会失败。
-
 ---
 
 ## 2. 项目布局
@@ -74,7 +72,7 @@ DevTrove.Crypto/
 <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
-各 csproj 继承基线或自行覆盖。当前 Core 覆盖为三个 TFM、门包覆盖为一个 —— 三处声明必须统一（`RM-0.0.1`）。
+各 csproj 继承基线或自行覆盖。当前所有 csproj 都继承此 5 TFM 基线声明。
 
 ### 两个 `netstandard` 目标的现状
 
