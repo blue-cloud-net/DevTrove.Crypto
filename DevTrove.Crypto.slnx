@@ -6,10 +6,20 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/docs/">
-    <File Path="docs\roadmap.md" />
-    <File Path="docs\architecture.md" />
-    <File Path="docs\development-guide.md" />
-    <File Path="docs\v0.1\core-roadmap.md" />
+    <File Path="docs/architecture.md" />
+    <File Path="docs/architecture.zh-CN.md" />
+    <File Path="docs/development-guide.md" />
+    <File Path="docs/development-guide.zh-CN.md" />
+    <File Path="docs/library-api.md" />
+    <File Path="docs/library-api.zh-CN.md" />
+    <File Path="docs/nuget.md" />
+    <File Path="docs/nuget.zh-CN.md" />
+    <File Path="docs/roadmap.md" />
+    <File Path="docs/roadmap.zh-CN.md" />
+    <File Path="docs/standards.md" />
+    <File Path="docs/standards.zh-CN.md" />
+    <File Path="docs/tls-scanner.md" />
+    <File Path="docs/tls-scanner.zh-CN.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
