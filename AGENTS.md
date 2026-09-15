@@ -7,19 +7,20 @@
 
 ## 1. 仓库定位
 
-`DevTrove.Crypto` 是**独立发布、独立版本号**的纯托管 .NET 密码学与证书库（BouncyCastle 封装），发行三个 NuGet 包：
+`DevTrove.Crypto` 是**独立发布、独立版本号**的纯托管 .NET 密码学与证书库（BouncyCastle 封装），发行四个 NuGet 包：
 
 | 包 | 角色 |
 |---|---|
+| `DevTrove.Crypto.Abstractions` | **契约**：对称 / 非对称 / 摘要 / X.509 四面的接口与抽象基类；**零包依赖**（计划中，`0.1.0`） |
+| `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装（算法原语、密钥、ASN.1、X.509、CSR、CRL、PKCS#12）；依赖 Abstractions |
 | `DevTrove.Crypto` | **门面包（metapackage）**：仅 `ProjectReference` → Core，对外只传递依赖 |
-| `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装（算法原语、密钥、ASN.1、X.509、CSR、CRL、PKCS#12） |
-| `DevTrove.Crypto.Tls` | **TLS 探测引擎**（计划中，`0.4.0`；当前仅有预留命名空间） |
+| `DevTrove.Crypto.Tls` | **TLS 探测引擎**（计划中，`0.6.0`；当前仅有预留命名空间） |
 
 技术栈（版本以 [`Directory.Packages.props`](Directory.Packages.props) 为唯一权威）：
 
 | 层 | 技术 |
 |---|---|
-| 目标框架 | `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+| 目标框架 | `netstandard2.0;net8.0;net9.0;net10.0`（`netstandard2.1` 已废弃 —— 无未 EOL 宿主可解析该资产） |
 | 核心依赖 | BouncyCastle.Cryptography |
 | 测试 | xUnit + FluentAssertions + CliWrap；互操作依赖 **tongsuo**（唯一外部工具） |
 
@@ -28,10 +29,12 @@
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/         门面包
-│  ├─ DevTrove.Crypto.Core/    实现
-│  └─ DevTrove.Crypto.Tls/     TLS 探测引擎（计划中 `0.4.0`）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖，计划中 `0.1.0`）
+│  ├─ DevTrove.Crypto/              门面包
+│  ├─ DevTrove.Crypto.Core/         实现
+│  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0`）
 ├─ tests/
+│  ├─ DevTrove.Crypto.Abstractions.Tests/  契约测试（仅 Windows 含 `net48`）
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/
 ├─ scripts/                     夹具生成脚本
@@ -84,8 +87,8 @@ DevTrove.Crypto/
 2. **零框架依赖**：核心库**不引用** DI、日志、ASP.NET Core、`Microsoft.Extensions.*`
 3. **不打日志**：核心库**不产生**日志，由调用方决定如何记录
 4. **命名空间与项目名一致**：根命名空间 `DevTrove.Crypto`；`DevTrove.Crypto.Core` 项目 → `DevTrove.Crypto.*` 命名空间
-5. **5 TFM 策略（目标）**：`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`（当前实际见 [docs/roadmap.md](docs/roadmap.md) 的「待办 / 已知偏差」节）
-6. **依赖方向单向**：`DevTrove.Crypto.Tls` 可引用 `DevTrove.Crypto.Core`；**禁止反向**
+5. **4 TFM 策略**：`netstandard2.0;net8.0;net9.0;net10.0`。每个交付目标必须有在 CI 中真正运行它的宿主（`netstandard2.0` 靠 Windows 上的 `net48` 测试项目）
+6. **依赖方向单向**：`DevTrove.Crypto.Core` → `DevTrove.Crypto.Abstractions`；`DevTrove.Crypto.Tls` → `DevTrove.Crypto.Core`；**禁止反向**，且 `Abstractions` 不得引用任何包（含 BouncyCastle）
 7. **库内禁止** `.Result` / `.Wait()` / 空 `catch` / `Task.Run` 伪造异步
 8. **库不得知道消费方**：可独立发布；不引用任何外部仓库的文档路径或章节号
 
@@ -97,13 +100,17 @@ DevTrove.Crypto/
 # 构建（Release 多 TFM）
 dotnet build DevTrove.Crypto.slnx -c Release
 
-# 测试（互操作需 tongsuo；缺失时直接失败而非跳过）
-dotnet test DevTrove.Crypto.slnx -c Release
+# 契约测试（无外部依赖；Linux 上必须显式指定 --framework）
+dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 
-# 仅核心库测试（跳过互操作）
-dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'
+# 全部测试（互操作需 tongsuo；缺失时直接失败而非跳过）
+dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0
 
-# 打包（按顺序：Core → Crypto）
+# 仅核心库单元测试（跳过互操作）
+dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0 --filter 'Category!=Integration'
+
+# 打包（按依赖顺序：Abstractions → Core → Crypto）
+dotnet pack src/DevTrove.Crypto.Abstractions/DevTrove.Crypto.Abstractions.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts
 
@@ -117,8 +124,9 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 
 ## 6. 提交前检查
 
-- [ ] `dotnet build` 通过（当前允许警告，但每新增类型应有中文 XML 注释）
-- [ ] `dotnet test` 全绿（或明确标注失败用例为预存缺陷）
+- [ ] `dotnet build` 通过（4 个 TFM 全绿；每新增类型应有中文 XML 注释）
+- [ ] `dotnet test tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0` 全绿
+- [ ] `dotnet test tests/DevTrove.Crypto.Core.Tests -c Release --framework net10.0` 全绿（或明确标注失败用例为预存缺陷）
 - [ ] 新增/修改的 public 成员有中文 XML 文档注释
 - [ ] 触及 `README` / `CHANGELOG` 时，同步对应的 `.zh-CN.md`
 - [ ] 触及 `docs/*.md` 时，同步对应 `*.zh-CN.md`（章节、表格、Mermaid、代码示例一一对应）
