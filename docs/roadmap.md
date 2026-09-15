@@ -47,7 +47,7 @@ SemVer. `0.x` allows breaking changes.
 |---|---|
 | `0.0.x` are **work-item numbers only** | Never packaged, tagged or published. The repository has never shipped a package. |
 | First real release | `0.1.0` |
-| Package versions | The three packages share one version number per milestone. `DevTrove.Crypto.Tls` does not exist before `0.4.0`, so it does not participate in earlier milestones. |
+| Package versions | The four packages share one version number per milestone. `DevTrove.Crypto.Tls` does not exist before `0.6.0`, so it does not participate in earlier milestones. |
 | Pre-release | Non-final builds use `-dev` / `-preview` suffixes. |
 
 The library is **independently versioned**. Consumers declare a minimum compatible version (see [nuget.md §3.2](nuget.md)).
@@ -59,12 +59,16 @@ The library is **independently versioned**. Consumers declare a minimum compatib
 | Version | Theme | Sub-items | Status |
 |---|---|---|---|
 | `RM-0.0.1` – `RM-0.0.13` | Baseline corrections (work items) | 13 | 🟡 |
-| `0.1.0` | Structure and consistency convergence | 6 | ⬜ |
-| `0.2.0` | Cryptographic primitive completion | 8 | ⬜ |
-| `0.3.0` | PKI capability completion | 9 | ⬜ |
-| `0.4.0` | TLS probe L1 + NTLS fingerprint | 11 | ⬜ |
-| `0.5.0` | TLS probe L2 + ShangMi | 9 | ⬜ |
+| `0.1.0` | Abstraction layer | 5 | ⬜ |
+| `0.2.0` | Symmetric algorithms | 4 | ⬜ |
+| `0.3.0` | Asymmetric algorithms | 3 | ⬜ |
+| `0.4.0` | Hashes and derivation | 4 | ⬜ |
+| `0.5.0` | PKI capability completion | 9 | ⬜ |
+| `0.6.0` | TLS probe L1 + NTLS fingerprint | 11 | ⬜ |
+| `0.7.0` | TLS probe L2 + ShangMi | 9 | ⬜ |
 | `1.0.0` | Stable API + PKIX | 5 | ⬜ |
+
+Milestones are split by **cryptographic family** rather than by mixed "primitive" batches, so each version carries a single theme and the abstraction landed in `0.1.0` is implemented against family by family.
 
 ---
 
@@ -77,6 +81,7 @@ Items that are complete (or in flight) but deliberately carry no version number.
 | `docs/standards.md` and `docs/library-api.md` created | ✅ | Referenced by README and AGENTS.md |
 | Web-era documents under `docs/v0.1/` removed | ✅ | — |
 | Documentation restructure: library scope, version line, status tracking | 🚧 | Not part of any version, by design |
+| Merge `OpenSslCli` into `TongsuoCli`, update `CliToolGuard` wording, and rename `*OpenSslInteropTests` to `*InteropTests` | ⬜ | Test-support tidy-up; carries no version number |
 
 ---
 
@@ -86,11 +91,13 @@ Each row is one sub-item. `Evidence` names the concrete way the acceptance crite
 
 ### 6.1 `RM-0.0.1` — TFM set alignment
 
-`Directory.Build.props` declares 5 target frameworks, Core overrides to 3 and the metapackage to 1. The three declarations must agree, and each TFM must be verified individually.
+`Directory.Build.props` declares the TFM set; every csproj agrees with it, and each target is verified individually.
+
+> The set was reduced from five targets to **four** during the `0.1.0` work. `netstandard2.1` was dropped because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Each of the remaining four targets has a host that actually runs it — see `RM-0.1.0-01`.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.1 | Unify `<TargetFrameworks>` across props and both csproj; verify every TFM separately | `dotnet build -f <tfm>` succeeds for each of the 5 TFMs | ✅ | `dotnet build -f <tfm>` for Core and the metapackage succeeded for `netstandard2.0` / `netstandard2.1` / `net8.0` / `net9.0` / `net10.0` (0 warnings, 0 errors) |
+| RM-0.0.1 | Unify `<TargetFrameworks>` across props and both csproj; verify every TFM separately | `dotnet build -f <tfm>` succeeds for each of the 4 TFMs | ✅ | `dotnet build -f <tfm>` for Core and the metapackage succeeds for `netstandard2.0` / `net8.0` / `net9.0` / `net10.0` (0 warnings, 0 errors). Re-verified after the set moved from five targets to four |
 
 ### 6.2 `RM-0.0.2` — metapackage is source-free
 
@@ -106,7 +113,7 @@ The metapackage project still contains `src/DevTrove.Crypto/Program.cs`, althoug
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.3 | Add both properties (or amend the documents) | Config and documents agree; build behaviour matches the documented one | ✅ | `Directory.Build.props` now sets `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` and `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`; `dotnet build DevTrove.Crypto.slnx -c Release` succeeded for all 5 TFMs (0 warnings, 0 errors) |
+| RM-0.0.3 | Add both properties (or amend the documents) | Config and documents agree; build behaviour matches the documented one | ✅ | `Directory.Build.props` now sets `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` and `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`; `dotnet build DevTrove.Crypto.slnx -c Release` succeeded for every TFM (0 warnings, 0 errors) |
 
 ### 6.4 `RM-0.0.4` — package metadata
 
@@ -114,7 +121,7 @@ No `<Version>`, `<PackageId>` or SourceLink exists, although `nuget.md §4` call
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.4 | Declare `<Version>`, `<PackageId>`, SourceLink and `RepositoryUrl` correctly | `dotnet pack` produces the intended version; `.nupkg` contains README + XML docs | ⬜ | Inspect `.nupkg` contents |
+| RM-0.0.4 | Declare `<Version>`, `<PackageId>`, SourceLink and `RepositoryUrl` correctly | `dotnet pack` produces the intended version; `.nupkg` contains README + XML docs | ✅ | `<Version>0.0.1-dev</Version>` written into props; both packages declare their own `<PackageId>`; Microsoft.SourceLink.GitHub wired in; `dotnet pack` produces `DevTrove.Crypto.Core.<version>.nupkg` and `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every TFM; the matching snupkg embeds the SourceLink JSON in its pdb |
 
 ### 6.5 `RM-0.0.5` — solution file
 
@@ -130,7 +137,7 @@ The `publish` job ran `dotnet pack --no-build` without a preceding build, the me
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.6 | Split into a branch-CI workflow + a tag-release workflow; restrict CI to `main` (not `dev`); verify `<Version>` / `<PackageLicenseExpression>` / `<TargetFrameworks>` / `<RepositoryUrl>` against the pushed tag before any pack or push; `uses` the CI workflow from release; narrow the push globs; drop `submodules` | A pushed `vX.Y.Z` tag builds, packs and publishes both packages correctly, and a tag whose version does not match `<Version>` is refused before any artifact is produced; `dev` is excluded from CI responsibility | ✅ | `.github/workflows/build.yml` is gone; `.github/workflows/ci.yml` keeps the `tongsuo` + `build` jobs and declares `workflow_call` (re-used by release) plus `workflow_dispatch`, with push / pull_request triggers restricted to `main` (no `dev`); `.github/workflows/release.yml` triggers on `v*` tag push with `concurrency: release-<ref> cancel-in-progress: false`; its `verify-version` job reads `Directory.Build.props` and refuses to proceed unless `<Version>` matches the tag version, `<PackageLicenseExpression>` is `Apache-2.0`, `<TargetFrameworks>` contains all five TFMs, and `<RepositoryUrl>` contains `DevTrove.Crypto`; push globs split into `DevTrove.Crypto.Core.*.nupkg` and `DevTrove.Crypto.[0-9]*.nupkg`; `softprops/action-gh-release@v2` attaches the `.nupkg` + `.snupkg` artifacts with `fail_on_unmatched_files: true`; full tag-triggered end-to-end verification still pending a real CI run |
+| RM-0.0.6 | Split into a branch-CI workflow + a tag-release workflow; restrict CI to `main` (not `dev`); verify `<Version>` / `<PackageLicenseExpression>` / `<TargetFrameworks>` / `<RepositoryUrl>` against the pushed tag before any pack or push; `uses` the CI workflow from release; narrow the push globs; drop `submodules` | A pushed `vX.Y.Z` tag builds, packs and publishes both packages correctly, and a tag whose version does not match `<Version>` is refused before any artifact is produced; `dev` is excluded from CI responsibility | ✅ | `.github/workflows/build.yml` is gone; `.github/workflows/ci.yml` keeps the `tongsuo` + `build` jobs and declares `workflow_call` (re-used by release) plus `workflow_dispatch`, with push / pull_request triggers restricted to `main` (no `dev`); `.github/workflows/release.yml` triggers on `v*` tag push with `concurrency: release-<ref> cancel-in-progress: false`; its `verify-version` job reads `Directory.Build.props` and refuses to proceed unless `<Version>` matches the tag version, `<PackageLicenseExpression>` is `Apache-2.0`, `<TargetFrameworks>` contains all four TFMs, and `<RepositoryUrl>` contains `DevTrove.Crypto`; push globs split into `DevTrove.Crypto.Core.*.nupkg` and `DevTrove.Crypto.[0-9]*.nupkg`; `softprops/action-gh-release@v2` attaches the `.nupkg` + `.snupkg` artifacts with `fail_on_unmatched_files: true`; full tag-triggered end-to-end verification still pending a real CI run |
 
 ### 6.7 `RM-0.0.7` — test support targets `net9.0`
 
@@ -148,7 +155,7 @@ Five public signatures default `signatureAlgorithm` to the hard-coded `SHA256WIT
 |---|---|---|---|---|
 | RM-0.0.8 | Derive the default from the private-key algorithm | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without an explicit algorithm | 🟡 | Rule written into `library-api.md` §4.1 (private-key → default signature-algorithm table); on the current empty Core `grep -rn SHA256WITHRSA src/ tests/` already returns nothing; the actual implementation and per-key-type unit tests land once RM-0.1.0-01 restores Core |
 
-This item must land **before** `RM-0.1.0-01`, so the new algorithm abstraction absorbs it instead of it being rewritten twice.
+This item lands **inside `RM-0.3.0`**, not in `0.1.0`: the `0.1.0` abstraction only defines `SignatureAlgorithmKind`, while the private-key → algorithm derivation itself is implemented alongside the asymmetric algorithms that need it.
 
 ### 6.9 `RM-0.0.9` — external tool unified on Tongsuo
 
@@ -161,7 +168,7 @@ The fixture scripts and interop tests currently depend on both `openssl` and `to
 | RM-0.0.9c | `generate-test-crl.sh` gains an SM2 CRL section (today absent) | SM2 CRL fixture is reproducible | ⬜ | Re-run script |
 | RM-0.0.9d | Remove the notion of a separate SM script; `TestDataGenerator` runs SM2 as part of the normal sequence | `SmCertScript` constant and its dedicated `try/catch` are gone | ✅ | No `generate-test-sm-certs*` script and no `SmCertScript` constant exist in the repo; `grep -rn generate-test-sm-certs` returns nothing |
 | RM-0.0.9e | A missing Tongsuo fails the build instead of skipping with a warning | Scripts exit non-zero when the tool is unavailable | ✅ | All 6 scripts gained a guard right after `set -e`: `TONGSUO_PATH` defaults to `/opt/tongsuo/bin/tongsuo`; if not executable, prints an error to stderr and exits 127; `TONGSUO_PATH=/nonexistent/tongsuo bash scripts/generate-test-pfx.sh` triggers it |
-| RM-0.0.9f | CI builds Tongsuo from source with a pinned version and caches the result | Integration stage passes on a clean runner | 🟡 | `build.yml` adds a `tongsuo` job that builds and installs Tongsuo 8.4.0 to `/opt/tongsuo`; `actions/cache@v4` with key `tongsuo-\$OS-v8.4.0`; the `build` job `needs: tongsuo` and injects `TONGSUO_PATH` into the fixtures/integration steps; end-to-end verification still pending a CI run |
+| RM-0.0.9f | CI builds Tongsuo from source with a pinned version and caches the result | Integration stage passes on a clean runner | 🟡 | `ci.yml` adds a `tongsuo` job that builds and installs Tongsuo 8.4.0 to `/opt/tongsuo`; `actions/cache@v4` with key `tongsuo-\$OS-v8.4.0`; the `build` job `needs: tongsuo` and injects `TONGSUO_PATH` into the fixtures/integration steps; end-to-end verification still pending a CI run |
 
 ### 6.10 `RM-0.0.10` — fixture directories and descriptions
 
@@ -171,17 +178,18 @@ The entire `tests/data/` tree is generated by scripts and **ignored by Git** —
 |---|---|---|---|---|
 | RM-0.0.10 | Add a **tracked** `tests/fixtures/ntls/` for captured handshake bytes; add `ocsp/` to the generated set; add matching `TestData` helpers; document the fixture inventory in [development-guide.md §8](development-guide.md) rather than in ignored files | Captured fixtures live outside the ignored directory and are version-controlled; the generated set is reproducible by re-running the scripts | 🟡 | Added `tests/fixtures/README.md` and `tests/fixtures/ntls/README.md`; `git check-ignore -v tests/fixtures/*` does not match while `tests/data/*` stays ignored; development-guide §8 already lists the fixture inventory; once RM-0.1.0-01 restores Core, add the `ocsp/` generation section and `TestData` accessors |
 
-### 6.11 `RM-0.0.11` — all five TFMs actually build
+### 6.11 `RM-0.0.11` — `netstandard2.0` actually builds
 
-`netstandard2.0/2.1` never produced an assembly. The polyfill exists but guards on `#if NETSTANDARD2_0`, which excludes `netstandard2.1`; `Convert.FromHexString`, `RandomNumberGenerator.GetBytes(int)` and `AsSpan` are used without guards on the netstandard targets.
+No `netstandard` target produced an assembly. `Convert.FromHexString`, `RandomNumberGenerator.GetBytes(int)` and `AsSpan` are used without guards on `netstandard2.0`.
+
+> `netstandard2.1` was dropped from the TFM set (`RM-0.1.0-01`), so this item now covers a single netstandard target. The guard symbol cannot be a single blanket value either: `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` exists on `netstandard2.1` but not on `netstandard2.0`, while `Convert.FromHexString` is missing from both. Pick the symbol per API.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.11a | Fix the polyfill guard (`NETSTANDARD2_0_OR_GREATER`) | `netstandard2.1` compiles | ⬜ | `dotnet build -f netstandard2.1` |
-| RM-0.0.11b | Add the missing polyfills / package references for both netstandard targets | `dotnet build -f netstandard2.0` and `-f netstandard2.1` succeed | ⬜ | Build output |
-| RM-0.0.11c | Correct the documents that place polyfills in a non-existent `Compat/` directory | Documents match the real file layout; `Compat/` only appears in roadmap §4.1 target layout and in this sub-item description | 🟡 | Removed the stale "polyfills live in `Compat/`" paragraphs from architecture / architecture.zh-CN / development-guide / development-guide.zh-CN; roadmap §4.1 and architecture §4.1 keep `Compat/` (the 0.1.0 internal target directory). 11a/11b code actions land once RM-0.1.0-01 restores Core |
+| RM-0.0.11b | Add the missing polyfills / package references for `netstandard2.0`, and choose the guard symbol per API | `dotnet build -f netstandard2.0` succeeds; every `#if` matches the API it protects | ⬜ | Build output + guard-by-guard review |
+| RM-0.0.11c | Correct the documents that place polyfills in a non-existent `Compat/` directory | Documents match the real file layout; `Compat/` only appears in the `architecture.md` target-layout table and in this sub-item description | 🟡 | Removed the stale "polyfills live in `Compat/`" paragraphs from architecture / architecture.zh-CN / development-guide / development-guide.zh-CN; the `architecture.md` §4.1 target-layout table keeps `Compat/` (the 0.1.0 internal target directory). The 11b code action lands once RM-0.1.0-01 restores Core |
 
-Until `RM-0.1.0-03` removes the .NET 8-only `TryEncryptEcbCore` / `TryEncryptCbcCore` overrides in the SM4 implementation, they are wrapped in `#if NET8_0_OR_GREATER` as a temporary bridge.
+Until `RM-0.2.0-01` removes the .NET 8-only `TryEncryptEcbCore` / `TryEncryptCbcCore` overrides in the SM4 implementation, they are wrapped in `#if NET8_0_OR_GREATER` as a temporary bridge.
 
 ### 6.12 `RM-0.0.12` — trimming and AOT compatibility (net8.0 and later only)
 
@@ -191,7 +199,7 @@ Enum display names resolve through `[Display(ResourceType = typeof(RS))]` and a 
 |---|---|---|---|---|
 | RM-0.0.12 | Mark the net8.0+ targets as trim/AOT compatible and annotate the resource lookup path | Publishing an AOT test app succeeds and enum display names still resolve | 🟡 | `Directory.Build.props` sets `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial` for the `net8.0` / `net9.0` / `net10.0` TFMs via an `IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')` condition; an in-props XML comment constrains the enum-display-name lookup to use an `IsDynamicCodeSupported` guard. AOT publish + smoke test land once RM-0.1.0-01 restores Core (which carries the enum display name resolver) |
 
-The two netstandard targets carry no AOT metadata: they serve the compatibility surface, while `net8.0` and later serve the AOT surface.
+The netstandard target carries no AOT metadata: it serves the compatibility surface, while `net8.0` and later serve the AOT surface.
 
 ### 6.13 `RM-0.0.13` — encoding rules aligned
 
@@ -208,89 +216,105 @@ The two netstandard targets carry no AOT metadata: they serve the compatibility 
 
 ---
 
-### 6.14 `0.1.0` — Structure and consistency convergence
+### 6.14 `0.1.0` — Abstraction layer
 
-No new capability. The public surface changes shape here, and the library has never been published, so the change is free.
+No new capability and no algorithm implementation. This milestone settles the contract surface: a new leaf assembly carries the interfaces and abstract base types that every later milestone implements against. The library has never been published, so the shape change is free.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.1.0-01 | Core structure rework: directories and namespaces (`Algorithms`, `Formats`, `Asn1`, `Interop`, `Compat`), BouncyCastle types removed from the public surface, one `Interop` extension per type, unified `*Crypto` naming | No `DevTrove.Crypto.Crypto.*` or `DevTrove.Crypto.BouncyCastle.*` namespace remains; no `GetBouncyCastle*` member is public | ⬜ | `grep` over `src/` for the old namespaces |
-| RM-0.1.0-02 | Built-in cryptography abstractions: `CipherModeKind` / `PaddingKind` enums, symmetric and hash base types, BCL adapters `AsSymmetricAlgorithm()` / `AsHashAlgorithm()` | CTR and AEAD modes are expressible without BCL enums | ⬜ | Unit tests over every mode |
-| RM-0.1.0-03 | Migrate AES and SM4 onto the new abstraction; align their mode sets; ECB supported by both with CBC as default and an explicit warning in XML docs; remove the .NET 8-only overrides | Both algorithms expose the same mode set; `CryptoStream` interop still works through the adapter | ⬜ | Mode matrix tests + interop tests |
-| RM-0.1.0-04 | Naming and layout follow-through: `GlobalUsings`, mirrored test directories, `library-api.md` rewritten, `architecture.md` §4 / §5 redrawn | Documents and code agree | ⬜ | Doc-to-code comparison |
-| RM-0.1.0-05 | Release readiness: all five TFMs green, packed artifacts complete, clean consumer project restores and calls the API | Package usable from an empty `netstandard2.0` and `net8.0` project | ⬜ | `dotnet pack` + consumer smoke test |
-| RM-0.1.0-06 | Delete `OpenSslCli`; merge its members into `TongsuoCli`; update every call site, `CliToolGuard` wording, and rename `*OpenSslInteropTests` files to neutral `*InteropTests` | No `OpenSslCli` reference remains | ⬜ | `grep -rn OpenSslCli tests/` returns nothing |
+| RM-0.1.0-01 | Create the `DevTrove.Crypto.Abstractions` assembly (own package, zero-dependency leaf, 4 TFMs, package metadata); Core structure rework (directories and namespaces `Algorithms` / `Asn1` / `Interop` / `Compat`; BouncyCastle types removed from the public surface; one `Interop` extension per type; unified `*Crypto` naming); naming and layout follow-through (`GlobalUsings`, mirrored test directories, `library-api.md` rewritten, `architecture.md` §4 / §5 redrawn) | Each of the 4 TFMs builds; no `DevTrove.Crypto.Crypto.*` or `DevTrove.Crypto.BouncyCastle.*` namespace remains; no `GetBouncyCastle*` member is public | ⬜ | `dotnet build -f <tfm>` plus a `grep` over `src/` for the old namespaces |
+| RM-0.1.0-02 | Symmetric and hash abstractions: `ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | CTR and AEAD modes are expressible without BCL enums; defaults are `Cbc` and `Pkcs7`; ECB makes `Encrypt` throw `InvalidOperationException` | ⬜ | Unit tests over the enum value sets and the base-class contract |
+| RM-0.1.0-03 | Asymmetric capability interfaces: `ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | Each capability is its own interface, so no single-inheritance constraint is imposed; `AsymmetricKeyBase` clears key material on disposal | ⬜ | Interface-inventory test + disposal test |
+| RM-0.1.0-04 | X.509 abstractions: `ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | All four interfaces are implementable by a single stub; **no implementation type ships in this milestone** (implementations land in `0.5.0`) | ⬜ | Stub-implementation test |
+| RM-0.1.0-05 | BCL adapters `AsSymmetricAlgorithm()` / `AsHashAlgorithm()`; release readiness | CBC / CFB / OFB / ECB produce the same result through the adapter as through the stub, while GCM / CTR throw `NotSupportedException`; all 4 TFMs green; packed artifacts complete and carrying the `DevTrove.Crypto.Abstractions` dependency; a clean consumer project restores and calls the API | ⬜ | Unit tests + `dotnet pack` + consumer smoke test |
 
 ---
 
-### 6.15 `0.2.0` — Cryptographic primitive completion
+### 6.15 `0.2.0` — Symmetric algorithms
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.2.0-01 | Key-pair capability interfaces (`ISigner`, `IKeyEncipherment`, `IKeyAgreement`) plus Ed25519, Ed448 and X25519 (X448 optional). X25519 only agrees keys and Ed25519 only signs, so capabilities are separate interfaces rather than one base class | Each algorithm implements exactly the capabilities it has | ⬜ | Interface-inventory test |
+| RM-0.2.0-01 | Migrate AES and SM4 onto the `0.1.0` abstraction; align their mode sets; ECB supported by both with CBC as the default and an explicit warning in the XML docs; remove the .NET 8-only overrides | Both algorithms expose the same mode set; `CryptoStream` interop still works through the adapter | ⬜ | Mode matrix tests + interop tests |
 | RM-0.2.0-02 | Symmetric key object: algorithm + key + IV/Nonce + memory clearing | Keys are no longer raw `byte[]` in the public API; disposal clears key material | ⬜ | Disposal test |
-| RM-0.2.0-03 | HMAC: HMAC-SM3 plus HMAC-SHA256/384/512, without the BCL `HashName` reflection factory | Sign and verify against reference vectors | ⬜ | Known-answer tests |
+| RM-0.2.0-03 | Symmetric mode completion: AES-CTR, AES key wrap (RFC 3394), SM4-CTR, SM4-GCM | RFC 3394 and GCM test vectors pass | ⬜ | Known-answer tests |
 | RM-0.2.0-04 | CMAC and GMAC | Known-answer tests pass | ⬜ | Known-answer tests |
-| RM-0.2.0-05 | KDF: HKDF-SHA256/384/512, PBKDF2, optional scrypt | RFC 5869 test vectors pass | ⬜ | Known-answer tests |
-| RM-0.2.0-06 | Hash family: SHA-256/384/512 wrappers on the built-in hash abstraction | Every hash exposes the same shape as SM3 | ⬜ | API inventory |
-| RM-0.2.0-07 | Symmetric mode completion: AES-CTR, AES key wrap (RFC 3394), SM4-CTR, SM4-GCM | RFC 3394 and GCM test vectors pass | ⬜ | Known-answer tests |
-| RM-0.2.0-08 | Single entry point for secure randomness | No ad-hoc randomness helper remains scattered across types | ⬜ | API inventory |
 
 ---
 
-### 6.16 `0.3.0` — PKI capability completion
+### 6.16 `0.3.0` — Asymmetric algorithms
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.3.0-01 | Certificate chain building and verification, including cycle and depth protection | Real-site chains and self-signed CA→leaf chains verify correctly; mutually-signed inputs terminate | ⬜ | Regression over `tests/data/certs/` |
-| RM-0.3.0-02 | Distinguished-name construction (structured fields → DN) and random serial numbers | Round-trip parse → build → parse is stable | ⬜ | Round-trip tests |
-| RM-0.3.0-03 | Format layer: PEM/DER auto-detection, unified conversion, multi-type PEM bundle parsing (private key + certificates) | Any supported input is detected and converted without the caller naming the format | ⬜ | Conversion matrix tests |
-| RM-0.3.0-04 | X.509 extension writing: AIA, CertificatePolicies, NameConstraints, PolicyConstraints, SCT | Generated certificates carry the extensions and `openssl`/`tongsuo` reads them back | ⬜ | Interop test |
-| RM-0.3.0-05 | PKCS#12 generation options: choice of KDF and cipher, defaulting to PBES2 + AES-256 | Generated file opens with the chosen parameters | ⬜ | Interop test |
-| RM-0.3.0-06 | CRL completion: delta CRLs, CRL signature verification, CRL Number, issuing distribution point | Generated and parsed CRLs carry and validate these fields | ⬜ | Interop test |
-| RM-0.3.0-07 | PKCS#7 / CMS SignedData parsing (generation optional) | Parse a CMS SignedData produced by another tool | ⬜ | Fixture test |
-| RM-0.3.0-08 | OCSP response parsing | Parse a captured OCSP response | ⬜ | Fixture test |
-| RM-0.3.0-09 | ASN.1 utilities: DER round-trip and OID mapping | Used by the TLS engine's extension parser | ⬜ | Unit tests |
+| RM-0.3.0-01 | Migrate RSA, ECDSA, DSA and SM2 onto the `0.1.0` capability interfaces; each algorithm implements exactly the capabilities it has | Each algorithm exposes only the capabilities it really has | ⬜ | Interface-inventory test |
+| RM-0.3.0-02 | Add Ed25519, Ed448 and X25519 (X448 optional). X25519 only agrees keys and Ed25519 only signs, which is why capabilities are separate interfaces rather than one base class | Sign and key-agreement round-trips against reference vectors | ⬜ | Known-answer tests |
+| RM-0.3.0-03 | `RM-0.0.8`: derive the default signature algorithm from the private key instead of hard-coding `SHA256WITHRSA` | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without the caller naming an algorithm | ⬜ | Per-key-type unit tests |
 
 ---
 
-### 6.17 `0.4.0` — TLS probe L1 and NTLS fingerprint
+### 6.17 `0.4.0` — Hashes and derivation
+
+| ID | Sub-item | Acceptance | Status | Evidence |
+|---|---|---|---|---|
+| RM-0.4.0-01 | Hash family: SHA-256/384/512 wrappers on the `0.1.0` digest abstraction | Every hash exposes the same shape as SM3 | ⬜ | API inventory |
+| RM-0.4.0-02 | HMAC: HMAC-SM3 plus HMAC-SHA256/384/512, without the BCL `HashName` reflection factory | Sign and verify against reference vectors | ⬜ | Known-answer tests |
+| RM-0.4.0-03 | KDF: HKDF-SHA256/384/512, PBKDF2, optional scrypt | RFC 5869 test vectors pass | ⬜ | Known-answer tests |
+| RM-0.4.0-04 | Single entry point for secure randomness | No ad-hoc randomness helper remains scattered across types | ⬜ | API inventory |
+
+---
+
+### 6.18 `0.5.0` — PKI capability completion
+
+| ID | Sub-item | Acceptance | Status | Evidence |
+|---|---|---|---|---|
+| RM-0.5.0-01 | Certificate chain building and verification, including cycle and depth protection | Real-site chains and self-signed CA→leaf chains verify correctly; mutually-signed inputs terminate | ⬜ | Regression over `tests/data/certs/` |
+| RM-0.5.0-02 | Distinguished-name construction (structured fields → DN) and random serial numbers | Round-trip parse → build → parse is stable | ⬜ | Round-trip tests |
+| RM-0.5.0-03 | Format layer: PEM/DER auto-detection, unified conversion, multi-type PEM bundle parsing (private key + certificates) | Any supported input is detected and converted without the caller naming the format | ⬜ | Conversion matrix tests |
+| RM-0.5.0-04 | X.509 extension writing: AIA, CertificatePolicies, NameConstraints, PolicyConstraints, SCT | Generated certificates carry the extensions and `openssl`/`tongsuo` reads them back | ⬜ | Interop test |
+| RM-0.5.0-05 | PKCS#12 generation options: choice of KDF and cipher, defaulting to PBES2 + AES-256 | Generated file opens with the chosen parameters | ⬜ | Interop test |
+| RM-0.5.0-06 | CRL completion: delta CRLs, CRL signature verification, CRL Number, issuing distribution point | Generated and parsed CRLs carry and validate these fields | ⬜ | Interop test |
+| RM-0.5.0-07 | PKCS#7 / CMS SignedData parsing (generation optional) | Parse a CMS SignedData produced by another tool | ⬜ | Fixture test |
+| RM-0.5.0-08 | OCSP response parsing | Parse a captured OCSP response | ⬜ | Fixture test |
+| RM-0.5.0-09 | ASN.1 utilities: DER round-trip and OID mapping | Used by the TLS engine's extension parser | ⬜ | Unit tests |
+
+---
+
+### 6.19 `0.6.0` — TLS probe L1 and NTLS fingerprint
 
 The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.4.0-01 | Create the `DevTrove.Crypto.Tls` project: sources, package metadata, solution entry, minimum-version dependency on `DevTrove.Crypto` | Project builds and packs as its own package | ⬜ | `dotnet pack` |
-| RM-0.4.0-02 | Protocol-version matrix | Verdicts match `openssl s_client` across a public test-site set | ⬜ | Cross-validation |
-| RM-0.4.0-03 | Cipher-suite matrix with weak-suite classification | Enumerates suites and flags weak ones | ⬜ | Cross-validation |
-| RM-0.4.0-04 | Extension fingerprint: SCT, OCSP staple, EMS, ALPN, session ticket, secure renegotiation | Each extension is detected on servers that advertise it | ⬜ | Cross-validation |
-| RM-0.4.0-05 | Server-sent certificate chain | Order matches `openssl s_client -showcerts` | ⬜ | Cross-validation |
-| RM-0.4.0-06 | Negotiated group and signature algorithm capture | Values match the server's actual choice | ⬜ | Cross-validation |
-| RM-0.4.0-07 | `TlsRaw`: hand-built ClientHello plus hand-rolled ServerHello / Certificate / ServerKeyExchange parsing | Parses captured byte fixtures | ⬜ | Fixture tests |
-| RM-0.4.0-08 | NTLS fingerprint: version, suites, dual certificate presence, signature algorithm, curve | Verdicts correct on captured public ShangMi-site bytes | ⬜ | Fixture tests |
-| RM-0.4.0-09 | ROBOT oracle probing | Distinguishes vulnerable from hardened servers | ⬜ | Cross-validation |
-| RM-0.4.0-10 | SSLv2 ClientHello probing | Detects servers that answer SSLv2 records | ⬜ | Cross-validation |
-| RM-0.4.0-11 | Graceful degradation: an anomalous server extension never fails the whole scan | Scan completes and records the anomaly | ⬜ | Fault-injection test |
+| RM-0.6.0-01 | Create the `DevTrove.Crypto.Tls` project: sources, package metadata, solution entry, minimum-version dependency on `DevTrove.Crypto` | Project builds and packs as its own package | ⬜ | `dotnet pack` |
+| RM-0.6.0-02 | Protocol-version matrix | Verdicts match `openssl s_client` across a public test-site set | ⬜ | Cross-validation |
+| RM-0.6.0-03 | Cipher-suite matrix with weak-suite classification | Enumerates suites and flags weak ones | ⬜ | Cross-validation |
+| RM-0.6.0-04 | Extension fingerprint: SCT, OCSP staple, EMS, ALPN, session ticket, secure renegotiation | Each extension is detected on servers that advertise it | ⬜ | Cross-validation |
+| RM-0.6.0-05 | Server-sent certificate chain | Order matches `openssl s_client -showcerts` | ⬜ | Cross-validation |
+| RM-0.6.0-06 | Negotiated group and signature algorithm capture | Values match the server's actual choice | ⬜ | Cross-validation |
+| RM-0.6.0-07 | `TlsRaw`: hand-built ClientHello plus hand-rolled ServerHello / Certificate / ServerKeyExchange parsing | Parses captured byte fixtures | ⬜ | Fixture tests |
+| RM-0.6.0-08 | NTLS fingerprint: version, suites, dual certificate presence, signature algorithm, curve | Verdicts correct on captured public ShangMi-site bytes | ⬜ | Fixture tests |
+| RM-0.6.0-09 | ROBOT oracle probing | Distinguishes vulnerable from hardened servers | ⬜ | Cross-validation |
+| RM-0.6.0-10 | SSLv2 ClientHello probing | Detects servers that answer SSLv2 records | ⬜ | Cross-validation |
+| RM-0.6.0-11 | Graceful degradation: an anomalous server extension never fails the whole scan | Scan completes and records the anomaly | ⬜ | Fault-injection test |
 
 ---
 
-### 6.18 `0.5.0` — TLS probe L2 and ShangMi
+### 6.20 `0.7.0` — TLS probe L2 and ShangMi
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.5.0-01 | A–F grading with a stated reason for every deduction | Results are explainable per test site | ⬜ | Report review |
-| RM-0.5.0-02 | Client-simulation matrix: Chrome, Firefox, Safari, Edge, Java, Android | Verdicts match each client's real handshake capability | ⬜ | Cross-validation |
-| RM-0.5.0-03 | ALPN / HTTP2 probing | Negotiated protocol matches the server's actual choice | ⬜ | Cross-validation |
-| RM-0.5.0-04 | Certificate transparency log query | Detects embedded SCTs and log availability | ⬜ | Cross-validation |
-| RM-0.5.0-05 | DNS CAA verification | Reports CAA records and mismatch versus the issuing CA | ⬜ | Cross-validation |
-| RM-0.5.0-06 | ShangMi cipher-suite matrix | Enumerates SM2/SM3/SM4 suites | ⬜ | Fixture and live tests |
-| RM-0.5.0-07 | ShangMi site specialised report: negotiated suites, dual certificate, signature algorithm, curve | Report fields complete for captured sites | ⬜ | Report review |
-| RM-0.5.0-08 | RFC 8998 (SM2-TLS 1.3) full handshake | Handshake completes against a supporting endpoint | ⬜ | Live test |
-| RM-0.5.0-09 | OCSP response signature verification | Verifies signature and target-certificate match | ⬜ | Fixture tests |
+| RM-0.7.0-01 | A–F grading with a stated reason for every deduction | Results are explainable per test site | ⬜ | Report review |
+| RM-0.7.0-02 | Client-simulation matrix: Chrome, Firefox, Safari, Edge, Java, Android | Verdicts match each client's real handshake capability | ⬜ | Cross-validation |
+| RM-0.7.0-03 | ALPN / HTTP2 probing | Negotiated protocol matches the server's actual choice | ⬜ | Cross-validation |
+| RM-0.7.0-04 | Certificate transparency log query | Detects embedded SCTs and log availability | ⬜ | Cross-validation |
+| RM-0.7.0-05 | DNS CAA verification | Reports CAA records and mismatch versus the issuing CA | ⬜ | Cross-validation |
+| RM-0.7.0-06 | ShangMi cipher-suite matrix | Enumerates SM2/SM3/SM4 suites | ⬜ | Fixture and live tests |
+| RM-0.7.0-07 | ShangMi site specialised report: negotiated suites, dual certificate, signature algorithm, curve | Report fields complete for captured sites | ⬜ | Report review |
+| RM-0.7.0-08 | RFC 8998 (SM2-TLS 1.3) full handshake | Handshake completes against a supporting endpoint | ⬜ | Live test |
+| RM-0.7.0-09 | OCSP response signature verification | Verifies signature and target-certificate match | ⬜ | Fixture tests |
 
 ---
 
-### 6.19 `1.0.0` — Stable API and PKIX
+### 6.21 `1.0.0` — Stable API and PKIX
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
@@ -309,7 +333,7 @@ The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 | Consumer-side `ProjectReference` / `PackageReference` toggling | A consumer integration pattern, not library behaviour |
 | Submodule / dual-repo workflow | This repository is standalone; how it is consumed is the consumer's concern |
 | L3 vulnerability probing (Heartbleed, CCS Injection, Ticketbleed) | Needs a self-implemented record layer and key derivation; only ROBOT is in scope |
-| NTLS full handshake | Needs a TLS 1.2 subset implemented from scratch; deferred beyond `0.5.0` |
+| NTLS full handshake | Needs a TLS 1.2 subset implemented from scratch; deferred beyond `0.7.0` |
 | Packaging `testssl.sh` | GPLv2; usable only as an optional external cross-check |
 | Native dependencies, including Tongsuo P/Invoke | Conflicts with the pure-managed, AOT-capable goal |
 
