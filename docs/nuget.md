@@ -154,7 +154,7 @@ CI is split into two workflows so that branch checks and tag-driven releases are
 
 | Workflow | Trigger | Action |
 |---|---|---|
-| `.github/workflows/ci.yml` | `push` / `pull_request` to `main` / `dev`, plus `workflow_call` + `workflow_dispatch` | Build + test; pack to `./artifacts/` only on `push` (no nuget.org push) |
+| `.github/workflows/ci.yml` | `push` / `pull_request` to `main` only, plus `workflow_call` + `workflow_dispatch` | Build + test; pack to `./artifacts/` only on `push` (no nuget.org push) |
 | `.github/workflows/release.yml` | `push` of `v*` tags | Verify invariants → re-run CI → repack + push to nuget.org + create GitHub Release |
 
 #### Version guard (`release.yml` / `verify-version`)

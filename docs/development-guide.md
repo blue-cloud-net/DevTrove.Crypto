@@ -149,7 +149,9 @@ CI is split across two workflows so that branch checks and tag-driven releases s
 
 ### 6.1 `ci.yml` — branch checks
 
-`.github/workflows/ci.yml`. Triggers: push / pull_request on `main` / `dev`, plus `workflow_call` (re-used by `release.yml`) and `workflow_dispatch` (manual warm-up of the tongsuo cache).
+`.github/workflows/ci.yml`. Triggers: push / pull_request on **`main` only**, plus `workflow_call` (re-used by `release.yml`) and `workflow_dispatch` (manual warm-up of the tongsuo cache or ad-hoc verification on a feature branch).
+
+> **`dev` is intentionally not covered.** `dev` is the integration / development branch; CI responsibility lives on `main`. Developers verify their work locally with `dotnet build DevTrove.Crypto.slnx -c Release` and `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` before opening a PR against `main`, or use `workflow_dispatch` for a one-off check on a feature branch. The integration tests (which require `tongsuo`) and the tag-driven `release.yml` flow are the only other paths that exercise the full pipeline.
 
 Top-level `permissions: contents: read`. `concurrency: ci-<workflow>-<ref> cancel-in-progress: true` cancels a stale in-flight run when the same branch is pushed again.
 

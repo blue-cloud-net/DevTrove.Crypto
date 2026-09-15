@@ -149,7 +149,9 @@ CI 拆为两个 workflow，使分支检查与 tag 触发的发布相互独立、
 
 ### 6.1 `ci.yml` —— 分支检查
 
-`.github/workflows/ci.yml`。触发器：`main` / `dev` 的 push / pull_request，外加 `workflow_call`（被 `release.yml` 复用）和 `workflow_dispatch`（手动预热 tongsuo 缓存）。
+`.github/workflows/ci.yml`。触发器：**仅** `main` 的 push / pull_request，外加 `workflow_call`（被 `release.yml` 复用）和 `workflow_dispatch`（手动预热 tongsuo 缓存或在 feature 分支上做一次性验证）。
+
+> **`dev` 故不覆盖。** dev 是集成/开发分支，CI 责任集中在 `main`。开发者需在本地用 `dotnet build DevTrove.Crypto.slnx -c Release` 与 `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` 自行验证后再开 PR 进 `main`；也可在 feature 分支上手动 `workflow_dispatch` 跑一次。完整流水线（需 `tongsuo` 的集成测试与 `release.yml` 标签流程）只走另外两条路径。
 
 顶部 `permissions: contents: read`。`concurrency: ci-<workflow>-<ref> cancel-in-progress: true`：同分支再次 push 时取消正在跑的旧实例。
 

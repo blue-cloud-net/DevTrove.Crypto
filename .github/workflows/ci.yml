@@ -1,9 +1,13 @@
 # CI
 #
 # 触发：
-#   - push / pull_request 到 main 或 dev：完整编译 + 测试（PR 与 push 共用）
+#   - push / pull_request 到 main：完整编译 + 测试（PR 与 push 共用）
 #   - workflow_call：被 release.yml 复用，保证发布版本经过与分支同等的编译/测试把关
 #   - workflow_dispatch：手动触发，用于本地预热 tongsuo 缓存或跑冒烟
+#
+# 故意不覆盖 dev：dev 是集成/开发分支，不承担 CI 责任。
+# dev 上的验证由开发者在本地 dotnet build / dotnet test 走完，合并前必须本地绿。
+# 也可手动用 workflow_dispatch 跑一次确认。
 #
 # 包发布由独立的 release.yml 负责；本 workflow 仅在 push（不含 PR）时把 nupkg 写到
 # ./artifacts/ 作为本地兜底，**不**推送到 nuget.org。
@@ -12,9 +16,9 @@ name: CI
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "dev"]
+    branches: ["main"]
   workflow_call:
   workflow_dispatch:
 

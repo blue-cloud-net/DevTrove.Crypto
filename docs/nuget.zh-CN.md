@@ -152,7 +152,7 @@ CI 拆为两个 workflow，使分支检查与 tag 触发的发布相互独立、
 
 | Workflow | 触发 | 动作 |
 |---|---|---|
-| `.github/workflows/ci.yml` | `main` / `dev` 的 `push` / `pull_request`，外加 `workflow_call` 与 `workflow_dispatch` | 构建 + 测试；仅 `push`（非 PR）时打包至 `./artifacts/`（**不**推 nuget.org） |
+| `.github/workflows/ci.yml` | 仅 `main` 的 `push` / `pull_request`，外加 `workflow_call` 与 `workflow_dispatch` | 构建 + 测试；仅 `push`（非 PR）时打包至 `./artifacts/`（**不**推 nuget.org） |
 | `.github/workflows/release.yml` | `v*` 标签 `push` | 校验不变量 → 重跑 CI → 重新打包 + 推 nuget.org + 创建 GitHub Release |
 
 #### 版本守卫（`release.yml` / `verify-version`）
