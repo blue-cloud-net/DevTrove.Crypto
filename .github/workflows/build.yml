@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+
+      - name: Generate PFX test fixtures (required before test)
+        run: ./scripts/generate-test-pfx.sh
+
+      - name: Restore
+        run: dotnet restore DevTrove.Crypto.slnx
+
+      - name: Build
+        run: dotnet build DevTrove.Crypto.slnx --no-restore -c Release
+
+      - name: Test (core, non-integration)
+        run: dotnet test DevTrove.Crypto.slnx --no-build -c Release --filter 'Category!=Integration' --collect:"XPlat Code Coverage"
+
+      - name: Test (interop, requires openssl)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y openssl
+          openssl version
+          dotnet test DevTrove.Crypto.slnx --no-build -c Release --filter 'Category=Integration'
+
+      - name: Pack Core (artifacts only, not pushed here)
+        if: github.event_name != 'pull_request'
+        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj --no-build -c Release -o ./artifacts
+
+      - name: Pack Metapackage (artifacts only, not pushed here)
+        if: github.event_name != 'pull_request'
+        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj --no-build -c Release -o ./artifacts
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: nuget
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Pack Core
+        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts --no-build
+
+      - name: Pack Metapackage
+        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -o ./artifacts --no-build
+
+      # 发布顺序：Core 先，Crypto 后（Crypto 通过 ProjectReference 自动依赖 Core，但需 Core 已存在于源）
+      - name: Push Core
+        run: dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Push Metapackage
+        run: dotnet nuget push ./artifacts/DevTrove.Crypto.*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

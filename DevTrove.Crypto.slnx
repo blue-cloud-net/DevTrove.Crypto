@@ -1,0 +1,29 @@
+<Solution>
+  <Name>DevTrove.Crypto</Name>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/docs/">
+    <File Path="docs\roadmap.md" />
+    <File Path="docs\architecture.md" />
+    <File Path="docs\development-guide.md" />
+    <File Path="docs\v0.1\core-roadmap.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj" />
+    <Project Path="src/DevTrove.Crypto/DevTrove.Crypto.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DevTrove.Crypto.Core.Tests/DevTrove.Crypto.Core.Tests.csproj" />
+    <Project Path="tests/DevTrove.Crypto.TestSupport/DevTrove.Crypto.TestSupport.csproj" />
+  </Folder>
+</Solution>

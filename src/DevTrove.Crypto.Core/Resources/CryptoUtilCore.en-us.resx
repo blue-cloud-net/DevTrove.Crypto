@@ -1,0 +1,320 @@
+﻿<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    
+    <!-- CertificatePolicy -->
+    <data name="CertificatePolicy_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="CertificatePolicy_AnyPolicy" xml:space="preserve">
+        <value>Any Policy</value>
+    </data>
+    <data name="CertificatePolicy_DomainValidated" xml:space="preserve">
+        <value>Domain Validated (DV)</value>
+    </data>
+    <data name="CertificatePolicy_OrganizationValidated" xml:space="preserve">
+        <value>Organization Validated (OV)</value>
+    </data>
+    <data name="CertificatePolicy_ExtendedValidation" xml:space="preserve">
+        <value>Extended Validation (EV)</value>
+    </data>
+    <data name="CertificatePolicy_MicrosoftDocumentSigning" xml:space="preserve">
+        <value>Microsoft Document Signing</value>
+    </data>
+    
+    <!-- CrlReason -->
+    <data name="CrlReason_Unspecified" xml:space="preserve">
+        <value>Unspecified</value>
+    </data>
+    <data name="CrlReason_KeyCompromise" xml:space="preserve">
+        <value>Key Compromise</value>
+    </data>
+    <data name="CrlReason_CACompromise" xml:space="preserve">
+        <value>CA Compromise</value>
+    </data>
+    <data name="CrlReason_AffiliationChanged" xml:space="preserve">
+        <value>Affiliation Changed</value>
+    </data>
+    <data name="CrlReason_Superseded" xml:space="preserve">
+        <value>Superseded</value>
+    </data>
+    <data name="CrlReason_CessationOfOperation" xml:space="preserve">
+        <value>Cessation of Operation</value>
+    </data>
+    <data name="CrlReason_CertificateHold" xml:space="preserve">
+        <value>Certificate Hold</value>
+    </data>
+    <data name="CrlReason_RemoveFromCrl" xml:space="preserve">
+        <value>Remove from CRL</value>
+    </data>
+    <data name="CrlReason_PrivilegeWithdrawn" xml:space="preserve">
+        <value>Privilege Withdrawn</value>
+    </data>
+    <data name="CrlReason_AACompromise" xml:space="preserve">
+        <value>AA Compromise</value>
+    </data>
+    
+    <!-- ExtendedKeyUsage -->
+    <data name="ExtendedKeyUsage_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="ExtendedKeyUsage_ServerAuthentication" xml:space="preserve">
+        <value>Server Authentication</value>
+    </data>
+    <data name="ExtendedKeyUsage_ClientAuthentication" xml:space="preserve">
+        <value>Client Authentication</value>
+    </data>
+    <data name="ExtendedKeyUsage_CodeSigning" xml:space="preserve">
+        <value>Code Signing</value>
+    </data>
+    <data name="ExtendedKeyUsage_EmailProtection" xml:space="preserve">
+        <value>Email Protection</value>
+    </data>
+    <data name="ExtendedKeyUsage_IpsecEndSystem" xml:space="preserve">
+        <value>IPsec End System</value>
+    </data>
+    <data name="ExtendedKeyUsage_IpsecTunnel" xml:space="preserve">
+        <value>IPsec Tunnel</value>
+    </data>
+    <data name="ExtendedKeyUsage_IpsecUser" xml:space="preserve">
+        <value>IPsec User</value>
+    </data>
+    <data name="ExtendedKeyUsage_TimeStamping" xml:space="preserve">
+        <value>Time Stamping</value>
+    </data>
+    <data name="ExtendedKeyUsage_OcspSigning" xml:space="preserve">
+        <value>OCSP Signing</value>
+    </data>
+    <data name="ExtendedKeyUsage_Dvcs" xml:space="preserve">
+        <value>Data Validation and Certification Server</value>
+    </data>
+    <data name="ExtendedKeyUsage_SbgpCertificate" xml:space="preserve">
+        <value>Secure BGP Certificate</value>
+    </data>
+    <data name="ExtendedKeyUsage_EapOverPpp" xml:space="preserve">
+        <value>EAP over PPP</value>
+    </data>
+    <data name="ExtendedKeyUsage_EapOverLan" xml:space="preserve">
+        <value>EAP over LAN</value>
+    </data>
+    <data name="ExtendedKeyUsage_SshClient" xml:space="preserve">
+        <value>SSH Client</value>
+    </data>
+    <data name="ExtendedKeyUsage_SshServer" xml:space="preserve">
+        <value>SSH Server</value>
+    </data>
+    <data name="ExtendedKeyUsage_DocumentSigning" xml:space="preserve">
+        <value>Document Signing</value>
+    </data>
+    <data name="ExtendedKeyUsage_AnyPurpose" xml:space="preserve">
+        <value>Any Purpose</value>
+    </data>
+    <data name="ExtendedKeyUsage_SmartCardLogon" xml:space="preserve">
+        <value>Smart Card Logon</value>
+    </data>
+    
+    <!-- GeneralNameType -->
+    <data name="GeneralNameType_Unknown" xml:space="preserve">
+        <value>Unknown</value>
+    </data>
+    <data name="GeneralNameType_OtherName" xml:space="preserve">
+        <value>Other Name</value>
+    </data>
+    <data name="GeneralNameType_Rfc822Name" xml:space="preserve">
+        <value>RFC 822 Name</value>
+    </data>
+    <data name="GeneralNameType_DnsName" xml:space="preserve">
+        <value>DNS Name</value>
+    </data>
+    <data name="GeneralNameType_X400Address" xml:space="preserve">
+        <value>X.400 Address</value>
+    </data>
+    <data name="GeneralNameType_DirectoryName" xml:space="preserve">
+        <value>Directory Name</value>
+    </data>
+    <data name="GeneralNameType_EdiPartyName" xml:space="preserve">
+        <value>EDI Party Name</value>
+    </data>
+    <data name="GeneralNameType_UniformResourceIdentifier" xml:space="preserve">
+        <value>Uniform Resource Identifier</value>
+    </data>
+    <data name="GeneralNameType_IPAddress" xml:space="preserve">
+        <value>IP Address</value>
+    </data>
+    <data name="GeneralNameType_RegisteredID" xml:space="preserve">
+        <value>Registered ID</value>
+    </data>
+    
+    <!-- KeyUsage -->
+    <data name="KeyUsage_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="KeyUsage_DigitalSignature" xml:space="preserve">
+        <value>Digital Signature</value>
+    </data>
+    <data name="KeyUsage_NonRepudiation" xml:space="preserve">
+        <value>Non Repudiation</value>
+    </data>
+    <data name="KeyUsage_KeyEncipherment" xml:space="preserve">
+        <value>Key Encipherment</value>
+    </data>
+    <data name="KeyUsage_DataEncipherment" xml:space="preserve">
+        <value>Data Encipherment</value>
+    </data>
+    <data name="KeyUsage_KeyAgreement" xml:space="preserve">
+        <value>Key Agreement</value>
+    </data>
+    <data name="KeyUsage_KeyCertSign" xml:space="preserve">
+        <value>Key Cert Sign</value>
+    </data>
+    <data name="KeyUsage_CrlSign" xml:space="preserve">
+        <value>CRL Sign</value>
+    </data>
+    <data name="KeyUsage_EncipherOnly" xml:space="preserve">
+        <value>Encipher Only</value>
+    </data>
+    <data name="KeyUsage_DecipherOnly" xml:space="preserve">
+        <value>Decipher Only</value>
+    </data>
+    
+    <!-- Exception Messages: InvalidOperationException -->
+    <data name="Error_CannotParsePemKey" xml:space="preserve">
+        <value>Cannot parse key from PEM</value>
+    </data>
+    <data name="Error_InvalidKeyInPem" xml:space="preserve">
+        <value>PEM does not contain a valid key</value>
+    </data>
+    <data name="Error_CannotParsePrivateKeyFromDer" xml:space="preserve">
+        <value>Cannot parse key from DER, format is not valid.</value>
+    </data>
+    <data name="Error_CannotParsePrivateKeyFromPem" xml:space="preserve">
+        <value>Cannot parse private key from PEM</value>
+    </data>
+    <data name="Error_InvalidPrivateKeyInPem" xml:space="preserve">
+        <value>PEM does not contain a valid private key</value>
+    </data>
+    <data name="Error_CannotParsePublicKeyFromPem" xml:space="preserve">
+        <value>Cannot parse public key from PEM</value>
+    </data>
+    <data name="Error_InvalidPublicKeyInPem" xml:space="preserve">
+        <value>PEM does not contain a valid public key</value>
+    </data>
+    <data name="Error_CannotParseCsrFromPem" xml:space="preserve">
+        <value>Cannot parse PEM format CSR.</value>
+    </data>
+    <data name="Error_CannotParseCrlFromPem" xml:space="preserve">
+        <value>Cannot parse PEM format CRL.</value>
+    </data>
+    <data name="Error_CannotParseCertificateFromPem" xml:space="preserve">
+        <value>Cannot parse PEM format certificate</value>
+    </data>
+    
+    <!-- Exception Messages: ArgumentException -->
+    <data name="Error_KeyNotPrivate" xml:space="preserve">
+        <value>Provided key is not a private key.</value>
+    </data>
+    <data name="Error_UnknownEcCurve" xml:space="preserve">
+        <value>Unknown EC curve: {0}</value>
+    </data>
+    <data name="Error_KeyNotPublic" xml:space="preserve">
+        <value>Provided key is not a public key</value>
+    </data>
+    <data name="Error_UnsupportedHashAlgorithm" xml:space="preserve">
+        <value>Unsupported hash algorithm: {0}</value>
+    </data>
+    <data name="Error_InputDataCannotBeEmpty" xml:space="preserve">
+        <value>Input data cannot be empty.</value>
+    </data>
+    <data name="Error_DestinationBufferTooShort" xml:space="preserve">
+        <value>Destination buffer is too short.</value>
+    </data>
+    <data name="Error_StreamDoesNotSupportReading" xml:space="preserve">
+        <value>Stream does not support reading.</value>
+    </data>
+    <data name="Error_InvalidKeySize" xml:space="preserve">
+        <value>Specified key is not a valid size for this algorithm. Expected {0} bytes.</value>
+    </data>
+    <data name="Error_InvalidIVSize" xml:space="preserve">
+        <value>Specified initialization vector (IV) does not match the block size for this algorithm. Expected {0} bytes.</value>
+    </data>
+    <data name="Error_InvalidCiphertextLength" xml:space="preserve">
+        <value>Invalid ciphertext length</value>
+    </data>
+    <data name="Error_InvalidC1PointFormat" xml:space="preserve">
+        <value>Invalid C1 point format</value>
+    </data>
+    <data name="Error_InvalidAsn1SM2CiphertextStructure" xml:space="preserve">
+        <value>Invalid ASN.1 SM2 ciphertext structure</value>
+    </data>
+    <data name="Error_InputBufferTooSmall" xml:space="preserve">
+        <value>Input buffer too small</value>
+    </data>
+    <data name="Error_OutputBufferTooSmall" xml:space="preserve">
+        <value>Output buffer too small</value>
+    </data>
+    <data name="Error_SignatureCannotBeEmpty" xml:space="preserve">
+        <value>Signature cannot be empty.</value>
+    </data>
+    
+    <!-- Exception Messages: CryptographicException -->
+    <data name="Error_InvalidCipherMode" xml:space="preserve">
+        <value>Specified cipher mode is not valid for this algorithm: {0}</value>
+    </data>
+    <data name="Error_InvalidPaddingMode" xml:space="preserve">
+        <value>Specified padding mode is not valid for this algorithm: {0}</value>
+    </data>
+    <data name="Error_PublicKeyNotInitialized" xml:space="preserve">
+        <value>Key pair not initialized or public key not imported.</value>
+    </data>
+    <data name="Error_PrivateKeyNotInitialized" xml:space="preserve">
+        <value>Key pair not initialized or private key not imported.</value>
+    </data>
+    <data name="Error_NotSm2PublicKey" xml:space="preserve">
+        <value>Not an SM2 public key.</value>
+    </data>
+    <data name="Error_NotSm2PrivateKey" xml:space="preserve">
+        <value>Not an SM2 private key.</value>
+    </data>
+    <data name="Error_PrivateKeyNotAvailableForSigning" xml:space="preserve">
+        <value>Private key not available for signing.</value>
+    </data>
+    <data name="Error_PublicKeyNotAvailableForVerification" xml:space="preserve">
+        <value>Public key not available for verification.</value>
+    </data>
+    <data name="Error_PublicKeyNotAvailableForEncryption" xml:space="preserve">
+        <value>Public key not available for encryption.</value>
+    </data>
+    <data name="Error_PrivateKeyNotAvailableForDecryption" xml:space="preserve">
+        <value>Private key not available for decryption.</value>
+    </data>
+    <data name="Error_CipherModeNotSupported" xml:space="preserve">
+        <value>Cipher mode not supported: {0}</value>
+    </data>
+    <data name="Error_PaddingModeNotSupported" xml:space="preserve">
+        <value>Padding mode not supported: {0}</value>
+    </data>
+    <data name="Error_KeyNotSet" xml:space="preserve">
+        <value>Key is not set.</value>
+    </data>
+    <data name="Error_CryptographicOperationFailed" xml:space="preserve">
+        <value>Error occurred during cryptographic operation.</value>
+    </data>
+    
+    <!-- Exception Messages: NotSupportedException -->
+    <data name="Error_CannotExtractPublicKeyFromPrivateKeyType" xml:space="preserve">
+        <value>Cannot extract public key from {0} type private key</value>
+    </data>
+    <data name="Error_UnsupportedPrivateKeyType" xml:space="preserve">
+        <value>Unsupported private key type: {0}</value>
+    </data>
+</root>
