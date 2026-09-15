@@ -10,8 +10,8 @@ This document describes the design of `DevTrove.Crypto.Tls`: capability boundari
 
 | Level | Content | This project |
 |---|---|---|
-| **L1** | Protocol version matrix, cipher-suite matrix, extension fingerprint, server-sent certificate chain, negotiated groups & signature algorithms | ✅ Scheduled (`0.4.0`) |
-| **L2** | L1 + A–F grading, client-simulation compatibility matrix, ALPN/HTTP2, certificate transparency, DNS CAA | ✅ Scheduled (`0.5.0`) |
+| **L1** | Protocol version matrix, cipher-suite matrix, extension fingerprint, server-sent certificate chain, negotiated groups & signature algorithms | ✅ Scheduled (`0.6.0`) |
+| **L2** | L1 + A–F grading, client-simulation compatibility matrix, ALPN/HTTP2, certificate transparency, DNS CAA | ✅ Scheduled (`0.7.0`) |
 | **L3** | L2 + vulnerability probing (Heartbleed, CCS Injection, ROBOT, Ticketbleed, etc.) | ❌ Only ROBOT (see §9.3) |
 
 This document owns the **design**. The **schedule and per-item status** live in [roadmap.md](roadmap.md) §6.17 and §6.18.
@@ -161,7 +161,7 @@ BouncyCastle **already has** these elements:
 | Signature schemes | SM2 (`sm2sig_sm3`) |
 | Curves | `curveSM2`, plus hybrid `curveSM2MLKEM768` |
 
-So RFC 8998 **theoretically supports a full handshake** (not only detection). The verification item is `RM-0.5.0-08`; if it proves feasible, SM2-TLS 1.3 lands in the `TlsProbe` engine.
+So RFC 8998 **theoretically supports a full handshake** (not only detection). The verification item is `RM-0.7.0-08`; if it proves feasible, SM2-TLS 1.3 lands in the `TlsProbe` engine.
 
 ### 8.2 NTLS / GB/T 38636 — dual-certificate ShangMi TLS
 
