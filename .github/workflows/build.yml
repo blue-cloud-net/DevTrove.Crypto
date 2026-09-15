@@ -7,8 +7,44 @@ on:
     branches: ["main", "dev"]
 
 jobs:
+  tongsuo:
+    # RM-0.0.9f：从源码编译 tongsuo，pin 版本并缓存产物，集成阶段必跑。
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore apt build deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential git cmake perl libssl-dev
+
+      # Tongsuo 编译产物按 OS+版本缓存；命中则秒级恢复
+      - name: Cache tongsuo build
+        id: cache-tongsuo
+        uses: actions/cache@v4
+        with:
+          path: /opt/tongsuo
+          key: tongsuo-${{ runner.os }}-v8.4.0
+          restore-keys: |
+            tongsuo-${{ runner.os }}-
+
+      - name: Build & install tongsuo
+        if: steps.cache-tongsuo.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch 8.4.0 https://github.com/Tongsuo-Project/Tongsuo.git /tmp/tongsuo
+          cd /tmp/tongsuo
+          ./config --prefix=/opt/tongsuo enable-ntls enable-sm2 enable-sm3 enable-sm4
+          make -j"$(nproc)"
+          sudo make install
+          /opt/tongsuo/bin/tongsuo version
+
+      - name: Export TONGSUO_PATH
+        run: echo "TONGSUO_PATH=/opt/tongsuo/bin/tongsuo" >> "$GITHUB_ENV"
+
   build:
     runs-on: ubuntu-latest
+    needs: tongsuo
 
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +58,8 @@ jobs:
             10.x
 
       - name: Generate PFX test fixtures (required before test)
+        env:
+          TONGSUO_PATH: /opt/tongsuo/bin/tongsuo
         run: ./scripts/generate-test-pfx.sh
 
       - name: Restore
@@ -33,11 +71,11 @@ jobs:
       - name: Test (core, non-integration)
         run: dotnet test DevTrove.Crypto.slnx --no-build -c Release --filter 'Category!=Integration' --collect:"XPlat Code Coverage"
 
-      - name: Test (interop, requires openssl)
+      - name: Test (interop, requires tongsuo)
+        env:
+          TONGSUO_PATH: /opt/tongsuo/bin/tongsuo
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y openssl
-          openssl version
+          $TONGSUO_PATH version
           dotnet test DevTrove.Crypto.slnx --no-build -c Release --filter 'Category=Integration'
 
       - name: Pack Core (artifacts only, not pushed here)
