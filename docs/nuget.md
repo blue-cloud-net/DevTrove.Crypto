@@ -14,9 +14,9 @@ This document describes the package boundaries, versioning strategy and release 
 | `DevTrove.Crypto.Core` | this repo | **Implementation**: BouncyCastle wrapper — algorithms, keys, ASN.1, X.509, CSR, PKCS#7/#12, CRL, OCSP parse | same as above |
 | `DevTrove.Crypto.Tls` | this repo | TLS probe engine: protocol / cipher-suite matrices, extension parsing, grading, raw-byte probing | same as above |
 
-**Note**: applications (the parent `DevTrove` repository and any external consumer) are **not** published — they are `IsPackable=false`.
+**Note**: applications that consume this library are **not** published — they are `IsPackable=false`. This document covers only the packages produced by this repository.
 
-> **Known deviation** (roadmap B1): Core currently targets `net8.0;net9.0;net10.0` (3 TFM). The 5-TFM strategy is the planned target; the metapackage today is `net10.0` only. Until both are unified, `dotnet build DevTrove.Crypto.slnx -c Release` fails with `NU1201`.
+> **Known deviation** (`RM-0.0.1`): the three framework declarations disagree — `Directory.Build.props` sets five, Core overrides to `net8.0;net9.0;net10.0` and the metapackage pins `net10.0`. Until they are unified, packed output cannot be trusted. See also `RM-0.0.11` for the `netstandard` targets.
 
 ---
 
@@ -26,7 +26,7 @@ This document describes the package boundaries, versioning strategy and release 
 |---|---|
 | 1 | **Data-format layer separate from network-protocol layer**: `DevTrove.Crypto` handles data only; never does network access |
 | 2 | **`DevTrove.Crypto.Tls` depends on `DevTrove.Crypto`**, no duplicate ASN.1 / X.509 / PKCS parsing |
-| 3 | **Library has no application dependency**: `DevTrove.Crypto.Tls` ships its own result models, does not reference `DevTrove.Core` |
+| 3 | **No application dependency**: `DevTrove.Crypto.Tls` ships its own result models and depends only on `DevTrove.Crypto` |
 | 4 | **Zero framework dependencies**: no DI, logging, ASP.NET Core; logging is the caller's responsibility |
 | 5 | **Metapackage / implementation split**: consumers reference `DevTrove.Crypto`; `DevTrove.Crypto.Core` is pulled in transitively and may be swapped without breaking the public contract |
 | 6 | **Pure-managed**: no native dependencies, no `runtimes/<rid>/native` packaging |
@@ -45,9 +45,9 @@ flowchart LR
 
 ## 3. Versioning
 
-### 3.1 Independent versions
+### 3.1 One version per milestone
 
-The three packages have **independent version numbers**, not tied to the application's version.
+The three packages **share a single version number per milestone**. There is no separate version per package: a milestone either ships all of them or ships only those that already exist (`DevTrove.Crypto.Tls` first appears in `0.4.0`).
 
 | Scenario | Version action |
 |---|---|
@@ -55,6 +55,8 @@ The three packages have **independent version numbers**, not tied to the applica
 | Bug fix | Patch bump |
 | Breaking change | Major bump (before `1.0.0`, breaking changes are allowed in Minor, but must be highlighted in CHANGELOG) |
 | Doc / comment only | No bump (or noted in Patch) |
+
+Version numbers are independent of any consumer's version. See [roadmap.md §3](roadmap.md) for the milestone list.
 
 ### 3.2 Dependency version declaration
 
@@ -71,9 +73,9 @@ The three packages have **independent version numbers**, not tied to the applica
 
 Early versions use `-dev` / `-preview` suffixes (e.g. `0.3.0-dev`) to avoid being referenced in production.
 
-### 3.4 Library version start
+### 3.4 Where the version line starts
 
-`0.0.1-dev` → iterate as `0.0.X-dev` → `0.1.0` once capability is complete. Breaking changes are allowed in `0.x` but must be flagged in CHANGELOG.
+`0.0.1`–`0.0.13` are **work-item numbers only**: they are never packaged, tagged or published. The first real release is `0.1.0`. Breaking changes are allowed throughout `0.x` but must be flagged in CHANGELOG. See [roadmap.md §3](roadmap.md).
 
 ---
 
@@ -97,6 +99,8 @@ Each publishable package **must** declare the following in `Directory.Build.prop
 | `IsPackable` | `true` |
 
 **Recommendation**: enable SourceLink so consumers can jump straight to the source.
+
+> **Known deviation** (`RM-0.0.4`): `<Version>`, `<PackageId>` and SourceLink are **not** declared anywhere today, even though the table above calls them mandatory. Packing without `<Version>` silently produces a `1.0.0` package.
 
 ### Common mistakes
 
@@ -130,7 +134,7 @@ netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0
 - Restoring this target enables compilation paths that are currently excluded — **probe first**.
 - The test matrix must cover this target (at least build success).
 
-> Today Core targets 3 TFM and the metapackage 1 TFM; see [roadmap.md §7 B1](roadmap.md) for the planned 5-TFM form and the `Compat/` polyfill (B3).
+> The two `netstandard` targets **have never produced an assembly** (`RM-0.0.11`). Until that is fixed, packaging yields a three-framework package, regardless of what the table above says.
 
 ---
 
@@ -160,7 +164,7 @@ Produces `*.nupkg` + `*.snupkg`.
 
 NuGet doesn't support atomic multi-package publishing. New versions should **publish the dependency first**, then update consumers, or follow the order above in CI to avoid "dependency bumped but dependency not yet published" windows.
 
-> **Known deviation** (roadmap B7): the `publish` job in `.github/workflows/build.yml` currently runs `dotnet pack ... --no-build` without a preceding `dotnet build`, and the push step globs `DevTrove.Crypto.*.nupkg` which double-matches the Core package. Both are tracked for fix.
+> **Known deviation** (`RM-0.0.6`): the `publish` job in `.github/workflows/build.yml` currently runs `dotnet pack ... --no-build` without a preceding `dotnet build`, and the push step globs `DevTrove.Crypto.*.nupkg`, which also matches the Core package.
 
 ### 6.3 Key management
 
@@ -210,17 +214,14 @@ dotnet add package DevTrove.Crypto.Tls # TLS probe (auto-pulls DevTrove.Crypto)
 
 ---
 
-## 10. Cross-repo working
+## 10. Consuming the packages
 
 | Scenario | Practice |
 |---|---|
-| Dual-repo development | Work in `lib/Crypto` (single submodule); toggle to `ProjectReference` via conditional property |
-| Release | Conditional property toggles to `PackageReference`, restore from nuget.org |
-| Local un-published version coupling | Local NuGet feed (folder or local feed) |
+| Referencing the packages | Add a `PackageReference` to `DevTrove.Crypto` (or `DevTrove.Crypto.Tls` for probing); the version constraint uses a lower bound, e.g. `[0.1.0, )` |
+| Working against an unreleased build | Publish to a local folder feed and point the consumer at it |
 
-**Note**: `ProjectReference` cannot automatically convert to a NuGet dependency. If `ProjectReference` is still in use at pack time, the produced package will be missing the `DevTrove.Crypto` dependency declaration and consumers will fail to restore. **Packaging must use `PackageReference` mode.**
-
-> Today the conditional switch is not implemented (roadmap B6); packaging produces incomplete dependency metadata. Plan: introduce the switch before first stable release.
+How a consumer wires up project references versus package references is a consumer-side decision and is deliberately not covered here. **Note**: a `ProjectReference` does not turn into a NuGet dependency — a package must be built from `PackageReference` metadata, or its dependency declaration will be missing and consumers will fail to restore.
 
 ---
 
@@ -230,6 +231,6 @@ dotnet add package DevTrove.Crypto.Tls # TLS probe (auto-pulls DevTrove.Crypto)
 |---|---|
 | [architecture.md](architecture.md) | Package layering, dependency direction, capability boundaries |
 | [standards.md](standards.md) | Engineering files + metadata conventions |
-| [roadmap.md](roadmap.md) | Phase A library transformation tasks |
+| [roadmap.md](roadmap.md) | Version line, per-item status and evidence |
 | [development-guide.md](development-guide.md) | Build / test / pack commands |
 | [library-api.md](library-api.md) | Public API index |

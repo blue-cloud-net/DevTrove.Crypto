@@ -8,7 +8,7 @@
 
 ## [未发布]
 
-### 变更（进行中：父仓路线图 Phase A）
+### 变更（仅库化重构）
 
 - **重命名**：项目目录、程序集名、命名空间 `Crypto.Utils.*` → `DevTrove.Crypto.*`
 - **删除**：`Crypto.Utils.Api`、`Crypto.Utils.Host`、`Crypto.Utils.UI`、相关 NuGet 包、旧 HTTP API 文档（`docs/api-reference.md`、`docs/v0.2/*`、`docs/v1.x/*`）
@@ -24,8 +24,13 @@
 
 ### 已知限制
 
-- L1：证书链**验证**为精简实现（DN 比对 + 逐级验签 + 信任根匹配），**非 PKIX 完整路径校验** —— v1.1 升级
-- L2：证书链**构建**对互相签发的构造输入可能不终止 —— v1.1 修复
-- L3：OCSP **仅解析响应**（不构造请求、不验证签名） —— v2 评估
+能力缺口（证书链验证、OCSP、PKCS#7、KDF、MAC、Ed25519 / X25519）与会长期保留的限制见 [docs/architecture.md §7](docs/architecture.md)。`0.0.x` 是工作项编号而非版本；逐项状态见 [docs/roadmap.md](docs/roadmap.md)。
+
+### 文档
+
+- 整套文档按**独立库**口径重写：删除全部「库如何被消费、被谁消费」的描述，把阶段路线换成版本线，并引入逐项状态追踪（`✅` / `🚧` / `🟡` / `⬜`）
+- 在 `docs/architecture.md §1` 补上明确的目标集（纯托管、跨平台、AOT 友好、宽兼容面）
+- 修正与代码不符的宣称：OCSP 解析、PKCS#7/CMS、证书链构建与验证、`SM4` 的 CTR/GCM **均未实现**；两个 `netstandard` 目标从未产出程序集
+- 把代码风格配置的矛盾（`.editorconfig` vs `docs/standards.md §2.4`）记入台账
 
 [未发布]: https://github.com/blue-cloud-net/DevTrove.Crypto/compare/main...HEAD

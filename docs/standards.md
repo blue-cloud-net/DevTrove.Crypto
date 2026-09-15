@@ -17,7 +17,7 @@ See [AGENTS.md](../AGENTS.md) §3 for the canonical language policy. Quick refer
 | `README.md` / `CHANGELOG.md` | **English (default entry)** |
 | `README.zh-CN.md` / `CHANGELOG.zh-CN.md` | **Chinese** |
 | `AGENTS.md` (this repo) | **Chinese** |
-| Code comments, XML doc comments | **Chinese** (i18n in [roadmap.md §7 B-cmnt](roadmap.md)) |
+| Code comments, XML doc comments | **Chinese** (internationalisation is not currently scheduled) |
 | Log messages | **English** |
 | Exception messages | **English, ending with a period** |
 | Identifiers | English |
@@ -36,7 +36,8 @@ See [AGENTS.md](../AGENTS.md) §3 for the canonical language policy. Quick refer
 | `Directory.Build.props` | Global build properties (TFM, nullability, language version, NuGet metadata) |
 | `Directory.Packages.props` | Central package version management (CPM) |
 | `.editorconfig` | Code style |
-| `.gitignore` / `.gitattributes` | Ignore rules + line endings |
+| `.gitignore` | Ignore rules |
+| `.gitattributes` | Line-ending normalisation — **not present yet**, see `RM-0.0.13` |
 | `AGENTS.md` | Entry point for agents / contributors: authoritative docs, hard constraints, pre-submission checks |
 
 ### 2.2 Central package management (CPM)
@@ -64,6 +65,8 @@ Each project writes `<PackageReference Include="..." />` only — **never** with
 <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 ```
 
+> **Known deviation** (`RM-0.0.3`): `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are documented here but are **not present** in `Directory.Build.props` today. Either the properties or this document must change — they cannot keep disagreeing.
+
 For library projects (`IsPackable=true`) additionally:
 
 ```xml
@@ -80,6 +83,8 @@ For library projects (`IsPackable=true`) additionally:
 | `*.{xml,csproj,props,targets,slnx}` | 2-space indent |
 | `*.{json,yml,yaml}` | 2-space indent |
 | `*.md` | Preserve trailing whitespace (Markdown line break semantics) |
+
+> **Known deviation** (`RM-0.0.13`): `.editorconfig` currently sets `end_of_line = crlf` and `insert_final_newline = false`, and defines no section for Markdown, XML, JSON or YAML. **This table is the source of truth** — the config file is rewritten to match it, not the other way round.
 
 ---
 
@@ -150,6 +155,17 @@ For library projects (`IsPackable=true`) additionally:
 - Avoid allocations inside loops; use `ArrayPool<T>` when needed.
 - String concatenation inside loops uses `StringBuilder`.
 
+### 3.8 Cryptography-specific constraints
+
+| Rule | Reason |
+|---|---|
+| Do **not** derive from `SymmetricAlgorithm`, `HashAlgorithm`, `AsymmetricAlgorithm` or `HMAC` | `CipherMode` is a closed enum with no CTR and no AEAD concept, and the `netstandard` targets lack the `net8.0` virtuals — inheriting them ties the library's capability set to a target framework. Use the built-in abstractions and expose BCL interop through adapters (see [architecture.md §8](architecture.md), decision D20). |
+| BouncyCastle types must not appear in a public signature | The implementation has to stay replaceable; interop goes through the explicit extensions in `Interop/` (decision D21). |
+| Algorithm proxies are named `<Algorithm>Crypto` | One rule for every algorithm (decision D23). |
+| Key material is cleared on disposal | It must not outlive the object that owns it; see `SymmetricKey` in [roadmap.md](roadmap.md) §6.15. |
+| Prefer `Span<T>` on hot paths, but keep the `netstandard` targets buildable | `System.Memory` supplies spans there; guard anything that only exists on `net8.0` and later with `#if`. |
+| Code reachable from a trimmed or AOT-compiled consumer must avoid unannotated reflection | See `RM-0.0.12`. |
+
 ---
 
 ## 4. Naming
@@ -202,25 +218,24 @@ For library projects (`IsPackable=true`) additionally:
 - Structure: Arrange–Act–Assert, separated by blank lines.
 - One test verifies one behavior.
 - Test projects **mirror** the directory structure of the project under test.
-- Test fixtures live under `tests/data/`, accessed by relative path.
+- Test fixtures live under `tests/data/` and are accessed by relative path. That directory is **generated, never committed** (see [architecture.md §8](architecture.md), D18). Captured data that no script can produce goes to `tests/fixtures/`, which is version-controlled.
 - **Do not write** tests that only assert "does not throw".
-- Tests depending on external executables (`openssl`) have an explicit failure semantics (see [development-guide.md §5.2](development-guide.md)).
+- Tests depending on external executables (tongsuo) have explicit failure semantics (see [development-guide.md §5.2](development-guide.md)).
 
-> **Known deviation** (roadmap B11): the project uses xUnit 2.9.2 + FluentAssertions 6.12.1; upgrading to xUnit v3 is on the roadmap. TestSupport does not yet declare `net9.0`.
+> **Known deviation** (`RM-0.0.7`): the project uses xUnit 2.9.2 + FluentAssertions 6.12.1, and `DevTrove.Crypto.TestSupport` does not declare `net9.0` yet. An xUnit v3 upgrade is under consideration but is **not** currently scheduled.
 
 ---
 
-## 8. Submodule & cross-repo working mode
+## 8. Repository working mode
 
-This library lives as a submodule at `lib/Crypto` in the consuming `DevTrove` repository, tracking the `dev` branch. Working modes:
+This repository is **standalone**: it is developed, tested and released on its own, and nothing in it depends on how or where it is consumed.
 
 | Mode | How it works |
 |---|---|
-| Dual-repo development (recommended) | Edit `lib/Crypto` directly; the parent repository references it via `ProjectReference`. Conditional property in `Directory.Build.props` toggles between `ProjectReference` and `PackageReference` — typically `ProjectReference` is the default for the `dev` branch. |
-| Standalone | `dotnet build DevTrove.Crypto.slnx -c Release` works in this repo alone; tests + packaging run independently. |
-| Release | After CI green, tag `v*` to trigger the publish job (see [development-guide.md §6](development-guide.md)). |
+| Day-to-day | `dotnet build DevTrove.Crypto.slnx -c Release` and `dotnet test` run entirely inside this repository. |
+| Release | Once CI is green, push a `v*` tag to trigger the publish job (see [development-guide.md §6](development-guide.md)). |
 
-> **Known deviation** (roadmap B6): the `Directory.Build.props` conditional property toggle between `ProjectReference` and `PackageReference` is **planned but not yet implemented**. Today `ProjectReference` is used everywhere; packaging produces packages that may lack a `DevTrove.Crypto` `PackageReference`. See the roadmap for the planned form.
+How a consumer references the package — project reference, package reference or a local feed — is a consumer-side decision and is deliberately not covered here.
 
 ---
 
@@ -231,7 +246,7 @@ This library lives as a submodule at `lib/Crypto` in the consuming `DevTrove` re
 | Branch | Purpose |
 |---|---|
 | `main` | Stable branch, always buildable |
-| `dev` | Integration branch, submodule track target for the parent repo |
+| `dev` | Integration branch; pre-release work lands here before it reaches `main` |
 | `feature/<slug>` | Feature work |
 | `fix/<slug>` | Bug fixes |
 | `docs/<slug>` | Documentation-only changes |
@@ -259,12 +274,13 @@ One commit, one thing. No unrelated formatting changes mixed in.
 
 ### 9.3 Pre-submission checks
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` — known to fail with `NU1201` today (see roadmap B1, B2); warnings must be zero for new code.
+- `dotnet build DevTrove.Crypto.slnx -c Release` — expect failures until `RM-0.0.1` and `RM-0.0.11` land; warnings must be zero for new code.
 - `dotnet test DevTrove.Crypto.slnx -c Release` — green (or documented pre-existing failures).
 - New / modified public members have Chinese XML doc comments.
 - Touched `README.md` / `CHANGELOG.md` ⇒ sync the `.zh-CN.md`.
 - Touched `docs/*.md` ⇒ sync the matching `*.zh-CN.md` (sections, tables, Mermaid, code samples all 1:1).
-- Architecture / package / naming / mount path / TFM / test-strategy changes ⇒ sync **this repo's** `docs/*` and `.zh-CN.md` only. Do **not** reverse-sync the parent repo.
+- **Changed the status of any item in [roadmap.md](roadmap.md)** ⇒ update it in the same commit, in both language versions.
+- Architecture / package / naming / TFM / test-strategy changes ⇒ sync this repository's `docs/*` and `.zh-CN.md`.
 - Logs and exceptions contain **no** key material, passphrases or input plaintext.
 
 ---
@@ -272,6 +288,7 @@ One commit, one thing. No unrelated formatting changes mixed in.
 ## 10. Prohibited
 
 - ❌ Committing `bin/`, `obj/`, `artifacts/`, `.vs/`, `.vshistory/`, `*.pfx`
+- ❌ Forcing `tests/data/` into version control (it is generated; see D18)
 - ❌ Using `git add -A` / `git add .` (fixtures + residue easily miscommitted)
 - ❌ Writing English in `docs/` and skipping chapters in `*.zh-CN.md` (or vice versa)
 - ❌ Claiming capabilities that aren't implemented (docs must match code)

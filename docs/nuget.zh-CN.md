@@ -14,9 +14,9 @@
 | `DevTrove.Crypto.Core` | 本仓 | **实现**：BouncyCastle 封装、算法原语、密钥、ASN.1、X.509、CSR、PKCS#7/#12、CRL、OCSP 解析 | 同上 |
 | `DevTrove.Crypto.Tls` | 本仓 | TLS 探测引擎：协议 / 套件矩阵、扩展解析、评级、裸字节探测 | 同上 |
 
-**注意**：消费方（父仓 `DevTrove` 及任何外部使用者）**不发布**（`IsPackable=false`）。
+**注意**：消费本库的应用**不发布**（`IsPackable=false`）。本文档只涉及本仓产出的包。
 
-> **已知偏差**（roadmap B1）：Core 当前实为 3 TFM（`net8.0;net9.0;net10.0`），门包实为 `net10.0` 单 TFM。5 TFM 是目标态；两项目前未统一，导致 `dotnet build DevTrove.Crypto.slnx -c Release` 报 **NU1201**。
+> **已知偏差**（`RM-0.0.1`）：三处目标框架声明彼此不一致 —— `Directory.Build.props` 设 5 个，Core 覆盖为 `net8.0;net9.0;net10.0`，门包固定 `net10.0`。在它们统一之前，打包产物不可信。两个 `netstandard` 目标的现状见 `RM-0.0.11`。
 
 ---
 
@@ -26,7 +26,7 @@
 |---|---|
 | 1 | **数据格式层与网络协议层分离**：`DevTrove.Crypto` 只处理数据，不做任何网络访问 |
 | 2 | **`DevTrove.Crypto.Tls` 依赖 `DevTrove.Crypto`**，不重复实现 ASN.1 / X.509 / PKCS 解析 |
-| 3 | **核心库不依赖应用层**：`DevTrove.Crypto.Tls` 自带结果模型，不引用 `DevTrove.Core` |
+| 3 | **不依赖应用层**：`DevTrove.Crypto.Tls` 自带结果模型，只依赖 `DevTrove.Crypto` |
 | 4 | **核心库零框架依赖**：不引用 DI、日志、ASP.NET Core；日志由调用方决定 |
 | 5 | **门面包与实现包分离**：使用方引用 `DevTrove.Crypto`；`DevTrove.Crypto.Core` 作为其依赖被自动引入，将来可替换实现而不破坏外部契约 |
 | 6 | **纯托管**：不引入任何原生依赖，不打包 `runtimes/<rid>/native` |
@@ -45,9 +45,9 @@ flowchart LR
 
 ## 3. 版本策略
 
-### 3.1 独立版本
+### 3.1 每个里程碑一个版本号
 
-三个包**各自独立版本号**，不强制与应用程序版本一致。
+三个包**在每个里程碑内共用同一个版本号**，不存在每包独立版本：一个里程碑要么全部发布，要么只发布已经存在的包（`DevTrove.Crypto.Tls` 从 `0.4.0` 开始出现）。
 
 | 场景 | 版本动作 |
 |---|---|
@@ -71,9 +71,9 @@ flowchart LR
 
 早期版本使用 `-dev` / `-preview` 后缀（如 `0.3.0-dev`），避免被生产环境误引用。
 
-### 3.4 库的版本起点
+### 3.4 版本线起点
 
-`0.0.1-dev` → 按 `0.0.X-dev` 迭代 → 能力齐备后发 `0.1.0`。`0.x` 阶段允许破坏性变更，但必须在 CHANGELOG 中显著标注。
+`0.0.1`–`0.0.13` **仅为工作项编号**：不打包、不打 tag、不发布。首次真实发布为 `0.1.0`。`0.x` 期间允许破坏性变更，但必须在 CHANGELOG 中显著标注。见 [roadmap.md §3](roadmap.md)。
 
 ---
 
@@ -97,6 +97,8 @@ flowchart LR
 | `IsPackable` | `true` |
 
 **建议**：启用 SourceLink，使使用方可直接跳转到源码。
+
+> **已知偏差**（`RM-0.0.4`）：`<Version>`、`<PackageId>` 与 SourceLink **均未声明**，尽管上表称其为必需项。不写 `<Version>` 打包会静默产出 `1.0.0`。
 
 ### 常见错误
 
@@ -130,7 +132,7 @@ netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0
 - 恢复该目标后，此前被条件编译排除的文件会重新参与编译，**必须先单独实测**
 - 测试矩阵需覆盖该目标（至少构建通过）
 
-> 目前 Core 3 TFM、门包 1 TFM，详见 [roadmap.md §7 B1](roadmap.md)；`Compat/` polyfill 见 B3。
+> 两个 `netstandard` 目标**从未产出过程序集**（`RM-0.0.11`）。在修好之前，打包只能产出三个框架的包，与上表描述不符。
 
 ---
 
@@ -160,7 +162,7 @@ dotnet pack <project> -c Release -o ./artifacts --include-symbols
 
 由于 NuGet 不支持原子多包发布，新版本发布时应**先发包、后打标签**，或在 CI 中按上述顺序依次推送，避免出现"依赖已升级但被依赖的包尚未发布"的窗口期。
 
-> **已知偏差**（roadmap B7）：`.github/workflows/build.yml` 的 `publish` job 当前用 `dotnet pack ... --no-build`，但缺少先行的 `dotnet build`；推送步的 glob `DevTrove.Crypto.*.nupkg` 会重复匹配 Core 包。两者均列入修复跟踪。
+> **已知偏差**（`RM-0.0.6`）：`.github/workflows/build.yml` 的 `publish` job 当前用 `dotnet pack ... --no-build`，却缺少先行的 `dotnet build`；推送步的 glob `DevTrove.Crypto.*.nupkg` 也会匹配到 Core 包。
 
 ### 6.3 密钥管理
 
@@ -210,18 +212,14 @@ dotnet add package DevTrove.Crypto.Tls # TLS 探测能力（自动引入 DevTrov
 
 ---
 
-## 10. 跨仓开发
+## 10. 使用方如何引用
 
 | 场景 | 做法 |
 |---|---|
-| 开发期同时改动两仓 | 在应用仓 `lib/Crypto`（单一子模块）下工作，并通过条件属性切换为 `ProjectReference` |
-| 发布期 | 条件属性切换为 `PackageReference`，从 nuget.org 还原 |
-| 本地联调未发布版本 | 使用本地 NuGet 源（本地文件夹或本地 feed） |
-| 版本升级 | 先发布被依赖包，再更新消费方的 `PackageReference` 下界 |
+| 引用包 | 对 `DevTrove.Crypto`（探测能力则加 `DevTrove.Crypto.Tls`）加 `PackageReference`，版本约束用下界，例如 `[0.1.0, )` |
+| 联调未发布版本 | 发布到本地文件夹 feed，让消费方指向它 |
 
-**注意**：`ProjectReference` 无法自动转换为 NuGet 依赖。若在打包时仍使用 `ProjectReference`，生成的包会缺少对 `DevTrove.Crypto` 的依赖声明，导致使用方还原失败。因此**打包必须使用 `PackageReference` 模式**。
-
-> 当前条件切换未实现（roadmap B6）；打包产出的依赖元数据不完整。计划：在首次稳定版前引入切换。
+消费方如何在项目引用与包引用之间取舍，属消费方决策，本文档有意不涉及。**注意**：`ProjectReference` 不会自动变成 NuGet 依赖 —— 包必须基于 `PackageReference` 元数据产出，否则依赖声明缺失，使用方会还原失败。
 
 ---
 
@@ -231,6 +229,6 @@ dotnet add package DevTrove.Crypto.Tls # TLS 探测能力（自动引入 DevTrov
 |---|---|
 | [architecture.md](architecture.md) | 包在整体架构中的位置与依赖方向 |
 | [standards.md](standards.md) | 工程文件与元数据规范 |
-| [roadmap.md](roadmap.md) | Phase A 的库改造任务 |
+| [roadmap.md](roadmap.md) | 版本线、逐项状态与证据 |
 | [development-guide.md](development-guide.md) | 构建/测试/打包命令 |
 | [library-api.md](library-api.md) | 公开 API 索引 |

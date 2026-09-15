@@ -12,15 +12,15 @@ Build, test, pack, and CI conventions for `DevTrove.Crypto`.
 |---|---|
 | Build all (Release) | `dotnet build DevTrove.Crypto.slnx -c Release` |
 | Run all tests | `dotnet test DevTrove.Crypto.slnx -c Release` |
-| Run unit tests only (skip OpenSSL interop) | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` |
+| Run unit tests only (skip interop) | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category!=Integration'` |
 | Run interop tests only | `dotnet test DevTrove.Crypto.slnx -c Release --filter 'Category=Integration'` |
 | Pack Core | `dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts` |
 | Pack Metapackage | `dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -o ./artifacts` |
 | Generate PFX fixtures (CI also runs) | `./scripts/generate-test-pfx.sh` |
 
-External dependency: `openssl` 3.x. Tests fail (not skip) when it is missing.
+External dependency: **tongsuo**. Tests fail (not skip) when it is missing. See §5.2.
 
-> **Known deviation** (see [roadmap.md §7 B1, B2](roadmap.md)): `dotnet build DevTrove.Crypto.slnx -c Release` is currently broken with `NU1201` because of the TFM mismatch between the global props and the per-project csproj settings. Tracked in the roadmap.
+> **Known deviation** (`RM-0.0.1`, `RM-0.0.11`): the three target-framework declarations disagree, and the two `netstandard` targets have never produced an assembly. Expect build failures until those items land.
 
 ---
 
@@ -29,12 +29,12 @@ External dependency: `openssl` 3.x. Tests fail (not skip) when it is missing.
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto/         metapackage (no source — see roadmap B2)
+│  ├─ DevTrove.Crypto/         metapackage (no source — see roadmap `RM-0.0.2`)
 │  ├─ DevTrove.Crypto.Core/    implementation
-│  └─ DevTrove.Crypto.Tls/     TLS probe engine (Phase 0 scaffold)
+│  └─ DevTrove.Crypto.Tls/     TLS probe engine (planned, `0.4.0` — not present yet)
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
-│  └─ DevTrove.Crypto.TestSupport/   OpenSSL CLI helpers
+│  └─ DevTrove.Crypto.TestSupport/   CLI helpers (tongsuo)
 ├─ scripts/                     fixture generation
 ├─ .github/workflows/build.yml  CI
 ├─ Directory.Build.props        global build props + NuGet metadata
@@ -70,53 +70,25 @@ DevTrove.Crypto/
 <IncludeSymbols>true</IncludeSymbols>
 <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-<!-- Target frameworks (target = 5; current = 3 + 1) -->
+<!-- Target frameworks (declared in the baseline; every csproj must agree) -->
 <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
-Each csproj either inherits this baseline or overrides it (the Core project today overrides to 3 TFM, the metapackage to 1 — see roadmap B1).
+Each csproj either inherits this baseline or overrides it. Today Core overrides to three frameworks and the metapackage to one — the three declarations have to be unified (`RM-0.0.1`).
 
-### `netstandard2.0` polyfill
+### The `netstandard` targets
 
-Per roadmap B3, the `Compat/` polyfill directory **does not exist** today. The README claim that `netstandard2.0` missing APIs are polyfilled in `Compat/` is currently false.
+The two `netstandard` targets **have never produced an assembly**, and the story the README told about why was wrong twice over: the polyfill is not in a `Compat/` directory (it is `Extensions/ArgumentNullExceptionExtensions.cs`), and its guard `#if NETSTANDARD2_0` does not cover `netstandard2.1`. On top of that, `Convert.FromHexString`, `RandomNumberGenerator.GetBytes(int)` and `AsSpan` are used without guards on those targets.
 
-Decide:
-
-- **Drop `netstandard2.0`** from the global TargetFrameworks if no consumer needs it.
-- **Or create `Compat/`** with the required polyfills (`System.ComponentModel.Annotations` etc.) and document the list.
-
-Until this is resolved, the `[netstandard2.0]` build is not real.
+Both targets are **staying** — this is a NuGet library and the compatibility surface is part of the product. Work is tracked as `RM-0.0.11`.
 
 ---
 
-## 4. `ProjectReference` ↔ `PackageReference` switch
+## 4. Consumer-side integration (out of scope)
 
-> **Known deviation** (roadmap B6): the conditional property switch is **planned but not implemented**. Today every consumer uses `ProjectReference`; packaging produces packages whose dependency metadata is incomplete.
+How a consumer references the packages — `ProjectReference` during development, `PackageReference` from a feed, or a local folder feed for unreleased builds — is a consumer decision. This repository does not ship a switch for it and does not test one.
 
-The planned form:
-
-```xml
-<!-- Directory.Build.props -->
-<PropertyGroup>
-  <UseCryptoProjectRef Condition="'$(UseCryptoProjectRef)' == ''">true</UseCryptoProjectRef>
-</PropertyGroup>
-```
-
-```xml
-<!-- Consumer csproj -->
-<ItemGroup Condition="'$(UseCryptoProjectRef)' == 'true'">
-  <ProjectReference Include="..\..\..\lib\Crypto\src\DevTrove.Crypto\DevTrove.Crypto.csproj" />
-</ItemGroup>
-<ItemGroup Condition="'$(UseCryptoProjectRef)' != 'true'">
-  <PackageReference Include="DevTrove.Crypto" Version="[1.2.0, )" />
-</ItemGroup>
-```
-
-- Dev (default): `<UseCryptoProjectRef>true</UseCryptoProjectRef>` → `ProjectReference` to the submodule.
-- Pack / release: `<UseCryptoProjectRef>false</UseCryptoProjectRef>` → restore from nuget.org.
-- Local un-published version coupling: local NuGet feed (folder or local feed).
-
-**Why this matters**: `ProjectReference` cannot automatically convert to a NuGet dependency. If `ProjectReference` is still in use at pack time, the produced package will lack a `DevTrove.Crypto` dependency declaration and consumers will fail to restore.
+One consequence is worth stating because it bites at pack time: a `ProjectReference` does not turn into a NuGet dependency. A package built from project references will be missing its dependency declaration, and consumers will fail to restore. See [nuget.md §10](nuget.md).
 
 ---
 
@@ -133,25 +105,25 @@ The planned form:
 | Method naming | `Method_Should_Behavior_When_Condition` |
 | Structure | Arrange–Act–Assert, separated by blank lines |
 
-> **Known deviation** (roadmap B11): upgrading to xUnit v3 is on the roadmap. `DevTrove.Crypto.TestSupport.csproj` does not currently declare `net9.0`; once added, the integration filter `Category!=Integration` works for both `net9.0` and `net10.0`.
+> **Known deviation** (`RM-0.0.7`): `DevTrove.Crypto.TestSupport.csproj` does not declare `net9.0`, while the test project does. An xUnit v3 upgrade is under consideration but is not scheduled.
 
-### 5.2 `OpenSslCli`
+### 5.2 `TongsuoCli`
 
-Interop tests (key / certificate / CSR / CRL / PKCS#12 generation & parsing) depend on the `openssl` executable.
+Interop tests (key / certificate / CSR / CRL / PKCS#12 generation and parsing, plus the ShangMi family) shell out to **tongsuo**, an OpenSSL distribution that carries the Chinese national algorithms. It is the **only** external tool this repository depends on.
 
 | | |
 |---|---|
-| Override path | environment variable `OPENSSL_PATH` (the helper looks up default `openssl` on PATH) |
-| Version requirement | must support SM2 / SM3 / SM4 (OpenSSL 3.x) |
-| Purpose | (a) interop test: generate via OpenSSL → parse via this library (and reverse); (b) fixture fallback generation |
+| Override path | environment variable `TONGSUO_PATH` (default `/opt/tongsuo/bin/tongsuo`) |
+| Version requirement | a build supporting SM2 / SM3 / SM4 |
+| Purpose | (a) interop test: generate with tongsuo → parse with this library, and the reverse; (b) fallback generation for fixtures |
 
-**Removed national-crypto CLI dependency** (planned, roadmap B4): the design intent is to drop the `TongsuoCli` requirement and generate SM2 fixtures with OpenSSL. Currently `TongsuoCli.cs` is still in the tree and several `tests/data/*/README.md` files reference `scripts/generate-test-sm-certs.sh`, which **does not exist**. Until B4 is resolved, either restore the script or replace the references.
+**Upstream OpenSSL is no longer used.** Tongsuo is a fork and is command-compatible, but it is not the same implementation — so interoperability against upstream OpenSSL is no longer asserted. That trade-off is recorded as risk R2 in [roadmap.md §8](roadmap.md). An optional, non-blocking cross-check against upstream OpenSSL is the documented escape hatch. `RM-0.1.0-06` merges the former `OpenSslCli` helper into `TongsuoCli`.
 
 ### 5.3 Tools-missing behavior (important)
 
-The test base in `DevTrove.Crypto.TestSupport` is `CliToolGuard`: when an external tool is unavailable, tests **fail (Fail), not skip (Skip)**.
+The test base in `DevTrove.Crypto.TestSupport` is `CliToolGuard`: when the external tool is unavailable, tests **fail (Fail), not skip (Skip)**.
 
-This means: **the CI image must install `openssl`**, otherwise all interop tests fail.
+This means: **the CI image must provide tongsuo**, otherwise every interop test fails.
 
 This is an intentional trade-off:
 
@@ -160,18 +132,18 @@ This is an intentional trade-off:
 | ✅ Fail | Environment issues surface immediately; never "tests green but actually untested" |
 | ❌ Skip | Easy to mask issues; interop defects only show up post-release |
 
-If "no-openssl environment" support is needed in the future, use an **explicit test category** (e.g. `[Trait("RequiresOpenSsl", "true")]`) and filter by environment — never silently skip.
+If running tests without tongsuo is ever needed, use an **explicit test category** (e.g. `[Trait("RequiresTongsuo", "true")]`) and filter by environment — never silently skip.
 
 ### 5.4 Cross-validation (not in CI)
 
-Some scanner determinism checks must be compared against independent implementations. The following steps run **manually locally**, not in CI:
+Some scanner determinism checks have to be compared against independent implementations. The following steps run **manually and locally**, not in CI:
 
 1. Scan public test sites covering expired certs, self-signed certs, hostname mismatch, weak suites, no SNI, old-protocol-only
-2. Use `openssl s_client` to get the same target's protocol / suite / certificate chain
-3. Use `testssl.sh` to get the same target's verdict
+2. Use `tongsuo s_client` to get the same target's protocol, suite and certificate chain
+3. Optionally use `testssl.sh` to get the same target's verdict
 4. Triangulate; resolve each difference
 
-`testssl.sh` is GPLv2 — **never** ship it with this repo; only as an external cross-check tool during development.
+`testssl.sh` is GPLv2 — **never** ship it with this repository; it is an external cross-check tool only.
 
 ---
 
@@ -185,11 +157,13 @@ Some scanner determinism checks must be compared against independent implementat
 | Pull Request into `main` / `dev` | Build + test |
 | Push `v*` tag | Build + test + pack + publish (needs `NUGET_API_KEY` secret in the `nuget` environment) |
 
+> The workflow currently triggers on `main` only; the `dev` trigger is part of `RM-0.0.6`.
+
 Jobs:
 
 | Job | Purpose | Note |
 |---|---|---|
-| `build` | Build + unit tests + interop tests + coverage + pack to `artifacts/` | Runs on `ubuntu-latest` with .NET 8.x / 9.x / 10.x; installs `openssl` via `apt` for interop tests |
+| `build` | Build + unit tests + interop tests + coverage + pack to `artifacts/` | Runs on `ubuntu-latest` with .NET 8.x / 9.x / 10.x. Must build tongsuo (pinned version, cached) before the interop stage — see `RM-0.0.9` |
 | `publish` | Pack + push to nuget.org on tag | Tagged-triggered; needs `NUGET_API_KEY` |
 
 ### CI publish order
@@ -200,10 +174,12 @@ Jobs:
 
 NuGet does not support atomic multi-package publishing. To avoid "dependency bumped but not yet published" windows, either (a) **publish the dependency first**, then update the consumer, or (b) follow the order above in CI.
 
-### CI known deviations (roadmap B7)
+### CI known deviations (`RM-0.0.6`, `RM-0.0.9`)
 
-- `publish` job runs `dotnet pack ... --no-build` with no preceding `dotnet build` step. Add a `dotnet build` step in publish.
-- Push Metapackage glob `DevTrove.Crypto.*.nupkg` **double-matches** the Core package. Restrict to `DevTrove.Crypto.*[!Core]*.nupkg` or push by exact filename.
+- the `publish` job runs `dotnet pack ... --no-build` with no preceding `dotnet build` step
+- the metapackage push glob `DevTrove.Crypto.*.nupkg` also matches the Core package
+- the workflow triggers on `main` only, and `actions/checkout` still asks for `submodules: recursive` although this repository has none
+- tongsuo is not installed, so the integration stage fails on a clean runner
 
 ---
 
@@ -238,44 +214,50 @@ After pack, verify:
 
 ### 8.1 Layout
 
+`tests/data/` is **entirely generated and entirely ignored by Git** (`.gitignore` line `tests/data/`). Nothing under it is version-controlled — not even the per-directory `README.md` files, so those are local scratch notes rather than documentation.
+
 ```
-tests/data/
+tests/data/                      ← generated, never committed
 ├── certs/        certificates (real site chains, self-signed chains, SM2 certs)
 ├── crls/         CRLs (including SM2)
 ├── csrs/         CSRs (with extension combinations, SM2)
 ├── keys/         keys (RSA / EC / DSA / SM2, PEM + DER, including encrypted private keys)
-├── pfx/          PKCS#12 (password-protected, NOT committed — generated locally / in CI)
-├── ocsp/         OCSP response fixtures (planned — see roadmap B5)
-└── ntls/         NTLS handshake byte fixtures (planned — see roadmap B5)
+├── pfx/          PKCS#12 (password-protected)
+└── ocsp/         OCSP response fixtures (planned — see `RM-0.0.10`)
+
+tests/fixtures/                  ← version-controlled
+└── ntls/         NTLS handshake bytes captured from public ShangMi sites (planned — `RM-0.0.10`)
 ```
 
-> Roadmap B5: `ocsp/` and `ntls/` directories do not exist yet.
+The split follows one rule: **anything a script can regenerate is generated; anything captured from the outside is committed.** `TestData` currently exposes helpers for the five generated directories only.
 
 ### 8.2 Sources & policy
 
 | Fixture | Source | Committed? | Note |
 |---|---|---|---|
-| RSA / EC / DSA keys and certificates | generated by `openssl` | ✅ | Reproducible via script |
-| **SM2 keys, certificates, CSR, CRL** | generated by `openssl` (after B4) | ✅ | **Pre-generated fixtures committed**, to avoid CI depending on the national-crypto toolchain |
-| PKCS#12 | generated by `openssl` | ❌ | `.gitignore` ignores `*.pfx`; **generated on-demand in CI** |
-| Real-site certificate chains | captured from public sites | ✅ | Regression for chain parsing & verification |
-| **NTLS handshake bytes** | captured from public ShangMi sites | ✅ | See [tls-scanner.md §8.4](tls-scanner.md) |
+| RSA / EC / DSA keys and certificates | generated by `tongsuo` | ❌ | Rebuilt by script whenever missing |
+| **SM2 keys, certificates, CSR, CRL** | generated by `tongsuo` | ❌ | Requires tongsuo on the machine; the script does not fall back to a weaker tool |
+| PKCS#12 | generated by `tongsuo` | ❌ | `.gitignore` also ignores `*.pfx` separately |
+| Real-site certificate chains | captured from public sites by `pull-website-certs.sh` | ❌ | Lands in the generated tree, so it is rebuilt rather than committed |
+| **NTLS handshake bytes** | captured from public ShangMi sites | ✅ | The one exception — no script can produce these, so they live in `tests/fixtures/ntls/`. See §8.4 |
 
-**Unified passphrase**: all encrypted private keys and PKCS#12 use the same test passphrase (currently `test1234`); documented in each `tests/data/<sub>/README.md`.
+**Unified passphrase**: all encrypted private keys and PKCS#12 use the same test passphrase (currently `test1234`). This section is the tracked record of that convention — the per-directory `tests/data/<sub>/README.md` files are generated alongside the fixtures and are not version-controlled.
 
 ### 8.3 Fixture scripts
 
+There are five scripts, one per algorithm family — ShangMi fixtures are generated **alongside** their standard counterparts, not by a separate script:
+
 ```
 scripts/
-├── generate-test-certs.sh       RSA / EC self-signed + CA+leaf chains
-├── generate-test-crl.sh         CRL with two revoked entries + reasons
+├── generate-test-certs.sh       RSA / EC / DSA / SM2 self-signed + CA→leaf chains
+├── generate-test-crl.sh         CRLs with two revoked entries plus reasons, including SM2
 ├── generate-test-pfx.sh         private key + cert / cert chain PFX (test1234)
-├── generate-test-csrs.sh        CSRs with extension combinations
-├── generate-test-keys.sh        RSA / EC / DSA keys (PEM + DER, encrypted variants)
-└── generate-test-sm-certs.sh    SM2 certs / CSR via tongsuo (planned restoration — see B4)
+├── generate-test-csrs.sh        CSRs with extension combinations, including SM2
+├── generate-test-keys.sh        RSA / EC / DSA / SM2 keys (PEM + DER, encrypted variants)
+└── pull-website-certs.sh        capture published site chains into tests/data/certs/
 ```
 
-> Roadmap B4: `generate-test-sm-certs.sh` does not exist; `tests/data/*/README.md` still references it.
+Today `generate-test-certs.sh` and `generate-test-crl.sh` have no SM2 sections at all, even though SM2 fixtures of both kinds exist in the working tree — meaning they were produced by something no longer in the repository, and cannot be reproduced today. `TestDataGenerator` also still references a `generate-test-sm-certs.sh` that does not exist. Both are `RM-0.0.9`.
 
 ### 8.4 NTLS handshake byte fixtures (key)
 
@@ -283,8 +265,8 @@ Since the library does not use a native national-crypto protocol stack, NTLS det
 
 | Mechanism | Note |
 |---|---|
-| **Static byte fixtures** | Capture real `ServerHello` / `Certificate` / `ServerKeyExchange` bytes from public ShangMi sites into `tests/data/ntls/`; tests feed the parser directly |
-| **Fake server replay** | Spin up a minimal TCP listener in the test process, replay those bytes, and validate the full probe path (including timeout / exception handling) |
+| **Static byte fixtures** | Capture real `ServerHello` / `Certificate` / `ServerKeyExchange` bytes from public ShangMi sites into `tests/fixtures/ntls/`; tests feed the parser directly — no national-crypto protocol stack is needed on the machine |
+| **Fake server replay** | Spin up a minimal TCP listener in the test process, replay those bytes, and validate the full probe path, including timeout and exception handling |
 
 Fixtures should cover:
 
@@ -302,19 +284,23 @@ Fixtures should cover:
 ## 9. Local workflow
 
 ```bash
-# 1. Clone (or use submodule inside the application repo)
+# 1. Clone
 git clone https://github.com/blue-cloud-net/DevTrove.Crypto.git
 cd DevTrove.Crypto
 
-# 2. Make sure `openssl` 3.x is on PATH (tests require it)
-openssl version
+# 2. Make sure tongsuo is available (tests require it)
+#    Default: /opt/tongsuo/bin/tongsuo — override with TONGSUO_PATH
+export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 
 # 3. (Optional) regenerate fixtures if any drift
-./scripts/generate-test-certs.sh
 ./scripts/generate-test-keys.sh
+./scripts/generate-test-certs.sh
+./scripts/generate-test-csrs.sh
+./scripts/generate-test-crl.sh
 ./scripts/generate-test-pfx.sh
 
 # 4. Build + test
+#    Expect failures until RM-0.0.1 and RM-0.0.11 land
 dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  DevTrove.Crypto.slnx -c Release
 
@@ -322,8 +308,6 @@ dotnet test  DevTrove.Crypto.slnx -c Release
 dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts
 dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./artifacts
 ```
-
-> Today step 4 fails on `dotnet build DevTrove.Crypto.slnx -c Release` with `NU1201` (roadmap B1, B2).
 
 ---
 

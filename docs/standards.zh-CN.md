@@ -17,7 +17,7 @@
 | `README.md` / `CHANGELOG.md` | **英文（默认入口）** |
 | `README.zh-CN.md` / `CHANGELOG.zh-CN.md` | **中文** |
 | `AGENTS.md`（本仓） | **中文** |
-| 代码注释、XML 文档注释 | **中文**（国际化见 [roadmap.md §7 B-cmnt](roadmap.md)） |
+| 代码注释、XML 文档注释 | **中文**（国际化当前未排期） |
 | 日志消息 | **英文** |
 | 异常消息 | **英文，句尾加句号** |
 | 代码标识符 | 英文 |
@@ -36,7 +36,8 @@
 | `Directory.Build.props` | 全局编译属性（TFM、可空性、语言版本、NuGet 元数据） |
 | `Directory.Packages.props` | 集中包版本管理（CPM） |
 | `.editorconfig` | 代码风格 |
-| `.gitignore` / `.gitattributes` | 忽略规则与行尾规范 |
+| `.gitignore` | 忽略规则 |
+| `.gitattributes` | 行尾规范化 —— **尚未存在**，见 `RM-0.0.13` |
 | `AGENTS.md` | 代理与贡献者入口：权威文档索引、硬性约束、提交前检查 |
 
 ### 2.2 集中包管理（CPM）
@@ -71,6 +72,8 @@
 <IsPackable>true</IsPackable>
 ```
 
+> **已知偏差**（`RM-0.0.3`）：本文件写明了 `TreatWarningsAsErrors` 与 `EnforceCodeStyleInBuild`，但 `Directory.Build.props` 中**并不存在**这两个属性。要么补属性，要么改文档 —— 两者不能继续不一致。
+
 ### 2.4 行尾与编码
 
 | 类型 | 设置 |
@@ -80,6 +83,8 @@
 | `*.{xml,csproj,props,targets,slnx}` | 2 空格缩进 |
 | `*.{json,yml,yaml}` | 2 空格缩进 |
 | `*.md` | 保留行尾空白（Markdown 换行语义） |
+
+> **已知偏差**（`RM-0.0.13`）：`.editorconfig` 当前设的是 `end_of_line = crlf` 与 `insert_final_newline = false`，且没有为 Markdown、XML、JSON、YAML 定义任何段落。**本表是权威** —— 改的是配置文件，不是这张表。
 
 ---
 
@@ -150,6 +155,17 @@
 - 避免在循环内分配；必要时使用 `ArrayPool<T>`
 - 字符串拼接在循环内使用 `StringBuilder`
 
+### 3.8 密码学专用约束
+
+| 规则 | 理由 |
+|---|---|
+| **不得**继承 `SymmetricAlgorithm`、`HashAlgorithm`、`AsymmetricAlgorithm`、`HMAC` | `CipherMode` 是封闭枚举，既无 CTR 也无 AEAD 概念；且两个 `netstandard` 目标没有 `net8.0` 的虚方法 —— 继承它们等于把库的能力集绑死在特定 TFM 上。使用自建抽象，BCL 互操作经适配器提供（见 [architecture.md §8](architecture.md) 决策 D20）。 |
+| BouncyCastle 类型不得出现在公开签名中 | 实现必须可替换；互操作只经 `Interop/` 下的显式扩展方法（决策 D21）。 |
+| 算法代理统一命名为 `<Algorithm>Crypto` | 一套命名规则覆盖全部算法（决策 D23）。 |
+| 密钥材料在释放时清零 | 不得比拥有它的对象活得更久；见 [roadmap.md](roadmap.md) §6.15 的 `SymmetricKey`。 |
+| 热路径优先用 `Span<T>`，但两个 `netstandard` 目标必须仍可构建 | 那里由 `System.Memory` 提供 span；仅存在于 `net8.0` 及以后的内容用 `#if` 包起来。 |
+| 可能被裁剪或 AOT 编译的消费方触达的代码，须避开未经标注的反射 | 见 `RM-0.0.12`。 |
+
 ---
 
 ## 4. 命名规范
@@ -202,25 +218,24 @@
 - 结构：Arrange–Act–Assert，三段用空行分隔
 - 一个测试只验证一个行为
 - 测试项目**镜像**被测项目的目录结构
-- 测试夹具统一放在 `tests/data/`，通过相对路径定位
+- 测试夹具统一放在 `tests/data/`，通过相对路径定位。该目录**只生成、不入库**（见 [architecture.md §8](architecture.md) 的 D18）。脚本产不出的抓取类数据放 `tests/fixtures/`，那里是入库的。
 - **不写**仅断言"不抛异常"的测试
-- 依赖外部可执行文件（openssl）的测试必须有明确的失败语义（见 [development-guide.md §5.2](development-guide.md)）
+- 依赖外部可执行文件（tongsuo）的测试必须有明确的失败语义（见 [development-guide.md §5.2](development-guide.md)）
 
-> **已知偏差**（roadmap B11）：项目目前使用 xUnit 2.9.2 + FluentAssertions 6.12.1；升级到 xUnit v3 在 roadmap 上。TestSupport csproj 尚未声明 `net9.0`。
+> **已知偏差**（`RM-0.0.7`）：项目目前使用 xUnit 2.9.2 + FluentAssertions 6.12.1，且 `DevTrove.Crypto.TestSupport` 尚未声明 `net9.0`。升级到 xUnit v3 已在考虑，但**当前未排期**。
 
 ---
 
-## 8. 子模块与跨仓开发模式
+## 8. 仓库工作模式
 
-本库以子模块形式挂在消费方 `DevTrove` 仓的 `lib/Crypto`，跟踪 `dev` 分支。开发模式：
+本仓库**独立存在**：自行开发、测试与发布，仓内任何内容都不依赖它被如何消费、被谁消费。
 
 | 模式 | 做法 |
 |---|---|
-| 双仓开发（推荐） | 直接编辑 `lib/Crypto`；消费仓用 `ProjectReference` 引用。`Directory.Build.props` 条件属性在 `ProjectReference` 与 `PackageReference` 之间切换；`dev` 分支默认 `ProjectReference` |
-| 独立开发 | 在本仓直接 `dotnet build DevTrove.Crypto.slnx -c Release`；测试与打包独立运行 |
+| 日常开发 | `dotnet build DevTrove.Crypto.slnx -c Release` 与 `dotnet test` 完全在本仓内运行 |
 | 发布 | CI 绿灯后打 `v*` 标签触发 publish job（见 [development-guide.md §6](development-guide.md)） |
 
-> **已知偏差**（roadmap B6）：`Directory.Build.props` 中 `ProjectReference`↔`PackageReference` 的条件属性切换**计划中尚未实现**。目前所有位置都使用 `ProjectReference`；打包产出的包可能缺少对 `DevTrove.Crypto` 的 `PackageReference` 声明。计划形式见 roadmap。
+消费方如何引用本包 —— 项目引用、包引用或本地 feed —— 属消费方决策，本文档有意不涉及。
 
 ---
 
@@ -231,7 +246,7 @@
 | 分支 | 用途 |
 |---|---|
 | `main` | 稳定分支，始终保持可构建 |
-| `dev` | 集成分支，消费仓子模块跟踪目标 |
+| `dev` | 集成分支；预发布变更先落在这里，再进 `main` |
 | `feature/<slug>` | 功能开发 |
 | `fix/<slug>` | 缺陷修复 |
 | `docs/<slug>` | 仅文档变更 |
@@ -259,12 +274,13 @@ Conventional Commits，**英文类型前缀 + 中文描述**：
 
 ### 9.3 提交前检查
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` —— 当前因 NU1201 失败（见 roadmap B1、B2）；新代码须 0 警告
+- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.0.1` 与 `RM-0.0.11` 落地前预期会失败；新代码须 0 警告
 - `dotnet test DevTrove.Crypto.slnx -c Release` —— 全绿（或明确标注为预存缺陷）
 - 新增/修改的 public 成员有中文 XML 文档注释
 - 触及 `README.md` / `CHANGELOG.md` ⇒ 同步 `.zh-CN.md`
 - 触及 `docs/*.md` ⇒ 同步对应 `*.zh-CN.md`（章节、表格、Mermaid、代码示例一一对应）
-- 触及架构 / 包 / 命名 / 挂载路径 / TFM / 测试策略 ⇒ 同步**本仓** `docs/*` 与 `.zh-CN.md`；**不反向同步**消费仓
+- **变更了 [roadmap.md](roadmap.md) 中任何条目的状态** ⇒ 在同一次提交里更新，中英两份都改
+- 触及架构 / 包 / 命名 / TFM / 测试策略 ⇒ 同步本仓 `docs/*` 与 `.zh-CN.md`
 - 日志与异常中**无**密钥材料、口令、输入原文
 
 ---
@@ -272,6 +288,7 @@ Conventional Commits，**英文类型前缀 + 中文描述**：
 ## 10. 禁止事项
 
 - ❌ 提交 `bin/`、`obj/`、`artifacts/`、`.vs/`、`.vshistory/`、`*.pfx`
+- ❌ 把 `tests/data/` 强行纳入版本控制（它是生成物；见 D18）
 - ❌ 使用 `git add -A` / `git add .`（夹具与残留极易被误提交）
 - ❌ 在 `docs/*.md` 与 `*.zh-CN.md` 之间出现章节、链接或表格不一致
 - ❌ 声称未实现的能力（文档与代码必须一致）

@@ -4,7 +4,9 @@
 
 Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Crypto.Core/**` — each entry names the namespace, type and a one-line description. **Namespace root is `DevTrove.Crypto`** for everything; the `DevTrove.Crypto.Core` project flattens namespaces so that consumers do not depend on the `Core` project name.
 
-> **Known deviation** (roadmap B2): the metapackage project at `src/DevTrove.Crypto/` still ships a `Program.cs` and is not source-free. Once B2 is resolved, this index applies unchanged.
+> **Known deviation** (`RM-0.0.2`): the metapackage project at `src/DevTrove.Crypto/` still ships a `Program.cs` and is not source-free. Once that file is gone, this index applies unchanged.
+
+> **Planned restructure** (`RM-0.1.0-01`): namespaces change in `0.1.0`. `DevTrove.Crypto.Crypto.*` becomes `DevTrove.Crypto.Algorithms.*`, `DevTrove.Crypto.BouncyCastle.*` becomes `DevTrove.Crypto.Asn1`, algorithm proxies are renamed to `<Algorithm>Crypto` (`Sm2Crypto`, `Sm3Crypto`, `Sm4Crypto`, …), and BouncyCastle types leave the public surface. Section names below follow the code as it exists today — the target layout is in [architecture.md §4.1](architecture.md).
 
 ---
 
@@ -27,7 +29,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 | `RsaCrypto` | RSA encrypt / decrypt (OAEP-SHA256 default, PKCS#1 v1.5 optional); sign / verify (PSS default, PKCS#1 v1.5 optional) |
 | `EcdsaCrypto` | ECDSA sign / verify (DER encoded); ECDH shared secret (same-curve validation) |
 | `DsaCrypto` | DSA sign / verify (DER encoded); key lengths 1024 / 2048 / 3072 |
-| `AesCrypto` | AES-CBC / CFB / OFB (auto IV) + AES-GCM (12-byte nonce + 16-byte tag); **ECB disabled** |
+| `AesCrypto` | AES-CBC / CFB / OFB (auto IV) + AES-GCM (12-byte nonce + 16-byte tag). ECB is supported for interoperability but CBC is the default and ECB is documented as insecure |
 
 ### 1.3 ShangMi (`DevTrove.Crypto.Crypto.Sm`)
 
@@ -125,7 +127,7 @@ These wrap BouncyCastle types to make `Core` self-contained without forcing cons
 
 ## 6. Reserved namespace — `DevTrove.Crypto.Tls`
 
-The `DevTrove.Crypto.Tls` namespace is **reserved for future use** by the TLS probe engine. No public types today.
+The namespace is reserved for the TLS probe engine. No public types exist today; the package is scheduled for `0.4.0` ([roadmap.md](roadmap.md) §6.17). The list below is a **design target**, not an API commitment.
 
 | Planned entity (per [tls-scanner.md §12](tls-scanner.md)) | Purpose |
 |---|---|
@@ -174,4 +176,4 @@ This index is hand-maintained. When a new public type is added:
 2. Add a Chinese line in [library-api.zh-CN.md](library-api.zh-CN.md) at the matching section (sections, tables and descriptions stay one-to-one).
 3. Verify with `grep -rn 'public (class|sealed class|record|enum|interface|struct) ' src/DevTrove.Crypto.Core --include='*.cs' | grep -v 'Resources/' | grep -v '.Designer\.cs'` — every match should appear in this index.
 
-> The metapackage's `Program.cs` is excluded — once removed (roadmap B2), drop the corresponding note here.
+> The metapackage's `Program.cs` is excluded — once it is removed (`RM-0.0.2`), drop the corresponding note here.

@@ -10,11 +10,11 @@
 
 | 等级 | 内容 | 本项目 |
 |---|---|---|
-| **L1** | 协议版本矩阵、密码套件矩阵、扩展指纹、服务端实发证书链、协商群与签名算法 | ✅ 排期（父仓 roadmap Phase 3） |
-| **L2** | L1 + A~F 评级、客户端模拟兼容性矩阵、ALPN/HTTP2、证书透明度、DNS CAA | ✅ 排期（父仓 roadmap Phase 4） |
+| **L1** | 协议版本矩阵、密码套件矩阵、扩展指纹、服务端实发证书链、协商群与签名算法 | ✅ 已排期（`0.4.0`） |
+| **L2** | L1 + A~F 评级、客户端模拟兼容性矩阵、ALPN/HTTP2、证书透明度、DNS CAA | ✅ 已排期（`0.5.0`） |
 | **L3** | L2 + 漏洞探测（Heartbleed、CCS Injection、ROBOT、Ticketbleed 等） | ❌ 仅 ROBOT（见 §9.3） |
 
-父仓 `DevTrove` 的 roadmap 拥有**排期**；本仓文档描述**设计**。
+本文档描述**设计**；**排期与逐项状态**见 [roadmap.md](roadmap.md) §6.17 与 §6.18。
 
 ---
 
@@ -38,7 +38,7 @@ flowchart TB
     R1 --> R2 --> R3
 ```
 
-两层各自独立、结果在应用层合并。
+两层各自独立，结果在调用方合并。
 
 ---
 
@@ -63,7 +63,7 @@ flowchart TB
 | **协议版本覆盖完整** | `ProtocolVersion.SSLv3`（`0x0300`）存在，且 `CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3` → 纯托管即可枚举 SSLv3 ~ TLS 1.3 |
 | **不受系统策略限制** | 不依赖 OpenSSL，因此不受"OpenSSL 3 默认禁用 TLS 1.2 以下"之类策略影响 |
 | **回调式 API 提供完整信息** | `TlsClient` 钩子可逐字段获取协商结果与服务端扩展 |
-| **纯托管** | 可跨平台一致，且可编译进 WebAssembly（用于证书解析等本地能力） |
+| **纯托管** | 可跨平台一致，且可编译进 WebAssembly 与裁剪 / AOT 构建（用于证书解析等本地能力） |
 | **RFC 8998 已内建** | 见 §8.1 |
 
 ### 关键 API 钩子
@@ -161,7 +161,7 @@ BouncyCastle **已内建**以下要素：
 | 签名方案 | SM2（`sm2sig_sm3`） |
 | 曲线 | `curveSM2`，以及混合群 `curveSM2MLKEM768` |
 
-因此 RFC 8998 **理论上可完成完整握手**（不仅是检测）。验证项排期在父仓 roadmap；若可行，则国密 TLS 1.3 归入 `TlsProbe` 引擎。
+因此 RFC 8998 **理论上可完成完整握手**（不仅是检测）。验证项为 `RM-0.5.0-08`；若可行，则国密 TLS 1.3 归入 `TlsProbe` 引擎。
 
 ### 8.2 NTLS / GB/T 38636 —— 双证书国密 TLS
 
@@ -281,7 +281,7 @@ ROBOT 是 RSA 密钥交换的填充预言机探测，只需发送**不同构造�
 
 ## 12. 结果模型
 
-`DevTrove.Crypto.Tls` 自带结果模型，不依赖应用层。主要实体：
+`DevTrove.Crypto.Tls` 自带结果模型，依赖只向外。主要实体：
 
 | 实体 | 内容 |
 |---|---|
@@ -296,7 +296,7 @@ ROBOT 是 RSA 密钥交换的填充预言机探测，只需发送**不同构造�
 | `ClientSimulationMatrix` | 各客户端模拟结果 |
 | `ProbeDiagnostics` | 探测过程中的异常与降级记录（**必须暴露**，避免"静默失败"） |
 
-消费应用负责把上述模型映射为自家契约 DTO。
+消费方自行将这些模型映射为自家契约类型。
 
 ---
 
@@ -325,7 +325,7 @@ ROBOT 是 RSA 密钥交换的填充预言机探测，只需发送**不同构造�
 | 限流 | 按 IP 与全局两个维度限流 |
 | 超时与大小限制 | 严格限制连接超时与读取字节数 |
 
-这些控制由消费应用负责；本库提供原始探测能力并信任宿主应用施加这些限制。
+这些控制属于部署引擎的一方；本库提供原始探测能力，并假定调用方会施加这些限制。
 
 ---
 
@@ -335,7 +335,7 @@ ROBOT 是 RSA 密钥交换的填充预言机探测，只需发送**不同构造�
 |---|---|
 | **公开测试站点** | 对 `badssl.com` 系列（过期、自签、主机名不匹配、RC4、3DES、无 SNI、仅 TLS 1.0 等）扫描，验证判定正确 |
 | **交叉验证** | 与 `openssl s_client`、`testssl.sh` 的输出比对（**本地手动执行，不进 CI**） |
-| **NTLS 夹具回放** | 从公开国密站点抓取 ServerHello / Certificate / ServerKeyExchange 字节作为静态夹具，验证解析与判定逻辑（不依赖铜锁） |
+| **NTLS 夹具回放** | 从公开国密站点抓取 ServerHello / Certificate / ServerKeyExchange 字节存入**已入库**的 `tests/fixtures/ntls/`，直接验证解析与判定逻辑 —— 机器上无需任何国密协议栈 |
 | **黄金文件快照** | 一次完整扫描结果固化为 JSON，防止回归 |
 | **异常路径** | 构造"服务端发送非常规扩展"的场景，验证不会导致整场扫描失败 |
 
@@ -347,6 +347,6 @@ ROBOT 是 RSA 密钥交换的填充预言机探测，只需发送**不同构造�
 |---|---|
 | [architecture.md](architecture.md) | 引擎在总体架构中的位置 |
 | [standards.md](standards.md) | 编码与测试规范 |
-| [roadmap.md](roadmap.md) | 引擎阶段路线 |
+| [roadmap.md](roadmap.md) | 版本线、逐项状态与证据 |
 | [development-guide.md](development-guide.md) | 构建/测试/打包 |
 | [library-api.md](library-api.md) | 公开 API 索引（引擎章节） |

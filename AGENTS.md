@@ -7,13 +7,21 @@
 
 ## 1. 仓库定位
 
-`DevTrove.Crypto` 是 DevTrove 工具箱的**核心库仓库**（子仓），发行三个 NuGet 包：
+`DevTrove.Crypto` 是**独立发布、独立版本号**的纯托管 .NET 密码学与证书库（BouncyCastle 封装），发行三个 NuGet 包：
 
 | 包 | 角色 |
 |---|---|
 | `DevTrove.Crypto` | **门面包（metapackage）**：仅 `ProjectReference` → Core，对外只传递依赖 |
-| `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装（算法原语、密钥、ASN.1、X.509、CSR、PKCS#7/#12、CRL、OCSP） |
-| `DevTrove.Crypto.Tls` | **TLS 探测引擎**（暂仅预留命名空间；Phase 0 建骨架） |
+| `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装（算法原语、密钥、ASN.1、X.509、CSR、CRL、PKCS#12） |
+| `DevTrove.Crypto.Tls` | **TLS 探测引擎**（计划中，`0.4.0`；当前仅有预留命名空间） |
+
+技术栈（版本以 [`Directory.Packages.props`](Directory.Packages.props) 为唯一权威）：
+
+| 层 | 技术 |
+|---|---|
+| 目标框架 | `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0` |
+| 核心依赖 | BouncyCastle.Cryptography |
+| 测试 | xUnit + FluentAssertions + CliWrap；互操作依赖 **tongsuo**（唯一外部工具） |
 
 仓内布局：
 
@@ -22,7 +30,7 @@ DevTrove.Crypto/
 ├─ src/
 │  ├─ DevTrove.Crypto/         门面包
 │  ├─ DevTrove.Crypto.Core/    实现
-│  └─ DevTrove.Crypto.Tls/     TLS 探测引擎（Phase 0 引入）
+│  └─ DevTrove.Crypto.Tls/     TLS 探测引擎（计划中 `0.4.0`）
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/
@@ -30,8 +38,8 @@ DevTrove.Crypto/
 └─ docs/                        开发文档（英文默认 + `.zh-CN.md` 中文对照）
 ```
 
-应用仓以**单一子模块** `lib/Crypto` 挂载本仓，跟踪 `dev` 分支。**本仓库独立发布独立版本号**，
-文档自洽：库内部设计的所有问题（架构、规范、包规划、TLS 探测引擎、路线、测试策略）均在本仓 `docs/` 内回答，不反向引用应用仓。
+本仓库**独立发布、独立版本号**，可脱离任何消费方单独构建、测试与发布。
+文档自洽：库自身设计的所有问题（架构、规范、包规划、TLS 探测引擎、版本线、测试策略）均在本仓 `docs/` 内回答，不引用任何外部仓库的路径或章节。
 
 ---
 
@@ -79,7 +87,7 @@ DevTrove.Crypto/
 5. **5 TFM 策略（目标）**：`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`（当前实际见 [docs/roadmap.md](docs/roadmap.md) 的「待办 / 已知偏差」节）
 6. **依赖方向单向**：`DevTrove.Crypto.Tls` 可引用 `DevTrove.Crypto.Core`；**禁止反向**
 7. **库内禁止** `.Result` / `.Wait()` / 空 `catch` / `Task.Run` 伪造异步
-8. **不反向依赖应用仓**：库可独立发布；不引用父仓文档路径或章节号
+8. **库不得知道消费方**：可独立发布；不引用任何外部仓库的文档路径或章节号
 
 ---
 
@@ -89,7 +97,7 @@ DevTrove.Crypto/
 # 构建（Release 多 TFM）
 dotnet build DevTrove.Crypto.slnx -c Release
 
-# 测试（含 openssl/tongsuo 互操作；缺失时直接失败而非跳过）
+# 测试（互操作需 tongsuo；缺失时直接失败而非跳过）
 dotnet test DevTrove.Crypto.slnx -c Release
 
 # 仅核心库测试（跳过互操作）
@@ -103,7 +111,7 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 ./scripts/generate-test-pfx.sh
 ```
 
-外部依赖：`openssl`（3.x，互操作测试必需；缺失时测试**直接失败**而非跳过）。
+外部依赖：`tongsuo`（互操作测试必需；缺失时测试**直接失败**而非跳过）。
 
 ---
 
@@ -114,7 +122,8 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 - [ ] 新增/修改的 public 成员有中文 XML 文档注释
 - [ ] 触及 `README` / `CHANGELOG` 时，同步对应的 `.zh-CN.md`
 - [ ] 触及 `docs/*.md` 时，同步对应 `*.zh-CN.md`（章节、表格、Mermaid、代码示例一一对应）
-- [ ] 触及架构/包/命名/TFM/测试策略时，**不反向同步父仓**；本仓 `docs/*.md` 与 `*.zh-CN.md` 内自洽
+- [ ] 触及架构/包/命名/TFM/测试策略时，本仓 `docs/*.md` 与 `*.zh-CN.md` 内自洽
+- [ ] 变更了 [docs/roadmap.md](docs/roadmap.md) 中任何条目的状态，已**在同一次提交内**更新该状态（中英两份）
 - [ ] 日志与异常中**无密钥材料、口令、输入原文**
 
 ---
@@ -130,6 +139,7 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 ## 8. 禁止事项
 
 - ❌ 提交 `bin/`、`obj/`、`artifacts/`、`.vs/`、`.vshistory/`、`*.pfx`
+- ❌ 把 `tests/data/` 强行纳入版本控制（它是生成物，见 `architecture.md` D18）；抓取类夹具放 `tests/fixtures/`
 - ❌ 使用 `git add -A` / `git add .`（夹具与残留极易被误提交）
 - ❌ 在 `docs/` 写英文文档、在 `README.zh-CN.md` 里省略英文版已有的章节
 - ❌ 声称未实现的能力（文档与代码必须一致）

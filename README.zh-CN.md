@@ -8,8 +8,9 @@
 
 ## 特性
 
-- **三个 NuGet 包**：`DevTrove.Crypto`（门面包）、`DevTrove.Crypto.Core`（实现）、`DevTrove.Crypto.Tls`（TLS 探测引擎，Phase 0 引入）
-- **纯托管、零原生依赖** —— 可在 BouncyCastle 支持的所有宿主上运行，包括 WebAssembly
+- **三个 NuGet 包**：`DevTrove.Crypto`（门面包）、`DevTrove.Crypto.Core`（实现）、`DevTrove.Crypto.Tls`（TLS 探测引擎 —— 计划中，`0.4.0`）
+- **纯托管、零原生依赖** —— 可在 BouncyCastle 支持的所有宿主上运行，包括 WebAssembly、裁剪与 AOT 构建
+- **跨平台设计，`net8.0` 及以后兼容 AOT**，并以 `netstandard2.0` / `netstandard2.1` 承担更旧运行时的兼容面
 - **算法**：RSA / ECDSA / DSA、AES（CBC / GCM）、SM2 / SM3 / SM4
 - **X.509 / PKCS**：证书、CSR、CRL、PFX / PKCS#12、OCSP（仅解析）
 - **多目标**：`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`
@@ -62,7 +63,7 @@ sm2.GenerateKeyPair();
 | `net8.0` / `net9.0` | 当前 LTS / STS |
 | `net10.0` | 最新语言特性 |
 
-恢复 `netstandard2.0` 目标时会做编译探针，缺失 API 放在 `Compat/` 手写补丁（详见 [`docs/development-guide.md`](docs/development-guide.md)）。
+两个 `netstandard` 目标**保留**（消费方形态无法预知）。它们当前**从未产出过程序集**；文档里「缺失 API 放在 `Compat/` 手写补丁」的说法既指错位置，也与事实不符 —— 详见 [`docs/development-guide.md`](docs/development-guide.md)。
 
 ---
 
@@ -73,10 +74,10 @@ DevTrove.Crypto/
 ├─ src/
 │  ├─ DevTrove.Crypto/          门面包（无源码）
 │  ├─ DevTrove.Crypto.Core/     实现
-│  └─ DevTrove.Crypto.Tls/      TLS 探测引擎（Phase 0 引入）
+│  └─ DevTrove.Crypto.Tls/      TLS 探测引擎（计划中 `0.4.0`）
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
-│  └─ DevTrove.Crypto.TestSupport/   openssl / tongsuo CLI 封装
+│  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI 封装
 ├─ scripts/                       夹具生成
 └─ docs/                          开发文档（中文）
 ```
@@ -92,8 +93,8 @@ DevTrove.Crypto/
 | [docs/architecture.md](docs/architecture.md) | 库内分层、依赖方向、能力边界、已知限制 |
 | [docs/standards.md](docs/standards.md) | 编码规范、命名、Git 流程、评审清单 |
 | [docs/nuget.md](docs/nuget.md) | 包边界、版本策略、发布流程 |
-| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS 探测引擎设计（Phase 3 / Phase 4 排期） |
-| [docs/roadmap.md](docs/roadmap.md) | 库的阶段路线 + 待办 / 已知偏差 |
+| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS 探测引擎设计（排期 `0.4.0` / `0.5.0`） |
+| [docs/roadmap.md](docs/roadmap.md) | 版本线、逐项状态与证据、排除项、风险 |
 | [docs/development-guide.md](docs/development-guide.md) | 构建/测试/打包命令、TFM / polyfill 规则、CI |
 | [docs/library-api.md](docs/library-api.md) | 公开 API 索引 |
 
@@ -106,15 +107,15 @@ dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  DevTrove.Crypto.slnx -c Release
 ```
 
-互操作测试依赖外部工具 `openssl` 3.x。缺失时测试**直接失败而非跳过**（见 [docs/standards.md](docs/standards.md)）。
+互操作测试依赖外部工具 **tongsuo**。缺失时测试**直接失败而非跳过**（见 [docs/standards.md](docs/standards.md)）。
 
-> 当前构建因 `NU1201` 失败 —— 见 [docs/roadmap.md](docs/roadmap.md) 的「待办 / 已知偏差」表（B1、B2）。
+> 构建与打包目前均不可信：三处目标框架声明彼此不一致（`RM-0.0.1`），两个 `netstandard` 目标从未产出过程序集（`RM-0.0.11`）。见 [docs/roadmap.md](docs/roadmap.md)。
 
 ---
 
 ## 状态
 
-**早期开发**。首发版本号 `0.0.1-dev`，按 `0.0.X-dev → 0.1.0` 迭代。详见 [`docs/roadmap.md`](docs/roadmap.md)。
+**早期开发**。`0.0.1`–`0.0.13` 仅为工作项编号 —— 不打包、不发布；首次真实发布为 `0.1.0`。每个条目的当前状态见 [`docs/roadmap.md`](docs/roadmap.md)。
 
 ---
 

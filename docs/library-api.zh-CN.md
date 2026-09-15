@@ -4,7 +4,9 @@
 
 `DevTrove.Crypto` 的公开 API 索引。由 `src/DevTrove.Crypto.Core/**` **手工整理**：每项给出命名空间、类型与一句话说明。**根命名空间统一为 `DevTrove.Crypto`**；`DevTrove.Crypto.Core` 项目把命名空间拍平，消费方不依赖项目名 `Core`。
 
-> **已知偏差**（roadmap B2）：门面包项目 `src/DevTrove.Crypto/` 仍带 `Program.cs`，并非无源码。B2 解决后，本索引仍适用。
+> **已知偏差**（`RM-0.0.2`）：门包项目 `src/DevTrove.Crypto/` 仍带 `Program.cs`，并非无源码。该文件删除后，本索引仍适用。
+
+> **计划中的结构重整**（`RM-0.1.0-01`）：命名空间将在 `0.1.0` 变更。`DevTrove.Crypto.Crypto.*` 改为 `DevTrove.Crypto.Algorithms.*`，`DevTrove.Crypto.BouncyCastle.*` 改为 `DevTrove.Crypto.Asn1`，算法代理统一改名为 `<Algorithm>Crypto`（`Sm2Crypto`、`Sm3Crypto`、`Sm4Crypto` 等），BouncyCastle 类型退出公开面。下面的章节名沿用**当前**代码；目标布局见 [architecture.md §4.1](architecture.md)。
 
 ---
 
@@ -27,7 +29,7 @@
 | `RsaCrypto` | RSA 加 / 解密（默认 OAEP-SHA256，可选 PKCS#1 v1.5）；签名 / 验签（默认 PSS，可选 PKCS#1 v1.5） |
 | `EcdsaCrypto` | ECDSA 签名 / 验签（DER 编码）；ECDH 共享密钥（同曲线校验） |
 | `DsaCrypto` | DSA 签名 / 验签（DER 编码）；密钥长度 1024 / 2048 / 3072 |
-| `AesCrypto` | AES-CBC / CFB / OFB（自动 IV）+ AES-GCM（12 字节 Nonce + 16 字节 Tag）；**禁用 ECB** |
+| `AesCrypto` | AES-CBC / CFB / OFB（自动 IV）+ AES-GCM（12 字节 Nonce + 16 字节 Tag）。ECB 为互操作保留，但默认 CBC，且 ECB 已标注为不安全 |
 
 ### 1.3 国密（`DevTrove.Crypto.Crypto.Sm`）
 
@@ -125,7 +127,7 @@
 
 ## 6. 预留命名空间 —— `DevTrove.Crypto.Tls`
 
-`DevTrove.Crypto.Tls` 命名空间**为未来的 TLS 探测引擎预留**，目前无公开类型。
+该命名空间为 TLS 探测引擎预留。当前不存在任何公开类型；包排期在 `0.4.0`（[roadmap.md](roadmap.md) §6.17）。下表是**设计目标**，不是 API 承诺。
 
 | 计划实体（见 [tls-scanner.md §12](tls-scanner.md)） | 用途 |
 |---|---|
@@ -174,4 +176,4 @@ using DevTrove.Crypto.X509.Enums;
 2. 在 [library-api.md](library-api.md) 的同位置补一行（章节、表格、说明一一对应）
 3. 用 `grep -rn 'public (class|sealed class|record|enum|interface|struct) ' src/DevTrove.Crypto.Core --include='*.cs' | grep -v 'Resources/' | grep -v '.Designer\.cs'` 核对 —— 每个匹配应在本索引出现
 
-> 门包的 `Program.cs` 暂排除；roadmap B2 移除后，把对应提示也去掉。
+> 门包的 `Program.cs` 暂排除；该文件删除（`RM-0.0.2`）后，把对应提示也去掉。

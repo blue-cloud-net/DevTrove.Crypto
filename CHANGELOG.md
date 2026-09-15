@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-### Changed (in progress: Phase A of parent roadmap)
+### Changed (library-only restructuring)
 
 - **Renamed**: project namespaces / directory names / assembly names from `Crypto.Utils.*` → `DevTrove.Crypto.*`
 - **Removed**: `Crypto.Utils.Api`, `Crypto.Utils.Host`, `Crypto.Utils.UI`, related NuGet packages, and the old HTTP API documentation (`docs/api-reference.md`, `docs/v0.2/*`, `docs/v1.x/*`)
@@ -24,8 +24,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Known limitations
 
-- L1: Certificate chain **verification** is a simplified implementation (DN comparison + per-level signature check + trusted-root match); **not PKIX full path validation** — scheduled for v1.1
-- L2: Certificate chain **building** may not terminate on mutually-signed constructed inputs — scheduled for v1.1
-- L3: OCSP **parsing only** (no request construction, no signature verification) — v2 evaluation
+Capability gaps (chain verification, OCSP, PKCS#7, KDF, MAC, Ed25519 / X25519) and the limitations that will stay are listed in [docs/architecture.md §7](docs/architecture.md). `0.0.x` are work-item numbers, not releases; per-item status is in [docs/roadmap.md](docs/roadmap.md).
+
+### Documentation
+
+- Rewrote the whole document set for a **standalone library**: removed every reference to how or where the library is consumed, replaced the phase plan with a version line, and introduced per-item status tracking (`✅` / `🚧` / `🟡` / `⬜`)
+- Added an explicit goal set (pure-managed, cross-platform, AOT-friendly, wide compatibility surface) to `docs/architecture.md §1`
+- Corrected claims that did not match the code: OCSP parsing, PKCS#7/CMS, certificate-chain building and verification, and `SM4` CTR/GCM are **not** implemented; the `netstandard` targets never produced an assembly
+- Documented the code-style config contradiction (`.editorconfig` vs `docs/standards.md §2.4`) as a tracked item
 
 [Unreleased]: https://github.com/blue-cloud-net/DevTrove.Crypto/compare/main...HEAD
