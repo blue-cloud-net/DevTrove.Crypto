@@ -146,7 +146,7 @@ Five public signatures default `signatureAlgorithm` to the hard-coded `SHA256WIT
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.8 | Derive the default from the private-key algorithm | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without an explicit algorithm | ⬜ | Unit tests per key type |
+| RM-0.0.8 | Derive the default from the private-key algorithm | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without an explicit algorithm | 🟡 | Rule written into `library-api.md` §4.1 (private-key → default signature-algorithm table); on the current empty Core `grep -rn SHA256WITHRSA src/ tests/` already returns nothing; the actual implementation and per-key-type unit tests land once RM-0.1.0-01 restores Core |
 
 This item must land **before** `RM-0.1.0-01`, so the new algorithm abstraction absorbs it instead of it being rewritten twice.
 
