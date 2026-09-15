@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "dev"]
 
 jobs:
   build:
@@ -12,8 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -61,17 +59,28 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.x
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+
+      # publish 必须先 build —— 上游 job 仅产出测试与 pack，不复用。
+      - name: Restore
+        run: dotnet restore DevTrove.Crypto.slnx
+
+      - name: Build
+        run: dotnet build DevTrove.Crypto.slnx --no-restore -c Release
 
       - name: Pack Core
-        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj -c Release -o ./artifacts --no-build
+        run: dotnet pack src/DevTrove.Crypto.Core/DevTrove.Crypto.Core.csproj --no-build -c Release -o ./artifacts
 
       - name: Pack Metapackage
-        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj -c Release -o ./artifacts --no-build
+        run: dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj --no-build -c Release -o ./artifacts
 
-      # 发布顺序：Core 先，Crypto 后（Crypto 通过 ProjectReference 自动依赖 Core，但需 Core 已存在于源）
+      # 发布顺序：Core 先，Crypto 后（Crypto 通过 ProjectReference 自动依赖 Core）
+      # glob 必须严格匹配 —— 「DevTrove.Crypto.*」会同时匹配 Core 包
       - name: Push Core
-        run: dotnet nuget push ./artifacts/DevTrove.Crypto.Core.*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./artifacts/DevTrove.Crypto.Core.*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Push Metapackage
-        run: dotnet nuget push ./artifacts/DevTrove.Crypto.*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./artifacts/DevTrove.Crypto.[0-9]*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
