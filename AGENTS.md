@@ -147,6 +147,7 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 - ❌ 在 `DevTrove.Crypto` 门面包内放置任何 API 类型
 - ❌ 在 shell 脚本注释（`#` 行）或 `<< 'EOF'` 单引号 here-doc 中嵌入 `${VAR}` / `$VAR` 占位符：注释与单引号 here-doc **不会**被 shell 展开，写入后是字面文本，会误导读者；要引用工具名请直接写（如 `tongsuo`）
 - ❌ 在面向用户的提示文本（`echo` 提示、生成的 README 等）中嵌入带路径的变量（如 `${TONGSUO_BIN}`）：会展开为绝对路径，用户无法直接复制使用；应使用命令名（`tongsuo`）
+- ❌ 在代码与脚本的注释里嵌入 `roadmap.md` 的条目编号（如 `RM-0.0.9a`、`RM-0.0.9a/9e`）：roadmap 是文档内部追踪项，外泄到 `.cs` / `.csproj` / `.sh` / `.yml` / `.props` 的注释里会让条目号随版本变动而失真；roadmap ↔ 代码的对应关系由 `docs/roadmap.md` 自身维护，不在源码里反向引用
 
 ---
 
