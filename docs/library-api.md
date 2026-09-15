@@ -2,17 +2,68 @@
 
 > 中文对照：[library-api.zh-CN.md](library-api.zh-CN.md)
 
-Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Crypto.Core/**` — each entry names the namespace, type and a one-line description. **Namespace root is `DevTrove.Crypto`** for everything; the `DevTrove.Crypto.Core` project flattens namespaces so that consumers do not depend on the `Core` project name.
+Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — each entry names the namespace, type and a one-line description. **Namespace root is `DevTrove.Crypto`** for everything; the `DevTrove.Crypto.Core` project flattens namespaces so that consumers do not depend on the `Core` project name.
 
-> **Known deviation** (`RM-0.0.2`): the metapackage project at `src/DevTrove.Crypto/` still ships a `Program.cs` and is not source-free. Once that file is gone, this index applies unchanged.
+> **Sections 2–9 describe code that is being rebuilt.** `DevTrove.Crypto.Core` currently holds no source: the Web-era implementation was removed and is being reconstructed against the contracts in §1. Those sections are kept as the target index and are not a claim that the types exist today.
 
-> **Planned restructure** (`RM-0.1.0-01`): namespaces change in `0.1.0`. `DevTrove.Crypto.Crypto.*` becomes `DevTrove.Crypto.Algorithms.*`, `DevTrove.Crypto.BouncyCastle.*` becomes `DevTrove.Crypto.Asn1`, algorithm proxies are renamed to `<Algorithm>Crypto` (`Sm2Crypto`, `Sm3Crypto`, `Sm4Crypto`, …), and BouncyCastle types leave the public surface. Section names below follow the code as it exists today — the target layout is in [architecture.md §4.1](architecture.md).
+> **Contracts are the exception** — §1 names the assembly that `0.1.0` actually delivers.
 
 ---
 
-## 1. Algorithm primitives (`DevTrove.Crypto.Crypto`)
+## 1. Contracts (`DevTrove.Crypto.Abstractions`)
 
-### 1.1 Asymmetric keys
+A **separate assembly** with **no package dependencies at all** — not even BouncyCastle. Consumers can compile against this surface alone. Directory layout is flat, so each namespace maps onto one directory: `Symmetric/`, `Asymmetric/`, `Hash/`, `X509/`.
+
+> `RM-0.1.0-01`–`-05` deliver this assembly in `0.1.0`. BCL adapters sit next to the family they adapt rather than in a separate `Interop/` directory.
+
+### 1.1 Symmetric (`DevTrove.Crypto.Abstractions.Symmetric`)
+
+| Type | Kind | Purpose |
+|---|---|---|
+| `CipherModeKind` | enum | `Cbc` / `Cfb` / `Ofb` / `Ctr` / `Ecb` / `Gcm` — expresses CTR and AEAD, which the BCL's closed `CipherMode` enum cannot |
+| `PaddingKind` | enum | `None` / `Pkcs7` / `Zeros` / `AnsiX923` |
+| `ISymmetricBlockCipher` | interface | Block-size, key-size, mode, padding, nonce and tag sizes; `Encrypt` / `Decrypt` |
+| `SymmetricBlockCipher` | abstract class | Mode dispatch and padding; defaults `Cbc` + `Pkcs7`; **ECB makes `Encrypt` throw `InvalidOperationException`**; `Init` / `EncryptBlock` / `DecryptBlock` are left to the concrete algorithm |
+| `SymmetricBlockCipherInteropExtensions` | static class | `AsSymmetricAlgorithm()`. CBC / CFB / OFB / ECB bridge to the BCL; **GCM and CTR throw `NotSupportedException`** |
+
+### 1.2 Hash (`DevTrove.Crypto.Abstractions.Hash`)
+
+| Type | Kind | Purpose |
+|---|---|---|
+| `IDigest` | interface | `DigestSize` / `BlockSize` / `Reset()` / `Update(ReadOnlySpan<byte>)` / `Digest()` / `ComputeHash(ReadOnlySpan<byte>)` |
+| `DigestBase` | abstract class | Buffer management plus a one-shot `ComputeHash` built on `Update` + `Digest` |
+| `DigestInteropExtensions` | static class | `AsHashAlgorithm()` bridges to the BCL. On `netstandard2.0` the guard falls back to `HashCore(byte[], int, int)` |
+
+### 1.3 Asymmetric (`DevTrove.Crypto.Abstractions.Asymmetric`)
+
+| Type | Kind | Purpose |
+|---|---|---|
+| `ISigner` | interface | Sign / verify |
+| `IKeyEncipherment` | interface | Encrypt / decrypt |
+| `IKeyAgreement` | interface | Derive a shared secret (raw bytes; KDF is the caller's job) |
+| `IAsymmetricKey` | interface | Key metadata: algorithm and size |
+| `IPrivateKey` / `IPublicKey` | interface | Read-only key views |
+| `AsymmetricKeyBase` | abstract class | Holds key material and **clears it on disposal** |
+| `SignatureAlgorithmKind` | enum | The signature algorithms, so a default can be derived from the private key instead of hard-coding `SHA256WITHRSA` (`RM-0.0.8`) |
+
+Capabilities are separate interfaces rather than one base class because X25519 only agrees keys and Ed25519 only signs.
+
+### 1.4 X.509 (`DevTrove.Crypto.Abstractions.X509`)
+
+| Type | Kind | Purpose |
+|---|---|---|
+| `ICertificate` | interface | Read-only certificate view: subject, issuer, serial, validity, encoded form |
+| `ICertificateReader` | interface | Parse one or many certificates |
+| `ICertificateWriter` | interface | Emit a certificate |
+| `IDistinguishedName` | interface | Structured access to DN components |
+
+**No implementation type ships in `0.1.0`.** These interfaces are declared now and implemented in `0.5.0`; the contract tests prove they are implementable by a stub.
+
+---
+
+## 2. Algorithm primitives (`DevTrove.Crypto.Crypto`)
+
+### 2.1 Asymmetric keys
 
 | Type | Purpose |
 |---|---|
@@ -22,7 +73,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 | `AsymmetricPublicKeyParameter` | Public-key holder; verify / encrypt (where applicable) |
 | `PasswordFinder` | `IPasswordFinder` adapter for decrypting encrypted PEM |
 
-### 1.2 Algorithm wrappers
+### 2.2 Algorithm wrappers
 
 | Type | Purpose |
 |---|---|
@@ -31,7 +82,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 | `DsaCrypto` | DSA sign / verify (DER encoded); key lengths 1024 / 2048 / 3072 |
 | `AesCrypto` | AES-CBC / CFB / OFB (auto IV) + AES-GCM (12-byte nonce + 16-byte tag). ECB is supported for interoperability but CBC is the default and ECB is documented as insecure |
 
-### 1.3 ShangMi (`DevTrove.Crypto.Crypto.Sm`)
+### 2.3 ShangMi (`DevTrove.Crypto.Crypto.Sm`)
 
 | Type | Purpose |
 |---|---|
@@ -41,9 +92,9 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 
 ---
 
-## 2. X.509 (`DevTrove.Crypto.X509`)
+## 3. X.509 (`DevTrove.Crypto.X509`)
 
-### 2.1 Top-level types
+### 3.1 Top-level types
 
 | Type | Purpose |
 |---|---|
@@ -52,7 +103,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 | `CertificateRevocationList` | Generate (with revocation reasons) + parse + `IsRevoked` |
 | `X509ExtensionBuilder` | Apply `X509ExtensionOptions` to a certificate generator or assemble a CSR extension set |
 
-### 2.2 Models (`DevTrove.Crypto.X509.Models`)
+### 3.2 Models (`DevTrove.Crypto.X509.Models`)
 
 | Type | Purpose |
 |---|---|
@@ -64,7 +115,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 | `PfxBundle` | PFX / PKCS#12 container (cert + chain + private key) |
 | `RevokedCertificateInfo` | CRL entry |
 
-### 2.3 Enums (`DevTrove.Crypto.X509.Enums`)
+### 3.3 Enums (`DevTrove.Crypto.X509.Enums`)
 
 | Type | Purpose |
 |---|---|
@@ -76,7 +127,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/DevTrove.Cr
 
 Each enum ships with `*Extensions.cs` (extension methods) and a `*Helper.cs` (`X509/Extensions/`) for resource-string display + parsing.
 
-### 2.4 Utilities (`DevTrove.Crypto.X509.Utils`)
+### 3.4 Utilities (`DevTrove.Crypto.X509.Utils`)
 
 | Type | Purpose |
 |---|---|
@@ -84,7 +135,7 @@ Each enum ships with `*Extensions.cs` (extension methods) and a `*Helper.cs` (`X
 | `PfxUtils` | `ToPfx` / `FromPfx` for PKCS#12 import-export |
 | `X509NameParser` | DN parser (RFC 2253 + OpenSSL slash style) |
 
-### 2.5 Extensions (`DevTrove.Crypto.X509.Extensions`)
+### 3.5 Extensions (`DevTrove.Crypto.X509.Extensions`)
 
 | Type | Purpose |
 |---|---|
@@ -94,7 +145,7 @@ Each enum ships with `*Extensions.cs` (extension methods) and a `*Helper.cs` (`X
 
 ---
 
-## 3. BouncyCastle interop (`DevTrove.Crypto.BouncyCastle.*`)
+## 4. BouncyCastle interop (`DevTrove.Crypto.Asn1`, `DevTrove.Crypto.Interop`)
 
 | Type | Purpose |
 |---|---|
@@ -102,18 +153,18 @@ Each enum ships with `*Extensions.cs` (extension methods) and a `*Helper.cs` (`X
 | `CertificatePolicyObjectIdentifiers` | OID constants for certificate-policy extension |
 | `ExtendedKeyUsageObjectIdentifiers` | OID constants for extended-key-usage extension |
 
-These wrap BouncyCastle types to make `Core` self-contained without forcing consumers to `using Org.BouncyCastle.*` everywhere.
+These wrap BouncyCastle types so that `Core` can keep them out of its own public surface — see decision D21. Interop goes through the explicit extensions in `Interop/`; there is no `GetBouncyCastle*` member.
 
 ---
 
-## 4. Helpers (`DevTrove.Crypto.Common`, `DevTrove.Crypto.Extensions`)
+## 5. Helpers (`DevTrove.Crypto.Common`, `DevTrove.Crypto.Extensions`)
 
 | Type | Purpose |
 |---|---|
 | `EnumDisplayNameCache<TEnum>` | Cached resource-string lookup for enum display |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` convenience overloads |
 
-### 4.1 Signing-algorithm default rule (`RM-0.0.8`)
+### 5.1 Signing-algorithm default rule (`RM-0.0.8`)
 
 Any public signing method that accepts an optional `signatureAlgorithm` (e.g. `Certificate.GenerateSelfSigned`, `Certificate.SignCsr`, `Certificate.SignPublicKey`, `CertificateRevocationList.Generate`, `CertificateSigningRequest.Generate` overloads) **must derive the default from the private-key algorithm**, never hard-code `SHA256WITHRSA` or any other fixed OID:
 
@@ -129,15 +180,15 @@ Callers must remain able to override explicitly; the default only exists so that
 
 ---
 
-## 5. Resource files
+## 6. Resource files
 
 Resource files are not shipped in the `0.1.x` restructuring. Enum display names go through the trimmed/AOT-aware resolver added by `RM-0.0.12`.
 
 ---
 
-## 6. Reserved namespace — `DevTrove.Crypto.Tls`
+## 7. Reserved namespace — `DevTrove.Crypto.Tls`
 
-The namespace is reserved for the TLS probe engine. No public types exist today; the package is scheduled for `0.4.0` ([roadmap.md](roadmap.md) §6.17). The list below is a **design target**, not an API commitment.
+The namespace is reserved for the TLS probe engine. No public types exist today; the package is scheduled for `0.6.0` ([roadmap.md](roadmap.md) §6.19). The list below is a **design target**, not an API commitment.
 
 | Planned entity (per [tls-scanner.md §12](tls-scanner.md)) | Purpose |
 |---|---|
@@ -156,7 +207,7 @@ These are **planned, not implemented**. Any code claiming to reference them toda
 
 ---
 
-## 7. Consuming the API
+## 8. Consuming the API
 
 Consumers reference the metapackage:
 
@@ -164,26 +215,28 @@ Consumers reference the metapackage:
 <PackageReference Include="DevTrove.Crypto" Version="[0.1.0, )" />
 ```
 
-The metapackage transitively pulls `DevTrove.Crypto.Core`. Use the namespaces:
+The metapackage transitively pulls `DevTrove.Crypto.Core` and `DevTrove.Crypto.Abstractions`. Use the namespaces:
 
 ```csharp
 using DevTrove.Crypto;
-using DevTrove.Crypto.Crypto;
-using DevTrove.Crypto.Crypto.Sm;
-using DevTrove.Crypto.X509;
-using DevTrove.Crypto.X509.Enums;
+using DevTrove.Crypto.Abstractions.Symmetric;
+using DevTrove.Crypto.Abstractions.Asymmetric;
+using DevTrove.Crypto.Abstractions.Hash;
+using DevTrove.Crypto.Abstractions.X509;
 ```
+
+A consumer that wants the contract surface **without** the BouncyCastle-backed implementation references `DevTrove.Crypto.Abstractions` directly — it is the one package here that depends on nothing.
 
 For more on packaging and version constraints see [nuget.md](nuget.md).
 
 ---
 
-## 8. Maintenance
+## 9. Maintenance
 
 This index is hand-maintained. When a new public type is added:
 
 1. Add it to the matching section above.
 2. Add a Chinese line in [library-api.zh-CN.md](library-api.zh-CN.md) at the matching section (sections, tables and descriptions stay one-to-one).
-3. Verify with `grep -rn 'public (class|sealed class|record|enum|interface|struct) ' src/DevTrove.Crypto.Core --include='*.cs' | grep -v 'Resources/' | grep -v '.Designer\.cs'` — every match should appear in this index.
+3. Verify with a `grep` for public type declarations across `src/**` — every match must appear in this index.
 
-> The metapackage's `Program.cs` is excluded — once it is removed (`RM-0.0.2`), drop the corresponding note here.
+> The metapackage contributes no types by design, so it never appears in the `grep` result.
