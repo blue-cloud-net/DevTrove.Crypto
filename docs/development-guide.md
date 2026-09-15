@@ -175,7 +175,8 @@ NuGet does not support atomic multi-package publishing. To avoid "dependency bum
 ### CI known deviations
 
 - (`RM-0.0.6`, partial): publish-job build step, push globs, branch trigger and submodule checkout have been fixed; full tag-triggered end-to-end verification is still pending a CI run
-- (`RM-0.0.9`): tongsuo is not installed, so the integration stage fails on a clean runner
+- (`RM-0.0.9f`, partial): the `tongsuo` job builds and installs Tongsuo 8.4.0 with caching; the integration step now uses tongsuo. End-to-end verification still pending a CI run.
+- (`RM-0.0.9b` / `RM-0.0.9c`): the SM2 self-signed-cert and SM2 CRL fixture sections in the generator scripts will land once the rebuilt Core ships the corresponding helpers.
 
 ---
 

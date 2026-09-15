@@ -156,12 +156,12 @@ The fixture scripts and interop tests currently depend on both `openssl` and `to
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.9a | `generate-test-{keys,certs,csrs,crl,pfx}.sh` use `TONGSUO_PATH` instead of `openssl` | No `openssl` invocation remains in `scripts/` | ⬜ | `grep -rn openssl scripts/` returns nothing |
+| RM-0.0.9a | `generate-test-{keys,certs,csrs,crl,pfx}.sh` use `TONGSUO_PATH` instead of `openssl` | No `openssl` invocation remains in `scripts/` | ✅ | 6 scripts switched `openssl` → `${TONGSUO_BIN}`; `temp_openssl.cnf` → `temp_ext.cnf`; `grep -c openssl scripts/*.sh` all 0 |
 | RM-0.0.9b | `generate-test-certs.sh` gains an SM2 self-signed certificate section (today only a comment) | SM2 certificate fixtures are reproducible from the script | ⬜ | Re-run script on a clean `tests/data/` |
 | RM-0.0.9c | `generate-test-crl.sh` gains an SM2 CRL section (today absent) | SM2 CRL fixture is reproducible | ⬜ | Re-run script |
-| RM-0.0.9d | Remove the notion of a separate SM script; `TestDataGenerator` runs SM2 as part of the normal sequence | `SmCertScript` constant and its dedicated `try/catch` are gone | ⬜ | `grep -rn generate-test-sm-certs` returns nothing |
-| RM-0.0.9e | A missing Tongsuo fails the build instead of skipping with a warning | Scripts exit non-zero when the tool is unavailable | ⬜ | Run with `TONGSUO_PATH` pointing nowhere |
-| RM-0.0.9f | CI builds Tongsuo from source with a pinned version and caches the result | Integration stage passes on a clean runner | ⬜ | CI run |
+| RM-0.0.9d | Remove the notion of a separate SM script; `TestDataGenerator` runs SM2 as part of the normal sequence | `SmCertScript` constant and its dedicated `try/catch` are gone | ✅ | No `generate-test-sm-certs*` script and no `SmCertScript` constant exist in the repo; `grep -rn generate-test-sm-certs` returns nothing |
+| RM-0.0.9e | A missing Tongsuo fails the build instead of skipping with a warning | Scripts exit non-zero when the tool is unavailable | ✅ | All 6 scripts gained a guard right after `set -e`: `TONGSUO_PATH` defaults to `/opt/tongsuo/bin/tongsuo`; if not executable, prints an error to stderr and exits 127; `TONGSUO_PATH=/nonexistent/tongsuo bash scripts/generate-test-pfx.sh` triggers it |
+| RM-0.0.9f | CI builds Tongsuo from source with a pinned version and caches the result | Integration stage passes on a clean runner | 🟡 | `build.yml` adds a `tongsuo` job that builds and installs Tongsuo 8.4.0 to `/opt/tongsuo`; `actions/cache@v4` with key `tongsuo-\$OS-v8.4.0`; the `build` job `needs: tongsuo` and injects `TONGSUO_PATH` into the fixtures/integration steps; end-to-end verification still pending a CI run |
 
 ### 6.10 `RM-0.0.10` — fixture directories and descriptions
 

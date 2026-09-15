@@ -173,7 +173,8 @@ NuGet 不支持原子多包发布。为避免"依赖已升级但被依赖包尚�
 ### CI 已知偏差
 
 - （`RM-0.0.6`，部分）：publish job 的 build 步、推送 glob、分支触发与子模块 checkout 已修复；真实 `refs/tags/v*` 触发下的端到端验证仍待 CI 实跑
-- （`RM-0.0.9`）：未安装 tongsuo，干净 runner 上的集成阶段会失败
+- （`RM-0.0.9f`，部分）：新增 `tongsuo` job，从源码编译并缓存 Tongsuo 8.4.0；集成步骤改用 tongsuo。端到端验证仍待 CI 实跑
+- （`RM-0.0.9b` / `RM-0.0.9c`）：生成脚本中的 SM2 自签证书段与 SM2 CRL 段待 0.1.0 重建 Core 后的 SM2 生成流程落地
 
 ---
 

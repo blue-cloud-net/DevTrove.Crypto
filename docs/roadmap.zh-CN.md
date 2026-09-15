@@ -156,12 +156,12 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.9a | `generate-test-{keys,certs,csrs,crl,pfx}.sh` 改用 `TONGSUO_PATH` 而非 `openssl` | `scripts/` 内不再出现 `openssl` 调用 | ⬜ | `grep -rn openssl scripts/` 无输出 |
+| RM-0.0.9a | `generate-test-{keys,certs,csrs,crl,pfx}.sh` 改用 `TONGSUO_PATH` 而非 `openssl` | `scripts/` 内不再出现 `openssl` 调用 | ✅ | 6 个脚本 `openssl` → `${TONGSUO_BIN}`；`temp_openssl.cnf` → `temp_ext.cnf`；`grep -c openssl scripts/*.sh` 全 0 |
 | RM-0.0.9b | `generate-test-certs.sh` 补 SM2 自签名证书段（当前仅有一行注释） | SM2 证书夹具可由脚本复现 | ⬜ | 在干净的 `tests/data/` 上重跑脚本 |
 | RM-0.0.9c | `generate-test-crl.sh` 补 SM2 CRL 段（当前完全没有） | SM2 CRL 夹具可复现 | ⬜ | 重跑脚本 |
-| RM-0.0.9d | 取消「独立 SM 脚本」概念；`TestDataGenerator` 按正常顺序生成 SM2 | `SmCertScript` 常量与其专属 `try/catch` 已删除 | ⬜ | `grep -rn generate-test-sm-certs` 无输出 |
-| RM-0.0.9e | tongsuo 缺失时构建失败，而非跳过并警告 | 工具不可用时脚本以非零码退出 | ⬜ | 将 `TONGSUO_PATH` 指向不存在路径后运行 |
-| RM-0.0.9f | CI 从源码编译 tongsuo，pin 版本并缓存产物 | 干净 runner 上集成阶段通过 | ⬜ | CI 运行 |
+| RM-0.0.9d | 取消「独立 SM 脚本」概念；`TestDataGenerator` 按正常顺序生成 SM2 | `SmCertScript` 常量与其专属 `try/catch` 已删除 | ✅ | 仓库中已无 `generate-test-sm-certs*` 脚本、无 `SmCertScript` 常量；`grep -rn generate-test-sm-certs` 无输出 |
+| RM-0.0.9e | tongsuo 缺失时构建失败，而非跳过并警告 | 工具不可用时脚本以非零码退出 | ✅ | 6 个脚本在 `set -e` 后插入守卫：`TONGSUO_PATH` 默认 `/opt/tongsuo/bin/tongsuo`；不可执行时输出错误到 stderr 并 exit 127；`TONGSUO_PATH=/nonexistent/tongsuo bash scripts/generate-test-pfx.sh` 即触发 |
+| RM-0.0.9f | CI 从源码编译 tongsuo，pin 版本并缓存产物 | 干净 runner 上集成阶段通过 | 🟡 | `build.yml` 新增 `tongsuo` job：从 Tongsuo 8.4.0 编译并安装到 `/opt/tongsuo`；`actions/cache@v4` 键 `tongsuo-\$OS-v8.4.0`；`build` job `needs: tongsuo` 并向 fixtures/integration 步骤注入 `TONGSUO_PATH`；端到端验证待 CI 实跑 |
 
 ### 6.10 `RM-0.0.10` —— 夹具目录与说明
 
