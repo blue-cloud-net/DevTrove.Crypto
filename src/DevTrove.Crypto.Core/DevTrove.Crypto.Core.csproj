@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <IsPackable>true</IsPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Description>BouncyCastle 封装：算法原语、密钥、ASN.1、X.509、CSR、PKCS#7/#12、CRL、OCSP 的解析与生成。</Description>
