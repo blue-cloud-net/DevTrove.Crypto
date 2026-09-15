@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <PackageId>DevTrove.Crypto.Core</PackageId>
         <IsPackable>true</IsPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Description>BouncyCastle 封装：算法原语、密钥、ASN.1、X.509、CSR、PKCS#7/#12、CRL、OCSP 的解析与生成。</Description>
@@ -8,32 +9,13 @@
 
     <ItemGroup>
         <PackageReference Include="BouncyCastle.Cryptography" />
+        <!-- SourceLink：nuget.md §4 推荐启用，使符号包直链 GitHub 源码 -->
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
     </ItemGroup>
 
     <!-- 为 .NET Standard 2.0/2.1 添加所需的包 -->
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1'">
         <PackageReference Include="System.ComponentModel.Annotations"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Update="Resources\CryptoUtilCore.resx">
-        <Generator>ResXFileCodeGenerator</Generator>
-        <LastGenOutput>CryptoUtilCore.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
-      <EmbeddedResource Update="Resources\CryptoUtilCore.en-us.resx">
-        <DependentUpon>CryptoUtilCore.resx</DependentUpon>
-      </EmbeddedResource>
-      <EmbeddedResource Update="Resources\CryptoUtilCore.zh-hans.resx">
-        <DependentUpon>CryptoUtilCore.resx</DependentUpon>
-      </EmbeddedResource>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Update="Resources\CryptoUtilCore.Designer.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>CryptoUtilCore.resx</DependentUpon>
-      </Compile>
     </ItemGroup>
 
     <ItemGroup>

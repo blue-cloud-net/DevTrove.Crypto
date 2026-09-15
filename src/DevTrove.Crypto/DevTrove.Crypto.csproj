@@ -1,10 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <PackageId>DevTrove.Crypto</PackageId>
         <IsPackable>true</IsPackable>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <Description>DevTrove.Crypto 门面包：仅引用 DevTrove.Crypto.Core，向消费方传递依赖。</Description>
+        <!-- 门包不携带 lib/ref，NU5128 不适用；在门包上抑制该告警 -->
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

@@ -22,6 +22,12 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- 版本：0.0.x 仅作工作项编号（roadmap §3），首版发布前使用 -dev 哨兵值 -->
+    <Version>0.0.1-dev</Version>
+    <!-- SourceLink：调试符号直链 GitHub 源码 -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DeterministicSourcePaths>true</DeterministicSourcePaths>
 
     <!-- 5 TFM 策略：核心库最大化 NuGet 兼容面；应用项目 TFM 由子项目覆盖 -->
     <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
