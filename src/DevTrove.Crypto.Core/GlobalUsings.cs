@@ -1,10 +1,5 @@
 // global using 指令
 
-global using DevTrove.Crypto.Common;
-global using DevTrove.Crypto.Extensions;
-global using DevTrove.Crypto.Resources;
-global using DevTrove.Crypto.X509.Enums;
-global using DevTrove.Crypto.X509.Extensions;
 global using Org.BouncyCastle.Asn1;
 global using Org.BouncyCastle.Asn1.GM;
 global using Org.BouncyCastle.Asn1.Pkcs;
@@ -30,4 +25,3 @@ global using System.Collections.Concurrent;
 global using System.ComponentModel.DataAnnotations;
 global using System.Security.Cryptography;
 global using System.Text;
-global using RS = DevTrove.Crypto.Resources.CryptoUtilCore;

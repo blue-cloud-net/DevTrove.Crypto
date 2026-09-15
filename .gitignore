@@ -445,3 +445,6 @@ FodyWeavers.xsd
 
 # ---- 测试素材：由 scripts/generate-test-*.sh 在测试运行时生成，不纳入版本控制 ----
 tests/data/
+
+# ---- 临时备份：当前 src/DevTrove.Crypto.Core 的快照，等 0.1.0 重生成 Core 后删除 ----
+/tmp/
