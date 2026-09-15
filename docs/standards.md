@@ -292,6 +292,8 @@ One commit, one thing. No unrelated formatting changes mixed in.
 - ❌ Claiming capabilities that aren't implemented (docs must match code)
 - ❌ Logging or throwing Chinese exception messages inside the library
 - ❌ Placing source code or public API types inside the `DevTrove.Crypto` metapackage project
+- ❌ Embedding `${VAR}` / `$VAR` placeholders in shell-script comments (`#` lines) or single-quoted heredocs (`<< 'EOF'`): neither is expanded by the shell and the result is literal text that misleads readers. Reference the tool name literally (e.g. `tongsuo`)
+- ❌ Embedding path-bearing variables (e.g. `${TONGSUO_BIN}`) in user-facing prompt strings (`echo` hints, generated READMEs): they expand to an absolute path the user cannot directly copy. Use the command name (`tongsuo`) instead
 
 ---
 

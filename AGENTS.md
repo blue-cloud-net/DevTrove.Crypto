@@ -145,6 +145,8 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 - ❌ 声称未实现的能力（文档与代码必须一致）
 - ❌ 在核心库内打日志或抛出中文异常消息
 - ❌ 在 `DevTrove.Crypto` 门面包内放置任何 API 类型
+- ❌ 在 shell 脚本注释（`#` 行）或 `<< 'EOF'` 单引号 here-doc 中嵌入 `${VAR}` / `$VAR` 占位符：注释与单引号 here-doc **不会**被 shell 展开，写入后是字面文本，会误导读者；要引用工具名请直接写（如 `tongsuo`）
+- ❌ 在面向用户的提示文本（`echo` 提示、生成的 README 等）中嵌入带路径的变量（如 `${TONGSUO_BIN}`）：会展开为绝对路径，用户无法直接复制使用；应使用命令名（`tongsuo`）
 
 ---
 
