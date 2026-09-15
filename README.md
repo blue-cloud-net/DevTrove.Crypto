@@ -1,139 +1,123 @@
-# 🔐 Crypto Utils - 密码学工具平台
+# DevTrove.Crypto
 
-<p align="center">
-  <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8.0"/>
-  <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js" alt="Vue 3"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"/>
-</p>
+A pure-managed cryptography and certificate library for .NET, built on BouncyCastle, with first-class support for Chinese national cryptography (ShangMi / 国密) and X.509 / OCSP.
 
-## 📖 项目简介
-
-Crypto Utils 是一个功能全面、易用的密码学工具平台，专为开发者和测试人员设计，提供证书管理、密钥处理、CSR 生成、加解密等一站式密码学工具服务。本项目采用现代化的前后端分离架构，注重用户体验和数据安全，支持云端处理和本地浏览器模式双重选择，让您的敏感数据处理更加安全可控。
-
-## ✨ 核心特性
-
-### 🔑 密钥管理
-- 支持 **RSA**、**ECDSA**、**SM2**（商密）、**DSA** 等多种非对称加密算法
-- 密钥对生成，支持自定义密钥长度和椭圆曲线参数
-- 密钥格式转换：**PKCS#1** ↔ **PKCS#8**，**PEM** ↔ **DER**
-- 私钥解析并提取公钥，查看密钥详细信息
-
-### 📜 证书服务
-- **自签名证书生成**：快速创建测试用根证书
-- **CA 签发证书**：支持 CSR 签发、公钥签发、完整证书链生成
-- **证书解析**：详细展示证书信息、扩展字段、指纹计算
-- **证书验证**：证书链验证、证书与密钥匹配验证
-- **PFX 处理**：证书和私钥打包/解包，密码保护
-- **格式转换**：PEM、DER、CRT、CER 等格式互转
-
-### 📋 CSR（证书签名请求）
-- **交互式生成向导**：图形化配置 CN、O、OU、SAN 等字段
-- **CSR 解析**：查看 CSR 详细信息和扩展字段
-- **CSR 验证**：验证 CSR 与私钥、公钥的匹配关系
-
-### 🌐 HTTPS 工具
-- **在线证书检测**：检查网站 HTTPS 证书配置
-- **证书链补全**：自动下载并补全缺失的中间证书
-- **SSL/TLS 分析**：协议版本、加密套件安全性评估
-
-### 🛠️ 开发工具集
-- 哈希计算：MD5、SHA-1、SHA-256、SHA-512、SM3
-- 编解码工具：Base64、Hex、URL 编解码
-- JWT 工具：生成、解析、验证 JSON Web Token
-
-## 🏗️ 技术架构
-
-### 后端
-- **框架**：ASP.NET Core 8.0 Minimal API
-- **加密库**：BouncyCastle（支持商密算法）
-- **设计模式**：RESTful API、无状态设计
-- **特性**：统一异常处理、API 响应封装、Swagger 文档
-
-### 前端
-- **框架**：Vue 3 + TypeScript + Vite
-- **UI 组件库**：Element Plus
-- **样式方案**：UnoCSS
-- **状态管理**：Pinia
-- **路由管理**：Vue Router
-- **HTTP 客户端**：Axios
-- **国际化**：Vue I18n（中英文）
-
-### 部署
-- **容器化**：Docker / Docker Compose
-- **Web 服务器**：Kestrel / Nginx
-- **跨平台**：支持 Linux / Windows / macOS
-
-## 🚀 快速开始
-
-### 环境要求
-- .NET 8.0 SDK
-- Node.js 18+ / pnpm
-- Docker（可选）
-
-### 启动后端
-```bash
-cd src/Crypto.Utils.Host
-dotnet restore
-dotnet run
-```
-
-访问 API：`http://localhost:5000`  
-访问 Swagger：`http://localhost:5000/swagger`
-
-### 启动前端
-```bash
-cd src/Crypto.Utils.UI
-pnpm install
-pnpm dev
-```
-
-访问应用：`http://localhost:5173`
-
-### Docker 部署
-```bash
-docker-compose up -d
-```
-
-## 🔒 安全特性
-
-- **双模式架构**：支持云端 API 处理和浏览器本地处理模式
-- **数据不落盘**：API 无状态设计，不存储用户数据
-- **隐私保护**：敏感操作可选择纯前端模式，数据不离开浏览器
-- **HTTPS 传输**：生产环境强制使用 HTTPS 加密传输
-
-## 📚 文档
-
-- [API 设计文档](docs/API设计文档.md)
-- [UI 设计文档](docs/UI设计文档.md)
-- [项目路线图](docs/Roadmap.md)
-
-## 🗺️ 开发路线
-
-项目按照四个阶段逐步完善：
-1. **第一阶段**：基础设施与核心功能（密钥、证书基础操作）
-2. **第二阶段**：功能扩展（CSR、证书链、PFX、CRL）
-3. **第三阶段**：商密算法与高级特性（SM2/SM3/SM4、HTTPS 工具）
-4. **第四阶段**：生态完善（批量处理、监控、SDK、CLI）
-
-详见 [Roadmap.md](docs/Roadmap.md)
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 📄 开源协议
-
-本项目采用 [MIT License](LICENSE) 开源协议。
-
-## 🌟 致谢
-
-- [BouncyCastle](https://www.bouncycastle.org/) - 强大的密码学库
-- [Element Plus](https://element-plus.org/) - 优秀的 Vue 3 组件库
-- [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet) - 现代化的 Web 框架
+> 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
 ---
 
-<p align="center">
-  如果这个项目对您有帮助，请给我一个 ⭐ Star！
-</p>
+## Highlights
+
+- **Three NuGet packages**: `DevTrove.Crypto` (metapackage), `DevTrove.Crypto.Core` (implementation), `DevTrove.Crypto.Tls` (TLS probe engine, reserved for Phase 0)
+- **Pure managed, zero native dependencies** — runs on every platform BouncyCastle supports, including WebAssembly
+- **Algorithms**: RSA / ECDSA / DSA, AES (CBC / GCM), SM2 / SM3 / SM4
+- **X.509 / PKCS**: certificates, CSR, CRL, PFX / PKCS#12, OCSP (parse only)
+- **Multi-targeting**: `netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`
+- **Apache-2.0** licensed
+
+---
+
+## Installation
+
+```bash
+# 门面包（推荐）：仅传递依赖，自动引入 Core
+dotnet add package DevTrove.Crypto
+
+# 或显式引用实现包
+dotnet add package DevTrove.Crypto.Core
+```
+
+Requires .NET 8.0 or later at runtime; for older runtimes (e.g. .NET Framework, Unity), the `netstandard2.0` / `netstandard2.1` builds apply.
+
+---
+
+## Quick start
+
+```csharp
+using DevTrove.Crypto;
+using DevTrove.Crypto.X509;
+using DevTrove.Crypto.Crypto.Sm;
+
+// 解析 PEM 证书
+var cert = Certificate.FromPem(pemString);
+Console.WriteLine($"Subject: {cert.Subject}");
+Console.WriteLine($"NotAfter: {cert.NotAfter:yyyy-MM-dd}");
+Console.WriteLine($"SHA-256: {cert.Sha256Thumbprint}");
+
+// 生成 SM2 密钥对并自签名证书
+using var sm2 = new SM2();
+sm2.GenerateKeyPair();
+```
+
+More examples are provided in the test projects under `tests/DevTrove.Crypto.Core.Tests/`.
+
+---
+
+## Target frameworks
+
+| Target | Purpose |
+|---|---|
+| `netstandard2.0` | .NET Framework 4.6.2+, Unity, etc. |
+| `netstandard2.1` | .NET Core 3.x hosts |
+| `net8.0` / `net9.0` | Current LTS / STS |
+| `net10.0` | Latest features |
+
+Restoring `netstandard2.0` triggers a compilation probe; missing APIs are polyfilled in `Compat/` (see [`docs/development-guide.md`](docs/development-guide.md)).
+
+---
+
+## Repository layout
+
+```
+DevTrove.Crypto/
+├─ src/
+│  ├─ DevTrove.Crypto/          metapackage (no source)
+│  ├─ DevTrove.Crypto.Core/     implementation
+│  └─ DevTrove.Crypto.Tls/      TLS probe engine (Phase 0)
+├─ tests/
+│  ├─ DevTrove.Crypto.Core.Tests/
+│  └─ DevTrove.Crypto.TestSupport/   openssl / tongsuo CLI helpers
+├─ scripts/                       fixture generation
+└─ docs/                          development documentation (Chinese)
+```
+
+---
+
+## Documentation
+
+`docs/` ships each document in two languages: English default (`x.md`) + Chinese companion (`x.zh-CN.md`). Both have identical section / table / Mermaid structure.
+
+| Document | Contents |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | Internal layering, dependency direction, capability boundaries, known limitations |
+| [docs/standards.md](docs/standards.md) | Coding standards, naming, Git workflow, review checklist |
+| [docs/nuget.md](docs/nuget.md) | Package boundaries, versioning, release process |
+| [docs/tls-scanner.md](docs/tls-scanner.md) | TLS probe engine design (scheduled for Phase 3 / Phase 4) |
+| [docs/roadmap.md](docs/roadmap.md) | Library phase plan + pending / known deviations |
+| [docs/development-guide.md](docs/development-guide.md) | Build / test / pack commands, TFM / polyfill rules, CI |
+| [docs/library-api.md](docs/library-api.md) | Public API index |
+
+---
+
+## Build / test
+
+```bash
+dotnet build DevTrove.Crypto.slnx -c Release
+dotnet test  DevTrove.Crypto.slnx -c Release
+```
+
+External dependency for interop tests: `openssl` 3.x. Missing `openssl` causes interop tests to **fail**, not skip (per [docs/standards.md](docs/standards.md)).
+
+> The build currently fails with `NU1201` — see the pending-deviations table in [docs/roadmap.md](docs/roadmap.md) (items B1, B2).
+
+---
+
+## Status
+
+**Early development.** First packages target `0.0.1-dev` and follow `0.0.X-dev → 0.1.0`. See [docs/roadmap.md](docs/roadmap.md).
+
+---
+
+## License
+
+Apache-2.0 — see [LICENSE](LICENSE).
