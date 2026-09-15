@@ -1,19 +1,41 @@
+<!--
+    中央包版本管理（Central Package Management, CPM）。
+    启用 ManagePackageVersionsCentrally=true 后，所有子项目
+    通过 PackageReference（无 Version）即可统一锁版本。
+
+    包按职责分组：核心实现 / 测试 / 构建 / 注解 / SourceLink。
+    新增包时按所属分组追加，勿散落追加到末尾。
+  -->
 <Project>
 
-    <PropertyGroup>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    </PropertyGroup>
+  <!-- 启用中央包版本管理（CPM） -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
 
   <ItemGroup>
+    <!-- ========== [核心实现] ==========
+         库本身的运行时依赖。 -->
+
+    <!-- 密码学原语（ASN.1、X.509、CSR、CRL、PKCS#12、国密 SM 系列等） -->
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.6.2" />
-    <PackageVersion Include="CliWrap" Version="3.6.6" />
+
+    <!-- ========== [测试] ==========
+         单元测试框架与外部进程互操作封装。 -->
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.1" />
+    <PackageVersion Include="CliWrap" Version="3.6.6" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+
+    <!-- ========== [注解] ==========
+         netstandard2.0 兼容面所需的数据注解回填。 -->
     <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
+
+    <!-- ========== [SourceLink] ==========
+         调试符号直链 GitHub 源码（与 Directory.Build.props 配套）。 -->
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
-  
+
 </Project>
