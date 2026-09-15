@@ -162,7 +162,7 @@ dotnet pack <project> -c Release -o ./artifacts --include-symbols
 
 由于 NuGet 不支持原子多包发布，新版本发布时应**先发包、后打标签**，或在 CI 中按上述顺序依次推送，避免出现"依赖已升级但被依赖的包尚未发布"的窗口期。
 
-> **已知偏差**（`RM-0.0.6`）：`.github/workflows/build.yml` 的 `publish` job 当前用 `dotnet pack ... --no-build`，却缺少先行的 `dotnet build`；推送步的 glob `DevTrove.Crypto.*.nupkg` 也会匹配到 Core 包。
+> **已知偏差**（`RM-0.0.6`，部分）：`publish` job 已修复为 `dotnet restore` + `dotnet build` 后再 `dotnet pack --no-build`，推送 glob 拆分为 Core 的 `DevTrove.Crypto.Core.*.nupkg` 与门包的 `DevTrove.Crypto.[0-9]*.nupkg`。剩余事项为真实 `refs/tags/v*` 触发下的端到端验证。
 
 ### 6.3 密钥管理
 

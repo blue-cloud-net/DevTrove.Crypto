@@ -170,12 +170,10 @@ Job：
 
 NuGet 不支持原子多包发布。为避免"依赖已升级但被依赖包尚未发布"的窗口期，应**先发被依赖包、后更新消费方**，或在 CI 中按上述顺序依次推送。
 
-### CI 已知偏差（`RM-0.0.6`、`RM-0.0.9`）
+### CI 已知偏差
 
-- `publish` job 用 `dotnet pack ... --no-build`，但缺少先行的 `dotnet build` 步
-- 推送门包的 glob `DevTrove.Crypto.*.nupkg` 也会匹配到 Core 包
-- 工作流只在 `main` 触发；`actions/checkout` 仍请求 `submodules: recursive`，而本仓库没有子模块
-- 未安装 tongsuo，干净 runner 上的集成阶段会失败
+- （`RM-0.0.6`，部分）：publish job 的 build 步、推送 glob、分支触发与子模块 checkout 已修复；真实 `refs/tags/v*` 触发下的端到端验证仍待 CI 实跑
+- （`RM-0.0.9`）：未安装 tongsuo，干净 runner 上的集成阶段会失败
 
 ---
 

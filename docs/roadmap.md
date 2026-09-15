@@ -130,7 +130,7 @@ The `publish` job runs `dotnet pack --no-build` without a preceding build, the m
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.6 | Add a build step to `publish`; narrow the push glob; trigger on the integration branch; drop `submodules` | Tag-triggered run builds, packs and publishes both packages correctly | ⬜ | CI run (or dry run) |
+| RM-0.0.6 | Add a build step to `publish`; narrow the push glob; trigger on the integration branch; drop `submodules` | Tag-triggered run builds, packs and publishes both packages correctly | 🟡 | All four fixes applied in `.github/workflows/build.yml` (push/PR trigger on `dev` too; dropped `submodules: recursive`; publish job restored + rebuilt; push globs split into `DevTrove.Crypto.Core.*.nupkg` and `DevTrove.Crypto.[0-9]*.nupkg`); full tag-triggered verification still pending a CI run |
 
 ### 6.7 `RM-0.0.7` — test support targets `net9.0`
 

@@ -164,7 +164,7 @@ Produces `*.nupkg` + `*.snupkg`.
 
 NuGet doesn't support atomic multi-package publishing. New versions should **publish the dependency first**, then update consumers, or follow the order above in CI to avoid "dependency bumped but dependency not yet published" windows.
 
-> **Known deviation** (`RM-0.0.6`): the `publish` job in `.github/workflows/build.yml` currently runs `dotnet pack ... --no-build` without a preceding `dotnet build`, and the push step globs `DevTrove.Crypto.*.nupkg`, which also matches the Core package.
+> **Known deviation** (`RM-0.0.6`, partial): the `publish` job has been fixed to run `dotnet restore` + `dotnet build` before `dotnet pack --no-build`, and the push globs are split (`DevTrove.Crypto.Core.*.nupkg` for Core, `DevTrove.Crypto.[0-9]*.nupkg` for the metapackage). The remaining work is end-to-end verification under a real `refs/tags/v*` run.
 
 ### 6.3 Key management
 

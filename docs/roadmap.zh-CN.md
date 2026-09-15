@@ -130,7 +130,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.6 | publish 增加构建步骤；收窄推送 glob；在集成分支触发；去掉 `submodules` | tag 触发的运行能正确构建、打包并发布两个包 | ⬜ | CI 运行（或试运行） |
+| RM-0.0.6 | publish 增加构建步骤；收窄推送 glob；在集成分支触发；去掉 `submodules` | tag 触发的运行能正确构建、打包并发布两个包 | 🟡 | build.yml 4 项修复已落地（push/PR 加 `dev`、去掉 `submodules: recursive`、publish 加 restore+build、推送 glob 用 `DevTrove.Crypto.Core.*` 与 `DevTrove.Crypto.[0-9]*` 区分）；完整 tag 触发验证待 CI 实跑 |
 
 ### 6.7 `RM-0.0.7` —— TestSupport 目标 `net9.0`
 

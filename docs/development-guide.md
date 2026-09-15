@@ -172,12 +172,10 @@ Jobs:
 
 NuGet does not support atomic multi-package publishing. To avoid "dependency bumped but not yet published" windows, either (a) **publish the dependency first**, then update the consumer, or (b) follow the order above in CI.
 
-### CI known deviations (`RM-0.0.6`, `RM-0.0.9`)
+### CI known deviations
 
-- the `publish` job runs `dotnet pack ... --no-build` with no preceding `dotnet build` step
-- the metapackage push glob `DevTrove.Crypto.*.nupkg` also matches the Core package
-- the workflow triggers on `main` only, and `actions/checkout` still asks for `submodules: recursive` although this repository has none
-- tongsuo is not installed, so the integration stage fails on a clean runner
+- (`RM-0.0.6`, partial): publish-job build step, push globs, branch trigger and submodule checkout have been fixed; full tag-triggered end-to-end verification is still pending a CI run
+- (`RM-0.0.9`): tongsuo is not installed, so the integration stage fails on a clean runner
 
 ---
 
