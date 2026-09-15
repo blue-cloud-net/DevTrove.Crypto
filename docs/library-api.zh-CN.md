@@ -113,15 +113,25 @@
 | `EnumDisplayNameCache<TEnum>` | 枚举显示名的资源字符串缓存查找 |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` 便捷重载 |
 
+### 4.1 签名算法默认值规则（`RM-0.0.8`）
+
+任何接受可选 `signatureAlgorithm` 的公开签名方法（如 `Certificate.GenerateSelfSigned`、`Certificate.SignCsr`、`Certificate.SignPublicKey`、`CertificateRevocationList.Generate`、`CertificateSigningRequest.Generate` 的两个重载）**必须按私钥算法推导默认值**，不得硬编码 `SHA256WITHRSA` 或其它固定 OID：
+
+| 私钥算法 | 默认签名算法 |
+|---|---|
+| RSA | `SHA256WITHRSA` |
+| ECDSA（P-256 / P-384 / P-521） | `SHA256WITHECDSA` / `SHA384WITHECDSA` / `SHA512WITHECDSA` |
+| DSA | `SHA256WITHDSA` |
+| SM2（曲线 `sm2p256v1`） | `SM3WITHSM2` |
+| Ed25519 / Ed448 | `Ed25519` / `Ed448`（内禀） |
+
+调用方仍可显式覆盖；默认值的存在仅为了让 EC / DSA / SM2 / Ed25519 调用方不必特判。
+
 ---
 
 ## 5. 资源文件
 
-| 文件 | 用途 |
-|---|---|
-| `Resources/CryptoUtilCore.resx` | 基线资源（中文） |
-| `Resources/CryptoUtilCore.zh-hans.resx` | 简体中文 |
-| `Resources/CryptoUtilCore.en-us.resx` | 英文（美国） |
+`0.1.x` 重构期间不再随库发布资源文件。枚举显示名由 `RM-0.0.12` 引入的裁剪 / AOT 友好的解析器承载。
 
 ---
 

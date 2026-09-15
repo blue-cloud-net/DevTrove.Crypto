@@ -113,15 +113,25 @@ These wrap BouncyCastle types to make `Core` self-contained without forcing cons
 | `EnumDisplayNameCache<TEnum>` | Cached resource-string lookup for enum display |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` convenience overloads |
 
+### 4.1 Signing-algorithm default rule (`RM-0.0.8`)
+
+Any public signing method that accepts an optional `signatureAlgorithm` (e.g. `Certificate.GenerateSelfSigned`, `Certificate.SignCsr`, `Certificate.SignPublicKey`, `CertificateRevocationList.Generate`, `CertificateSigningRequest.Generate` overloads) **must derive the default from the private-key algorithm**, never hard-code `SHA256WITHRSA` or any other fixed OID:
+
+| Private-key algorithm | Default signature algorithm |
+|---|---|
+| RSA | `SHA256WITHRSA` |
+| ECDSA (P-256 / P-384 / P-521) | `SHA256WITHECDSA` / `SHA384WITHECDSA` / `SHA512WITHECDSA` |
+| DSA | `SHA256WITHDSA` |
+| SM2 (curve `sm2p256v1`) | `SM3WITHSM2` |
+| Ed25519 / Ed448 | `Ed25519` / `Ed448` (intrinsic) |
+
+Callers must remain able to override explicitly; the default only exists so that EC / DSA / SM2 / Ed25519 callers do not have to special-case it.
+
 ---
 
 ## 5. Resource files
 
-| File | Purpose |
-|---|---|
-| `Resources/CryptoUtilCore.resx` | Base resource set (Chinese) |
-| `Resources/CryptoUtilCore.zh-hans.resx` | Simplified Chinese |
-| `Resources/CryptoUtilCore.en-us.resx` | English (United States) |
+Resource files are not shipped in the `0.1.x` restructuring. Enum display names go through the trimmed/AOT-aware resolver added by `RM-0.0.12`.
 
 ---
 
