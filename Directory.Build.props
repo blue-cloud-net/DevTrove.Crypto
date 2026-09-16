@@ -40,9 +40,10 @@
   </PropertyGroup>
 
   <!-- ========== [TFM 策略] ==========
-       5 TFM：核心库最大化 NuGet 兼容面；应用项目 TFM 由子项目覆盖。 -->
+       4 TFM：核心库最大化 NuGet 兼容面；应用项目 TFM 由子项目覆盖。
+       netstandard2.1 已移除 —— 没有任何未 EOL 的宿主会解析该资产，无法被运行测试覆盖。 -->
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- ========== [AOT / 裁剪兼容] ==========

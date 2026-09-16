@@ -80,9 +80,9 @@ jobs:
           fi
           echo "License check passed: $PKG_LICENSE"
 
-          # 6. 不变量 3：<TargetFrameworks> 必须包含全部 5 个 TFM
+          # 6. 不变量 3：<TargetFrameworks> 必须包含全部 4 个 TFM
           PKG_TFM="$(grep -oP '(?<=<TargetFrameworks>)[^<]+' Directory.Build.props | head -1 | tr -d '[:space:]')"
-          REQUIRED_TFMS=("netstandard2.0" "netstandard2.1" "net8.0" "net9.0" "net10.0")
+          REQUIRED_TFMS=("netstandard2.0" "net8.0" "net9.0" "net10.0")
           MISSING=()
           for tfm in "${REQUIRED_TFMS[@]}"; do
             if [[ ";$PKG_TFM;" != *";$tfm;"* ]]; then
