@@ -1,14 +1,16 @@
 #!/bin/bash
 
 # 证书测试素材生成脚本（tongsuo）
-# 生成含扩展自签名证书、CA + 叶子证书链、极简自签名证书，用于固定测试。
+# 生成含扩展自签名证书、CA + 叶子证书链、极简自签名证书，以及 SM2 自签名证书，用于固定测试。
 # 依赖: generate-test-keys.sh 生成的密钥文件
 #
 # 生成参数（作为单元测试断言依据）：
-# - rsa-2048-selfsigned-ext.pem : RSA 2048，serial 1001，CN=test.example.com，SAN/KU/EKU/SKI/AKI/CRLDP
-# - ec-p256-selfsigned-ext.pem  : EC P-256，serial 2001，CN=ec-test.example.com，SAN/KU/EKU/SKI/AKI
+# - rsa-2048-self-signed.pem - RSA 2048，serial 1001，CN=test.example.com，SAN/KU/EKU/SKI/AKI/CRLDP
+# - ec-p256-self-signed.pem  - EC P-256，serial 2001，CN=ec-test.example.com，SAN/KU/EKU/SKI/AKI
 # - rsa-2048-minimal.pem        : RSA 2048，serial 3001，CN=minimal.example.com，无扩展
 # - ca.crt / leaf.crt           : CA(serial A001, CN=Test Root CA) + 叶子(serial B001, CN=leaf.example.com)
+# - dsa-2048-self-signed.pem    : DSA，serial 5001，CN=dsa-test.example.com，KU
+# - sm2-selfsigned.pem         : SM2，serial 6001，CN=sm2-test.example.cn，SAN/KU/EKU，使用 SM3 摘要
 
 set -e
 
@@ -33,7 +35,7 @@ mkdir -p "$OUTPUT_DIR"
 echo "输出目录: $OUTPUT_DIR"
 
 # 检查密钥文件
-if [ ! -f "$KEYS_DIR/rsa-2048-pkcs1.pem" ]; then
+if [ ! -f "$KEYS_DIR/rsa-2048-pkcs1.pem" ] || [ ! -f "$KEYS_DIR/sm2-pkcs8.pem" ]; then
     echo "密钥文件不存在，正在生成..."
     "$SCRIPT_DIR/generate-test-keys.sh"
 fi
@@ -57,7 +59,7 @@ EOF
 # ============================================
 # 1. RSA 自签名证书（完整扩展）
 # ============================================
-echo "[1/5] RSA 自签名证书 (含扩展)..."
+echo "[1/7] RSA 自签名证书 (含扩展)..."
 write_req_ext "keyUsage = critical,digitalSignature,keyEncipherment
 extendedKeyUsage = serverAuth,clientAuth
 subjectAltName = DNS:test.example.com,DNS:www.test.example.com,IP:192.168.1.100
@@ -74,7 +76,7 @@ echo "  ✓ rsa-2048-selfsigned-ext.pem"
 # ============================================
 # 2. EC 自签名证书（含扩展）
 # ============================================
-echo "[2/5] EC 自签名证书 (含扩展)..."
+echo "[2/7] EC 自签名证书 (含扩展)..."
 write_req_ext "keyUsage = critical,digitalSignature
 extendedKeyUsage = serverAuth
 subjectAltName = DNS:ec-test.example.com,DNS:api.ec-test.example.com
@@ -90,7 +92,7 @@ echo "  ✓ ec-p256-selfsigned-ext.pem"
 # ============================================
 # 3. 极简自签名证书（无扩展）
 # ============================================
-echo "[3/5] 极简自签名证书 (无扩展)..."
+echo "[3/7] 极简自签名证书 (无扩展)..."
 write_req_ext ""
 ${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/rsa-2048-pkcs1.pem" \
     -out "$OUTPUT_DIR/rsa-2048-minimal.pem" \
@@ -102,7 +104,7 @@ echo "  ✓ rsa-2048-minimal.pem"
 # ============================================
 # 4. CA 证书 + 叶子证书（证书链）
 # ============================================
-echo "[4/5] CA + 叶子证书链..."
+echo "[4/7] CA + 叶子证书链..."
 
 # CA 证书配置
 cat > "$OUTPUT_DIR/temp_ca_ext.cnf" <<EOF
@@ -151,7 +153,7 @@ echo "  ✓ leaf.crt"
 # ============================================
 # 5. DSA 自签名证书
 # ============================================
-echo "[5/6] DSA 自签名证书 (含扩展)..."
+echo "[5/7] DSA 自签名证书 (含扩展)..."
 write_req_ext "keyUsage = critical,digitalSignature"
 
 ${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/dsa-2048-private.pem" \
@@ -162,10 +164,27 @@ ${TONGSUO_BIN} req -x509 -new -key "$KEYS_DIR/dsa-2048-private.pem" \
 echo "  ✓ dsa-2048-selfsigned.pem"
 
 # ============================================
-# 6. 清理
+# 6. SM2 自签名证书（含扩展）
 # ============================================
-echo "[6/6] 清理临时文件..."
+echo "[6/7] SM2 自签名证书 (含扩展)..."
+write_req_ext "keyUsage = critical,digitalSignature
+extendedKeyUsage = serverAuth,clientAuth
+subjectAltName = DNS:sm2-test.example.cn,DNS:www.sm2-test.example.cn"
+
+# SM2 使用 SM3 摘要，且 sigopt sm2_id 与 BouncyCastle 默认一致（1234567812345678）。
+${TONGSUO_BIN} req -x509 -new -sm3 \
+    -key "$KEYS_DIR/sm2-pkcs8.pem" \
+    -out "$OUTPUT_DIR/sm2-selfsigned.pem" \
+    -days 365 -set_serial 0x6001 \
+    -sigopt sm2_id:1234567812345678 \
+    -subj "/C=CN/O=SM2 Corp/CN=sm2-test.example.cn" \
+    -config "$OUTPUT_DIR/temp_req_ext.cnf" 2>/dev/null
+echo "  ✓ sm2-selfsigned.pem"
+
+# ============================================
+# 7. 清理
+# ============================================
+echo "[7/7] 清理临时文件..."
 rm -f "$OUTPUT_DIR"/temp_*.cnf
 
 echo "完成。"
-# 提示：SM2 证书由 generate-test-sm-certs.sh（tongsuo）单独生成
