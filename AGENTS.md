@@ -11,7 +11,7 @@
 
 | 包 | 角色 |
 |---|---|
-| `DevTrove.Crypto.Abstractions` | **契约**：对称 / 非对称 / 摘要 / X.509 四面的接口与抽象基类；**零包依赖**（计划中，`0.1.0`） |
+| `DevTrove.Crypto.Abstractions` | **契约**：对称 / 非对称 / 摘要 / X.509 四面的接口与抽象基类；**零包依赖**（工作项 `RM-0.0.14`；随首个发布 `0.1.0` 出货） |
 | `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装（算法原语、密钥、ASN.1、X.509、CSR、CRL、PKCS#12）；依赖 Abstractions |
 | `DevTrove.Crypto` | **门面包（metapackage）**：仅 `ProjectReference` → Core，对外只传递依赖 |
 | `DevTrove.Crypto.Tls` | **TLS 探测引擎**（计划中，`0.6.0`；当前仅有预留命名空间） |
@@ -29,7 +29,7 @@
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖，计划中 `0.1.0`）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖，工作项 `RM-0.0.14`）
 │  ├─ DevTrove.Crypto/              门面包
 │  ├─ DevTrove.Crypto.Core/         实现
 │  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0`）
@@ -153,6 +153,7 @@ dotnet pack src/DevTrove.Crypto/DevTrove.Crypto.csproj         -c Release -o ./a
 - ❌ 声称未实现的能力（文档与代码必须一致）
 - ❌ 在核心库内打日志或抛出中文异常消息
 - ❌ 在 `DevTrove.Crypto` 门面包内放置任何 API 类型
+- ❌ 在 `DevTrove.Crypto.Abstractions` 内引用任何包（它必须保持零依赖，BouncyCastle 也不例外）
 - ❌ 在 shell 脚本注释（`#` 行）或 `<< 'EOF'` 单引号 here-doc 中嵌入 `${VAR}` / `$VAR` 占位符：注释与单引号 here-doc **不会**被 shell 展开，写入后是字面文本，会误导读者；要引用工具名请直接写（如 `tongsuo`）
 - ❌ 在面向用户的提示文本（`echo` 提示、生成的 README 等）中嵌入带路径的变量（如 `${TONGSUO_BIN}`）：会展开为绝对路径，用户无法直接复制使用；应使用命令名（`tongsuo`）
 - ❌ 在代码与脚本的注释里嵌入 `roadmap.md` 的条目编号（如 `RM-0.0.9a`、`RM-0.0.9a/9e`）：roadmap 是文档内部追踪项，外泄到 `.cs` / `.csproj` / `.sh` / `.yml` / `.props` 的注释里会让条目号随版本变动而失真；roadmap ↔ 代码的对应关系由 `docs/roadmap.md` 自身维护，不在源码里反向引用

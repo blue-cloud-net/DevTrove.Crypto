@@ -8,7 +8,9 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 
 > **第 2–9 节描述的是正在重建的代码。** `DevTrove.Crypto.Core` 当前不承载任何源码：Web 时代的实现已被移除，正在按第 1 节的契约重建。那几节作为**目标索引**保留，不构成「这些类型今天已存在」的声明。
 
-> **契约是例外** —— 第 1 节列的就是 `0.1.0` 实际交付的程序集。
+> **契约是例外** —— 第 1 节列的就是 `RM-0.0.14` 实际建成的程序集；它随首个发布 `0.1.0` 出货。
+
+> **API 稳定性。** 库处于 `0.x`，本索引中的任何条目都不构成兼容性承诺：公开类型与成员可能在任何次版本中变更。`1.0.0` 冻结该面（`RM-1.0.0-01`）。
 
 ---
 
@@ -16,7 +18,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 
 **独立程序集**，且**不依赖任何包** —— 连 BouncyCastle 都没有。消费方可仅对这个面编程。目录采用扁平布局，每个命名空间对应一个目录：`Symmetric/`、`Asymmetric/`、`Hash/`、`X509/`。
 
-> `RM-0.1.0-01`–`-05` 在 `0.1.0` 交付该程序集。BCL 适配器放在它所适配的族旁边，不另建 `Interop/` 目录。
+> `RM-0.0.14a`–`e` 建成该程序集；它随首个发布 `0.1.0` 出货。BCL 适配器放在它所适配的族旁边，不另建 `Interop/` 目录。
 
 ### 1.1 对称（`DevTrove.Crypto.Abstractions.Symmetric`）
 
@@ -25,7 +27,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 | `CipherModeKind` | enum | `Cbc` / `Cfb` / `Ofb` / `Ctr` / `Ecb` / `Gcm` —— 可表达 CTR 与 AEAD，而 BCL 的封闭 `CipherMode` 枚举做不到 |
 | `PaddingKind` | enum | `None` / `Pkcs7` / `Zeros` / `AnsiX923` |
 | `ISymmetricBlockCipher` | interface | 分组大小、密钥大小、模式、填充、Nonce 与 Tag 大小；`Encrypt` / `Decrypt` |
-| `SymmetricBlockCipher` | abstract class | 模式分发与填充；默认 `Cbc` + `Pkcs7`；**ECB 时 `Encrypt` 抛 `InvalidOperationException`**；`Init` / `EncryptBlock` / `DecryptBlock` 留给具体算法 |
+| `SymmetricBlockCipher` | abstract class | 模式分发与填充；默认 `Cbc` + `Pkcs7`；已实现 CBC / CFB / OFB 与 ECB —— **ECB 逐块独立加密、无 IV，XML 注释显式告警其不安全**；`Ctr` / `Gcm` 抛 `NotSupportedException`，待各族自行实现；`Init` / `EncryptBlock` / `DecryptBlock` 留给具体算法 |
 | `SymmetricBlockCipherInteropExtensions` | static class | `AsSymmetricAlgorithm()`。CBC / CFB / OFB / ECB 桥接到 BCL；**GCM 与 CTR 抛 `NotSupportedException`** |
 
 ### 1.2 摘要（`DevTrove.Crypto.Abstractions.Hash`）
@@ -46,7 +48,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 | `IAsymmetricKey` | interface | 密钥元数据：算法与长度 |
 | `IPrivateKey` / `IPublicKey` | interface | 只读密钥视图 |
 | `AsymmetricKeyBase` | abstract class | 持有密钥材料，**并在释放时清零** |
-| `SignatureAlgorithmKind` | enum | 签名算法枚举，使默认值可按私钥推导，而不硬编码 `SHA256WITHRSA`（`RM-0.3.0-03`） |
+| `SignatureAlgorithmKind` | enum | 签名算法枚举，使默认值可按私钥推导，而不硬编码 `SHA256WITHRSA`（`RM-0.2.0-03`） |
 
 能力拆成独立接口而非单一基类，是因为 X25519 只做密钥协商、Ed25519 只做签名。
 
@@ -166,7 +168,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 | `EnumDisplayNameCache<TEnum>` | 枚举显示名的资源字符串缓存查找 |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` 便捷重载 |
 
-### 5.1 签名算法默认值规则（`RM-0.3.0-03`）
+### 5.1 签名算法默认值规则（`RM-0.2.0-03`）
 
 任何接受可选 `signatureAlgorithm` 的公开签名方法（如 `Certificate.GenerateSelfSigned`、`Certificate.SignCsr`、`Certificate.SignPublicKey`、`CertificateRevocationList.Generate`、`CertificateSigningRequest.Generate` 的两个重载）**必须按私钥算法推导默认值**，不得硬编码 `SHA256WITHRSA` 或其它固定 OID：
 
@@ -184,13 +186,13 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 
 ## 6. 资源文件
 
-`0.1.x` 重构期间不再随库发布资源文件。枚举显示名由 `RM-0.0.12` 引入的裁剪 / AOT 友好的解析器承载。
+资源文件随 `RM-0.0.14` 落地：`Resources/CryptoUtilCore*.resx` 与 `Common/EnumDisplayNameCache<TEnum>`，后者的反射入口带 `DynamicallyAccessedMembers` 标注，使经裁剪与 AOT 编译的消费方仍能解析枚举显示名（`RM-0.0.12`，决策 D25）。资源键由 `0.5.0` 落地的 X.509 枚举消费；在此之前该机制用测试内的枚举验证。
 
 ---
 
 ## 7. 预留命名空间 —— `DevTrove.Crypto.Tls`
 
-该命名空间为 TLS 探测引擎预留。当前不存在任何公开类型；包排期在 `0.6.0`（[roadmap.md](roadmap.md) §6.19）。下表是**设计目标**，不是 API 承诺。
+该命名空间为 TLS 探测引擎预留。当前不存在任何公开类型；包排期在 `0.6.0`（[roadmap.md](roadmap.md) §6.18）。下表是**设计目标**，不是 API 承诺。
 
 | 计划实体（见 [tls-scanner.md §12](tls-scanner.md)） | 用途 |
 |---|---|

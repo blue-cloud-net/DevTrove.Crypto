@@ -44,7 +44,7 @@ DevTrove.Crypto/
 │  ├─ DevTrove.Crypto.Abstractions/  contracts: interfaces and abstract base types (zero dependencies)
 │  ├─ DevTrove.Crypto/               metapackage (no source — see §3)
 │  ├─ DevTrove.Crypto.Core/          implementation
-│  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned — see [roadmap.md](roadmap.md) §6.19)
+│  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned — see [roadmap.md](roadmap.md) §6.18)
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI helpers
@@ -60,10 +60,10 @@ Each `src/<Project>/` directory corresponds to one NuGet package.
 
 | Package ID | Role | Notes |
 |---|---|---|
-| `DevTrove.Crypto.Abstractions` | **Contracts**: interfaces and abstract base types for the symmetric, asymmetric, hash and X.509 surfaces | **Planned, `0.1.0`.** The leaf of the dependency graph — it references no package at all, BouncyCastle included. |
+| `DevTrove.Crypto.Abstractions` | **Contracts**: interfaces and abstract base types for the symmetric, asymmetric, hash and X.509 surfaces | **Work item `RM-0.0.14`; ships with the first release `0.1.0`.** The leaf of the dependency graph — it references no package at all, BouncyCastle included. |
 | `DevTrove.Crypto.Core` | **Implementation**: BouncyCastle wrapper — algorithms, keys, ASN.1, X.509, CSR, PKCS#7/#12, CRL, OCSP parse | The library that actually ships code. Depends on `DevTrove.Crypto.Abstractions`. |
 | `DevTrove.Crypto` | **Metapackage (facade)**: only `ProjectReference` → Core; no source code, no public API types | Consumers should reference this. Core — and through it Abstractions — is pulled in transitively. |
-| `DevTrove.Crypto.Tls` | **TLS probe engine** | **Planned.** The namespace is reserved and the package is scheduled for `0.6.0`; no types exist today (see [roadmap.md](roadmap.md) §6.19). |
+| `DevTrove.Crypto.Tls` | **TLS probe engine** | **Planned.** The namespace is reserved and the package is scheduled for `0.6.0`; no types exist today (see [roadmap.md](roadmap.md) §6.18). |
 
 ### Dependency graph
 
@@ -84,7 +84,7 @@ Two assemblies carry source. Contracts live in one, implementations in the other
 
 > **`DevTrove.Crypto.Core` currently holds no source.** The Web-era implementation was removed and is being rebuilt against the contracts below, so the tree that used to be printed here no longer describes anything real. It is deliberately not reproduced.
 
-### 4.1 `DevTrove.Crypto.Abstractions` (lands in `0.1.0`)
+### 4.1 `DevTrove.Crypto.Abstractions` (built by work item `RM-0.0.14`, ships with `0.1.0`)
 
 A **flat** layout — no intermediate directory layer — so the namespace maps one-to-one onto the directory.
 
@@ -111,18 +111,18 @@ Everything under the old `Crypto/` directory becomes `Algorithms/`, split by fam
 
 | Directory | Namespace | Lands in |
 |---|---|---|
-| `Asn1/` | `DevTrove.Crypto.Asn1` | `0.1.0` |
-| `Interop/` | `DevTrove.Crypto.Interop` | `0.1.0` |
-| `Compat/` | internal only | `0.1.0` |
+| `Asn1/` | `DevTrove.Crypto.Asn1` | `RM-0.0.14` |
+| `Interop/` | `DevTrove.Crypto.Interop` | `RM-0.0.14` |
+| `Compat/` | internal only | `RM-0.0.14` |
 | `X509/` | `DevTrove.Crypto.X509` | existing |
-| `Algorithms/Symmetric/` | `DevTrove.Crypto.Algorithms.Symmetric` | `0.2.0` |
-| `Algorithms/Asymmetric/` | `DevTrove.Crypto.Algorithms.Asymmetric` | `0.3.0` |
-| `Algorithms/Hash/` | `DevTrove.Crypto.Algorithms.Hash` | `0.4.0` |
+| `Algorithms/Symmetric/` | `DevTrove.Crypto.Algorithms.Symmetric` | `0.1.0` |
+| `Algorithms/Asymmetric/` | `DevTrove.Crypto.Algorithms.Asymmetric` | `0.2.0` |
+| `Algorithms/Hash/` | `DevTrove.Crypto.Algorithms.Hash` | `0.3.0` |
 | `Formats/` | `DevTrove.Crypto.Formats` | `0.5.0` |
 | `X509/Chain/` | `DevTrove.Crypto.X509.Chain` | `0.5.0` |
 | `X509/Ocsp/` | `DevTrove.Crypto.X509.Ocsp` | `0.5.0` |
 
-Each family's concrete algorithms land in the milestone named above, implemented against the `0.1.0` contracts. Per-item status is in [roadmap.md](roadmap.md) §6.
+Each family's concrete algorithms land in the milestone named above, implemented against the `RM-0.0.14` contracts. Per-item status is in [roadmap.md](roadmap.md) §6.
 
 ---
 
@@ -196,12 +196,12 @@ Two different things live here, and conflating them is what produced the previou
 | G2 | No PKIX path validation (no `AuthorityKeyIdentifier`, `KeyUsage`, `BasicConstraints`, path length, policy or name constraints) | Chains PKIX would reject may be accepted | `1.0.0` (`RM-1.0.0-02`) |
 | G3 | No OCSP code of any kind | No revocation-state verdict | `0.5.0` (`RM-0.5.0-08`); signature verification evaluated in `0.7.0` |
 | G4 | No PKCS#7 / CMS support | Cannot consume CMS SignedData | `0.5.0` (`RM-0.5.0-07`) |
-| G5 | No key-derivation functions (HKDF, PBKDF2, scrypt) | Callers must implement key derivation themselves — the most error-prone step to hand-roll | `0.4.0` (`RM-0.4.0-03`) |
-| G6 | No HMAC of any kind | `0.4.0` (`RM-0.4.0-02`) |
-| G7 | No Ed25519 / Ed448 / X25519 family | Modern signature and key-agreement suites unavailable | `0.3.0` (`RM-0.3.0-02`) |
+| G5 | No key-derivation functions (HKDF, PBKDF2, scrypt) | Callers must implement key derivation themselves — the most error-prone step to hand-roll | `0.4.0` (`RM-0.4.0-01`) |
+| G6 | No HMAC of any kind | No message authentication code can be computed | `0.3.0` (`RM-0.3.0-02`) |
+| G7 | No Ed25519 / Ed448 / X25519 family | Modern signature and key-agreement suites unavailable | `0.2.0` (`RM-0.2.0-02`) |
 | G8 | No format auto-detection (PEM / DER and friends) | Callers must know the format before calling | `0.5.0` (`RM-0.5.0-03`) |
-| G9 | `netstandard2.0` does not build | The advertised compatibility surface does not exist | `RM-0.1.0-01` |
-| G10 | No published contracts — the interface surface does not exist yet | Nothing can be compiled against a stable contract | `0.1.0` (`RM-0.1.0-01`–`-05`) |
+| G9 | `netstandard2.0` does not build | The advertised compatibility surface does not exist | `RM-0.0.14a` |
+| G10 | No published contracts — the interface surface does not exist yet | Nothing can be compiled against a stable contract | `RM-0.0.14a`–`e`; ships in the first release `0.1.0` |
 
 ### 7.2 Limitations that stay
 
@@ -209,7 +209,7 @@ Two different things live here, and conflating them is what produced the previou
 |---|---|---|---|
 | L1 | NTLS is **byte-level fingerprinting only**, no full handshake | The complete ShangMi stack cannot be exercised | Requires a TLS 1.2 subset built from scratch (see [tls-scanner.md §6.3](tls-scanner.md)) |
 | L2 | No L3 vulnerability probing (Heartbleed, CCS Injection, Ticketbleed) | No vulnerability verdict for those classes | Explicit non-goal; only ROBOT is in scope |
-| L3 | Asymmetric proxies expose only the capabilities their algorithm actually has | Not every asymmetric type can sign *and* encrypt | X25519 only agrees keys; Ed25519 only signs (see [roadmap.md](roadmap.md) §6.16) |
+| L3 | Asymmetric proxies expose only the capabilities their algorithm actually has | Not every asymmetric type can sign *and* encrypt | X25519 only agrees keys; Ed25519 only signs (see [roadmap.md](roadmap.md) §6.14) |
 
 See [roadmap.md](roadmap.md) for the status of every gap.
 
@@ -226,7 +226,7 @@ See [roadmap.md](roadmap.md) for the status of every gap.
 | D5 | NTLS does byte-level fingerprinting only, no full handshake | Plaintext handshake messages make detection sufficient for primary conclusions; full handshake would require implementing a TLS 1.2 subset from scratch with concentrated GB/T 38636 detail risk |
 | D6 | TLS probe engine co-located with the crypto library, package `DevTrove.Crypto.Tls` — no separate TLS repo | Only one dependency (`DevTrove.Crypto`); co-location shares TFM / polyfill / CI / fixtures; cross-repo version alignment cost is avoided. Each package still has its own version number |
 | D7 | Standalone repository: developed, tested and released on its own, keeping the `src/` layering inside | `src/` maps 1:1 to NuGet packages and namespaces; nothing in the repository depends on how or where it is consumed |
-| D8 | Library version starts at `0.0.1-dev`, iterates as `0.0.X-dev`, then `0.1.0` once capability is complete | Decoupled from application version (see [nuget.md](nuget.md) §3); `0.x` allows breaking changes |
+| D8 | Version line: `0.0.x` are work-item numbers only (never published), and the first public release is `0.1.0` — the first milestone that delivers usable capability | Decoupled from application version (see [nuget.md](nuget.md) §3); `0.x` allows breaking changes |
 | D9 | Library ships its own result models — dependencies point outwards only | The library can be published and consumed standalone |
 | D10 | Zero framework dependencies: no DI / logging / ASP.NET Core | Widest consumer base (.NET Framework, Unity, WebAssembly, trimmed / AOT); keeps the test surface clean |
 | D11 | Metapackage is source-free | Only `ProjectReference` → Core; consumers see only the metapackage; the implementation package can be swapped later without breaking the public contract |
@@ -238,7 +238,7 @@ See [roadmap.md](roadmap.md) for the status of every gap.
 | D17 | ECDH returns raw shared-secret bytes; KDF is the caller's responsibility | Library doesn't impose KDF choice |
 | D18 | Test fixtures are **generated, never committed**: `tests/data/` is ignored wholesale and rebuilt by `scripts/generate-test-*.sh`, which a test-assembly module initializer invokes on demand. Fixtures keep a short validity (≈1 year). Data no script can produce — captured NTLS handshake bytes — lives in `tests/fixtures/`, which **is** version-controlled | CI must not depend on remote generation, and assertions must not rely on "currently valid" **or on a fixture file being present in the repository** |
 | D19 | Missing external tools fail tests (`CliToolGuard`) rather than skip | Surfaces environment issues immediately |
-| D20 | **Cryptography abstractions are built in-house**, with BCL adapters only where `CryptoStream` / `SslStream` / `X509Certificate2` interop is needed | The BCL base classes cannot express CTR or AEAD (`CipherMode` is a closed enum), and `.NET 8`-only virtuals such as `TryEncryptEcbCore` do not exist on the `netstandard` targets — inheriting them ties the library's capability set to a target framework. See [roadmap.md](roadmap.md) §6.14 |
+| D20 | **Cryptography abstractions are built in-house**, with BCL adapters only where `CryptoStream` / `SslStream` / `X509Certificate2` interop is needed | The BCL base classes cannot express CTR or AEAD (`CipherMode` is a closed enum), and `.NET 8`-only virtuals such as `TryEncryptEcbCore` do not exist on the `netstandard` targets — inheriting them ties the library's capability set to a target framework. See [roadmap.md](roadmap.md) §6.13 |
 | D21 | BouncyCastle types stay out of the public API; interop goes through explicit `Interop` extensions | The implementation package is meant to be replaceable without breaking consumers; 9 public members used to leak BouncyCastle types |
 | D22 | Tongsuo is the **single** external tool for fixtures and interop tests | One tool to install, pin and cache; it covers both standard algorithms and ShangMi. Upstream OpenSSL interoperability is no longer asserted — recorded as a risk in [roadmap.md](roadmap.md) §8 |
 | D23 | Algorithm proxies are named `<Algorithm>Crypto` (`RsaCrypto`, `Sm2Crypto`, `Sm4Crypto`, …) | One naming rule for every algorithm; the previous mix of `RsaCrypto` and `SM2` was arbitrary |
@@ -259,7 +259,7 @@ See [roadmap.md](roadmap.md) for the status of every gap.
 
 See [roadmap.md](roadmap.md) for the version line, per-item status and evidence.
 
-- **`DevTrove.Crypto.Abstractions`**: not started. Scheduled for `0.1.0`; carries the contracts only, with no implementation type.
+- **`DevTrove.Crypto.Abstractions`**: not started. Work item `RM-0.0.14`; carries the contracts only, with no implementation type, and ships with the first release `0.1.0`.
 - **`DevTrove.Crypto.Core`**: holds no source today. The Web-era RSA / ECDSA / DSA / AES / SM2 / SM3 / SM4 and X.509 / CSR / CRL / PKCS#12 code was removed and is being rebuilt against the contracts above. It does **not** build for `netstandard2.0` yet, and has no certificate-chain, OCSP, PKCS#7, KDF, MAC or Ed25519 / X25519 support — see §7.1.
 - **`DevTrove.Crypto` (metapackage)**: the project exists and is source-free; it now inherits the shared TFM set instead of pinning one framework.
 - **`DevTrove.Crypto.Tls`**: not started. Namespace reserved; scheduled for `0.6.0`.

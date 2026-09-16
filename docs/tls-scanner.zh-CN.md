@@ -14,7 +14,7 @@
 | **L2** | L1 + A~F 评级、客户端模拟兼容性矩阵、ALPN/HTTP2、证书透明度、DNS CAA | ✅ 已排期（`0.7.0`） |
 | **L3** | L2 + 漏洞探测（Heartbleed、CCS Injection、ROBOT、Ticketbleed 等） | ❌ 仅 ROBOT（见 §9.3） |
 
-本文档描述**设计**；**排期与逐项状态**见 [roadmap.md](roadmap.md) §6.17 与 §6.18。
+本文档描述**设计**；**排期与逐项状态**见 [roadmap.md](roadmap.md) §6.18 与 §6.19。
 
 ---
 

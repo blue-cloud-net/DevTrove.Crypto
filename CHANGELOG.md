@@ -6,7 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 > Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)
 
+> **The library is in `0.x`: a breaking change is allowed between minor versions and is listed under `Changed` below. Nothing here is a compatibility promise until `1.0.0`.**
+
 ## [Unreleased]
+
+### Changed (version model)
+
+- **Version line renumbered.** The abstraction layer is a work item (`RM-0.0.14`) rather than a release, so the first public release — `0.1.0` — delivers symmetric algorithms, the first version that is actually usable. Later milestones moved down one: asymmetric `0.2.0`, hashes / MACs / randomness `0.3.0`, key derivation `0.4.0`. `0.5.0` and later are unchanged
+- **`<Version>` advanced to `0.1.0-dev`** in preparation for the first release
+- **`0.x` API instability stated explicitly** in `README.md` / `README.zh-CN.md` (the readme shipped inside every package), `docs/nuget.md` and `docs/roadmap.md`
 
 ### Changed (library-only restructuring)
 
@@ -20,7 +28,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Added**: bilingual `README.md` / `README.zh-CN.md`
 - **Added**: `AGENTS.md` for AI / human contributor workflow
 - **Documentation**: `docs/architecture.md` rewritten for library layout; `docs/roadmap.md` and `docs/development-guide.md` updated
-- **Note**: 5-TFM target (`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`) temporarily uses 3 TFM (`net8.0;net9.0;net10.0`) until the `netstandard2.0` polyfill is finalized
+- **Note**: the target set is four TFMs (`netstandard2.0;net8.0;net9.0;net10.0`); `netstandard2.1` was dropped because no non-EOL host resolves that asset
 
 ### Known limitations
 

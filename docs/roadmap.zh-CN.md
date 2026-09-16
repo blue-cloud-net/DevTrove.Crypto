@@ -46,9 +46,12 @@
 | 规则 | 说明 |
 |---|---|
 | `0.0.x` **仅为工作项编号** | 不打包、不打 tag、不发布。本仓库从未发布过任何包。 |
-| 首次真实发布 | `0.1.0` |
+| **发布门槛** | 只有交付可用能力的里程碑才打 tag、才发布。纯重构性质的工作项（`RM-0.0.14`）不单独发布 —— 其产物随首个发布版本一同出货。 |
+| 首次公开发布 | `0.1.0` —— 消费者第一个真正用得上的版本（对称算法）。 |
 | 包版本 | 每个里程碑内四个包共用同一版本号。`DevTrove.Crypto.Tls` 在 `0.6.0` 之前不存在，因此不参与更早的里程碑。 |
-| 预发布 | 非最终构建使用 `-dev` / `-preview` 后缀。 |
+| 预发布 | 非最终构建使用 `-dev` / `-preview` 后缀。版本线已预备为 `0.1.0-dev`。 |
+
+**`0.x` 不承载 API 兼容承诺。** 任何次版本（`0.1.0` → `0.2.0`）之间都允许破坏性变更，并在 `CHANGELOG.zh-CN.md` 中显著标注；修订版本（patch）永不破坏 API。包声明的依赖范围**只是下界**（见 [nuget.md §3.2](nuget.md)），因此浮动范围可能拉进破坏性的次版本 —— 库处于 `0.x` 期间消费方应锁定确切版本。`1.0.0` 冻结公开类型面（`RM-1.0.0-01`）。同一口径的消费者措辞见 [README.zh-CN.md](../README.zh-CN.md)，它正是随每个包一同发布的那份 readme。
 
 库**独立版本号**；消费方声明最低可兼容版本（见 [nuget.md §3.2](nuget.md)）。
 
@@ -58,17 +61,19 @@
 
 | 版本 | 主题 | 子项数 | 状态 |
 |---|---|---|---|
-| `RM-0.0.1`, `0.0.2`, `0.0.3`, `0.0.4`, `0.0.5`, `0.0.6`, `0.0.7`, `0.0.9`, `0.0.10`, `0.0.12`, `0.0.13` | 基线修正（工作项） | 11 | 🟡 |
-| `0.1.0` | 抽象层 | 5 | ⬜ |
-| `0.2.0` | 对称算法 | 4 | ⬜ |
-| `0.3.0` | 非对称算法 | 3 | ⬜ |
-| `0.4.0` | 哈希与派生 | 4 | ⬜ |
+| `RM-0.0.1`, `0.0.2`, `0.0.3`, `0.0.4`, `0.0.5`, `0.0.6`, `0.0.7`, `0.0.9`, `0.0.10`, `0.0.12`, `0.0.13`, `0.0.14` | 基线修正（工作项） | 12 | 🟡 |
+| `0.1.0` | 对称算法 | 4 | ⬜ |
+| `0.2.0` | 非对称算法 | 3 | ⬜ |
+| `0.3.0` | 哈希、MAC 与随机数 | 3 | ⬜ |
+| `0.4.0` | 密钥派生 | 1 | ⬜ |
 | `0.5.0` | PKI 能力补齐 | 9 | ⬜ |
 | `0.6.0` | TLS 探测 L1 + NTLS 指纹 | 11 | ⬜ |
 | `0.7.0` | TLS 探测 L2 + 国密 | 9 | ⬜ |
 | `1.0.0` | 稳定 API + PKIX | 5 | ⬜ |
 
-里程碑按**密码学族**而非混杂的「原语批次」划分，使每个版本只承载一个主题，`0.1.0` 落地的抽象按族逐个实现。
+里程碑按**密码学族**而非混杂的「原语批次」划分，使每个版本只承载一个主题。抽象层是工作项（`RM-0.0.14`）而非一个发布版本，各族在各自落地时实现其契约。
+
+因此首个公开发布是 `0.1.0`（**对称算法**）而不是抽象层：一个不携带任何可调用实现的版本只能作为空壳发布，而 NuGet 包 ID 一旦推送便无法收回。
 
 ---
 
@@ -93,7 +98,7 @@
 
 `Directory.Build.props` 声明 TFM 集合，每个 csproj 与其一致，且每个目标都单独验证。
 
-> 集合在 `0.1.0` 工作中由五个目标减为**四个**。`netstandard2.1` 被移除，因为没有任何未 EOL 的宿主会解析该资产，它永远无法被运行测试覆盖。剩余四个目标各自都有真正运行它的宿主 —— 见 `RM-0.1.0-01`。
+> 集合在 `RM-0.0.14` 工作中由五个目标减为**四个**。`netstandard2.1` 被移除，因为没有任何未 EOL 的宿主会解析该资产，它永远无法被运行测试覆盖。剩余四个目标各自都有真正运行它的宿主 —— 见 `RM-0.0.14a`。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -121,7 +126,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.4 | 正确声明 `<Version>`、`<PackageId>`、SourceLink 与 `RepositoryUrl` | `dotnet pack` 产出预期版本号；`.nupkg` 含 README 与 XML 文档 | ✅ | `<Version>0.0.1-dev</Version>` 写入 props；两包各显式 `<PackageId>`；引入 Microsoft.SourceLink.GitHub；`dotnet pack` 产出 `DevTrove.Crypto.Core.<version>.nupkg` 与 `DevTrove.Crypto.<version>.nupkg`，含 README + 各 TFM 的 lib/ 与 .xml；snupkg 内 pdb 嵌入 SourceLink JSON |
+| RM-0.0.4 | 正确声明 `<Version>`、`<PackageId>`、SourceLink 与 `RepositoryUrl` | `dotnet pack` 产出预期版本号；`.nupkg` 含 README 与 XML 文档 | ✅ | `<Version>` 写入 props（预备首发时推进为 `0.1.0-dev`）；两包各显式 `<PackageId>`；引入 Microsoft.SourceLink.GitHub；`dotnet pack` 产出 `DevTrove.Crypto.Core.<version>.nupkg` 与 `DevTrove.Crypto.<version>.nupkg`，含 README + 各 TFM 的 lib/ 与 .xml；snupkg 内 pdb 嵌入 SourceLink JSON |
 
 ### 6.5 `RM-0.0.5` —— 解决方案文件
 
@@ -166,7 +171,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.10 | 新增**可入库**的 `tests/fixtures/ntls/` 放抓取的握手字节；把 `ocsp/` 加进生成集；补对应 `TestData` 方法；夹具清单写进 [development-guide.md §8](development-guide.md) 而非被忽略的文件里 | 抓取类夹具位于被忽略目录之外且受版本控制；生成集可由脚本重建 | 🟡 | 已新增 `tests/fixtures/README.md` 与 `tests/fixtures/ntls/README.md`；`git check-ignore -v tests/fixtures/*` 无匹配，`tests/data/*` 仍被忽略；development-guide §8 已含夹具清单；待 0.1.0 重建 Core 后补 `ocsp/` 生成段与 `TestData` 访问器 |
+| RM-0.0.10 | 新增**可入库**的 `tests/fixtures/ntls/` 放抓取的握手字节；把 `ocsp/` 加进生成集；补对应 `TestData` 方法；夹具清单写进 [development-guide.md §8](development-guide.md) 而非被忽略的文件里 | 抓取类夹具位于被忽略目录之外且受版本控制；生成集可由脚本重建 | 🟡 | 已新增 `tests/fixtures/README.md` 与 `tests/fixtures/ntls/README.md`；`git check-ignore -v tests/fixtures/*` 无匹配，`tests/data/*` 仍被忽略；development-guide §8 已含夹具清单；待 `RM-0.0.14` 重建 Core 后补 `ocsp/` 生成段与 `TestData` 访问器 |
 
 ### 6.10 `RM-0.0.12` —— 裁剪与 AOT 兼容（仅 net8.0 及以后）
 
@@ -174,7 +179,7 @@
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.12 | 为 net8.0+ 目标标注裁剪 / AOT 兼容，并为资源解析路径加注 | 发布 AOT 测试应用成功，且枚举显示名仍可解析 | 🟡 | Directory.Build.props 对 `net8.0` / `net9.0` / `net10.0` 三个 TFM 设置 `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial`；props 内 XML 注释约束「枚举显示名解析须用 `IsDynamicCodeSupported` 守卫」；AOT publish + 冒烟测试待 0.1.0 重建 Core（含 enum 显示名解析实现）后执行 |
+| RM-0.0.12 | 为 net8.0+ 目标标注裁剪 / AOT 兼容，并为资源解析路径加注 | 发布 AOT 测试应用成功，且枚举显示名仍可解析 | 🟡 | Directory.Build.props 对 `net8.0` / `net9.0` / `net10.0` 三个 TFM 设置 `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial`；props 内 XML 注释约束「枚举显示名解析须用 `IsDynamicCodeSupported` 守卫」；AOT publish + 冒烟测试待 `RM-0.0.14` 重建 Core（含 enum 显示名解析实现）后执行 |
 
 netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以后承担 AOT 面。
 
@@ -193,53 +198,62 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.12 `0.1.0` —— 抽象层
+### 6.12 `RM-0.0.14` —— 抽象层（工作项）
 
-不新增能力，也不做任何算法实现。本里程碑只落定契约面：新建一个叶节点程序集，承载后续每个里程碑都要实现于其上的接口与抽象基类。库从未发布，因此形态变更零外部成本。
-
-| ID | 子项 | 验收 | 状态 | 证据 |
-|---|---|---|---|---|
-| RM-0.1.0-01 | 新建 `DevTrove.Crypto.Abstractions` 程序集（独立包、零依赖叶节点、4 TFM、包元数据）；Core 结构重整（目录与命名空间 `Algorithms` / `Asn1` / `Interop` / `Compat`；BouncyCastle 类型撤出公开面；每类型一个 `Interop` 扩展；统一 `*Crypto` 命名）；命名与布局配套（`GlobalUsings`、测试目录镜像、`library-api.md` 重写、`architecture.md` §4 / §5 重绘）；为 `netstandard2.0` 补齐缺失的 polyfill / 包引用并按 API 分别选择守卫符号 | 4 个 TFM 各自构建成功（含 `netstandard2.0`）；不再残留 `DevTrove.Crypto.Crypto.*` 或 `DevTrove.Crypto.BouncyCastle.*` 命名空间；无公开的 `GetBouncyCastle*` 成员；每个 `#if` 与其保护的 API 匹配 | ⬜ | `dotnet build -f <tfm>` 加对 `src/` 检索旧命名空间 |
-| RM-0.1.0-02 | 对称与摘要抽象：`ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | 无需 BCL 枚举即可表达 CTR 与 AEAD 模式；默认 `Cbc` + `Pkcs7`；ECB 时 `Encrypt` 抛 `InvalidOperationException` | ⬜ | 覆盖枚举值集合与基类契约的单元测试 |
-| RM-0.1.0-03 | 非对称能力接口：`ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | 每个能力独立成接口，不施加单一继承约束；`AsymmetricKeyBase` 释放时清零密钥材料 | ⬜ | 接口清单测试 + 释放行为测试 |
-| RM-0.1.0-04 | X.509 抽象：`ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | 四个接口可被单一 stub 实现，证明其可实现；**本里程碑不交付任何实现类型**（实现落在 `0.5.0`） | ⬜ | stub 实现测试 |
-| RM-0.1.0-05 | BCL 适配器 `AsSymmetricAlgorithm()` / `AsHashAlgorithm()`；可发布验收 | CBC / CFB / OFB / ECB 经适配器的结果与经 stub 的结果一致，GCM / CTR 抛 `NotSupportedException`；4 个 TFM 全绿；打包产物完整且携带 `DevTrove.Crypto.Abstractions` 依赖；干净消费方项目可还原并调用 API | ⬜ | 单元测试 + `dotnet pack` + 消费方冒烟测试 |
-
----
-
-### 6.13 `0.2.0` —— 对称算法
+不新增能力，也不做任何算法实现 —— 这是**基线工作项**，不是一个发布版本。它落定契约面：新建一个叶节点程序集，承载后续每个里程碑都要实现于其上的接口与抽象基类。库从未发布，因此形态变更零外部成本；本项不打 tag、不推送，程序集随首个发布（`0.1.0`）出货。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.2.0-01 | 将 AES 与 SM4 迁到 `0.1.0` 的抽象；对齐两者模式集合；ECB 均受支持、默认 CBC，并在 XML 注释中显式告警；移除 .NET 8 专属重写 | 两种算法暴露相同模式集合；`CryptoStream` 互操作仍可经适配器工作 | ⬜ | 模式矩阵测试 + 互操作测试 |
-| RM-0.2.0-02 | 对称密钥对象：算法 + 密钥 + IV/Nonce + 内存清理 | 公开 API 中密钥不再是裸 `byte[]`；释放时清零密钥材料 | ⬜ | 释放行为测试 |
-| RM-0.2.0-03 | 对称模式补齐：AES-CTR、AES key wrap（RFC 3394）、SM4-CTR、SM4-GCM | RFC 3394 与 GCM 测试向量通过 | ⬜ | 已知答案测试 |
-| RM-0.2.0-04 | CMAC 与 GMAC | 已知答案测试通过 | ⬜ | 已知答案测试 |
+| RM-0.0.14a | 新建 `DevTrove.Crypto.Abstractions` 程序集（独立包、零依赖叶节点、4 TFM、包元数据）；Core 结构重整（目录与命名空间 `Algorithms` / `Asn1` / `Interop` / `Compat`；BouncyCastle 类型撤出公开面；每类型一个 `Interop` 扩展；统一 `*Crypto` 命名）；命名与布局配套（`GlobalUsings`、测试目录镜像、`library-api.md` 重写、`architecture.md` §4 / §5 重绘）；为 `netstandard2.0` 补齐缺失的 polyfill / 包引用并按 API 分别选择守卫符号 | 4 个 TFM 各自构建成功（含 `netstandard2.0`）；不再残留 `DevTrove.Crypto.Crypto.*` 或 `DevTrove.Crypto.BouncyCastle.*` 命名空间；无公开的 `GetBouncyCastle*` 成员；每个 `#if` 与其保护的 API 匹配 | ⬜ | `dotnet build -f <tfm>` 加对 `src/` 检索旧命名空间 |
+| RM-0.0.14b | 对称与摘要抽象：`ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | 无需 BCL 枚举即可表达 CTR 与 AEAD 模式；默认 `Cbc` + `Pkcs7`；基类实现 CBC / CFB / OFB 与 ECB（ECB 逐块独立、无 IV，XML 注释显式告警其不安全），`Ctr` / `Gcm` 在基类抛 `NotSupportedException`，待各族自行实现 | ⬜ | 覆盖枚举值集合与基类契约的单元测试 |
+| RM-0.0.14c | 非对称能力接口：`ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | 每个能力独立成接口，不施加单一继承约束；`AsymmetricKeyBase` 释放时清零密钥材料 | ⬜ | 接口清单测试 + 释放行为测试 |
+| RM-0.0.14d | X.509 抽象：`ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | 四个接口可被单一 stub 实现，证明其可实现；**本工作项不交付任何实现类型**（实现落在 `0.5.0`） | ⬜ | stub 实现测试 |
+| RM-0.0.14e | BCL 适配器 `AsSymmetricAlgorithm()` / `AsHashAlgorithm()`；首个发布的可发布验收 | CBC / CFB / OFB / ECB 经适配器的结果与经 stub 的结果一致，GCM / CTR 抛 `NotSupportedException`；4 个 TFM 全绿；打包产物完整且携带 `DevTrove.Crypto.Abstractions` 依赖；干净消费方项目可还原并调用 API | ⬜ | 单元测试 + `dotnet pack` + 消费方冒烟测试 |
 
 ---
 
-### 6.14 `0.3.0` —— 非对称算法
+### 6.13 `0.1.0` —— 对称算法
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.3.0-01 | 将 RSA、ECDSA、DSA、SM2 迁到 `0.1.0` 的能力接口；每个算法只实现其真实具备的能力 | 每个算法只暴露它真正具备的能力 | ⬜ | 接口清单测试 |
-| RM-0.3.0-02 | 新增 Ed25519、Ed448、X25519（X448 可选）。X25519 只做密钥协商、Ed25519 只做签名，这正是能力拆成独立接口而非单一基类的原因 | 签名与密钥协商对照参考向量的往返正确 | ⬜ | 已知答案测试 |
-| RM-0.3.0-03 | 默认签名算法按私钥推导，不再硬编码 `SHA256WITHRSA` | 不再残留 `SHA256WITHRSA` 字面量；EC / DSA / SM2 无需调用方指定算法即可签名 | ⬜ | 按密钥类型的单元测试 |
+| RM-0.1.0-01 | 将 AES 与 SM4 迁到 `RM-0.0.14` 的抽象；对齐两者模式集合；ECB 均受支持、默认 CBC，并在 XML 注释中显式告警；移除 .NET 8 专属重写 | 两种算法暴露相同模式集合；`CryptoStream` 互操作仍可经适配器工作 | ⬜ | 模式矩阵测试 + 互操作测试 |
+| RM-0.1.0-02 | 对称密钥对象：算法 + 密钥 + IV/Nonce + 内存清理 | 公开 API 中密钥不再是裸 `byte[]`；释放时清零密钥材料 | ⬜ | 释放行为测试 |
+| RM-0.1.0-03 | 对称模式补齐：AES-CTR、AES key wrap（RFC 3394）、SM4-CTR、SM4-GCM | RFC 3394 与 GCM 测试向量通过 | ⬜ | 已知答案测试 |
+| RM-0.1.0-04 | CMAC 与 GMAC | 已知答案测试通过 | ⬜ | 已知答案测试 |
 
 ---
 
-### 6.15 `0.4.0` —— 哈希与派生
+### 6.14 `0.2.0` —— 非对称算法
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.4.0-01 | 哈希家族：SHA-256/384/512 包装，接入 `0.1.0` 的摘要抽象 | 每个哈希与 SM3 形态一致 | ⬜ | API 清单 |
-| RM-0.4.0-02 | HMAC：HMAC-SM3 与 HMAC-SHA256/384/512，不使用 BCL 的 `HashName` 反射工厂 | 与参考向量签名验签一致 | ⬜ | 已知答案测试 |
-| RM-0.4.0-03 | KDF：HKDF-SHA256/384/512、PBKDF2（scrypt 可选） | RFC 5869 测试向量通过 | ⬜ | 已知答案测试 |
-| RM-0.4.0-04 | 安全随机数统一入口 | 不再有散落各处的随机数辅助方法 | ⬜ | API 清单 |
+| RM-0.2.0-01 | 将 RSA、ECDSA、DSA、SM2 迁到 `RM-0.0.14` 的能力接口；每个算法只实现其真实具备的能力 | 每个算法只暴露它真正具备的能力 | ⬜ | 接口清单测试 |
+| RM-0.2.0-02 | 新增 Ed25519、Ed448、X25519（X448 可选）。X25519 只做密钥协商、Ed25519 只做签名，这正是能力拆成独立接口而非单一基类的原因 | 签名与密钥协商对照参考向量的往返正确 | ⬜ | 已知答案测试 |
+| RM-0.2.0-03 | 默认签名算法按私钥推导，不再硬编码 `SHA256WITHRSA` | 不再残留 `SHA256WITHRSA` 字面量；EC / DSA / SM2 无需调用方指定算法即可签名 | ⬜ | 按密钥类型的单元测试 |
 
 ---
 
-### 6.16 `0.5.0` —— PKI 能力补齐
+### 6.15 `0.3.0` —— 哈希、MAC 与随机数
+
+| ID | 子项 | 验收 | 状态 | 证据 |
+|---|---|---|---|---|
+| RM-0.3.0-01 | 哈希家族：SHA-256/384/512 包装，接入 `RM-0.0.14` 的摘要抽象 | 每个哈希与 SM3 形态一致 | ⬜ | API 清单 |
+| RM-0.3.0-02 | HMAC：HMAC-SM3 与 HMAC-SHA256/384/512，不使用 BCL 的 `HashName` 反射工厂 | 与参考向量签名验签一致 | ⬜ | 已知答案测试 |
+| RM-0.3.0-03 | 安全随机数统一入口 | 不再有散落各处的随机数辅助方法 | ⬜ | API 清单 |
+
+---
+
+### 6.16 `0.4.0` —— 密钥派生
+
+密钥派生从原先的「哈希与派生」里程碑拆出，使 `0.3.0` 稳定地只覆盖哈希与消息认证。它的首批消费者是 PKCS#12（PBES2 / PBKDF2，`RM-0.5.0-05`）与 TLS 1.3 的密钥调度。
+
+| ID | 子项 | 验收 | 状态 | 证据 |
+|---|---|---|---|---|
+| RM-0.4.0-01 | KDF：HKDF-SHA256/384/512、PBKDF2（scrypt 可选） | RFC 5869 测试向量通过 | ⬜ | 已知答案测试 |
+
+---
+
+### 6.17 `0.5.0` —— PKI 能力补齐
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -255,7 +269,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.17 `0.6.0` —— TLS 探测 L1 与 NTLS 指纹
+### 6.18 `0.6.0` —— TLS 探测 L1 与 NTLS 指纹
 
 引擎位于 `src/DevTrove.Crypto.Tls/`，该目录目前尚不存在。
 
@@ -275,7 +289,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.18 `0.7.0` —— TLS 探测 L2 与国密
+### 6.19 `0.7.0` —— TLS 探测 L2 与国密
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -291,7 +305,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.19 `1.0.0` —— 稳定 API + PKIX
+### 6.20 `1.0.0` —— 稳定 API + PKIX
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -323,7 +337,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 | R1 | CI 从源码编译 tongsuo 显著拉长流水线 | 反馈变慢、任务不稳定 | 缓存编译产物并 pin 版本 |
 | R2 | 统一到 tongsuo 后不再验证与上游 OpenSSL 的互操作 | 上游 OpenSSL 特有的回归会被漏掉 | 文档如实说明；保留一个可选、不阻塞的交叉校验 |
 | R3 | 全仓行尾重规范化产生极大 diff | 历史更难读 | 单独提交并在提交信息中注明 |
-| R4 | 替换 BCL 抽象会触及测试与文档中的大量调用点 | 重构面大、易出错 | 先落地 `RM-0.3.0-03`；按算法逐个迁移到新抽象 |
+| R4 | 替换 BCL 抽象会触及测试与文档中的大量调用点 | 重构面大、易出错 | 先落地 `RM-0.2.0-03`；按算法逐个迁移到新抽象 |
 | R5 | GB/T 38636（NTLS）细节无法从公开资料确认 | 检测判定可能不准 | 以抓取的真实站点字节为夹具；不确定项显式标注 |
 | R6 | 经裁剪或 AOT 编译的消费方丢失枚举显示名 | 静默降级 | 为资源解析路径加注；用 AOT 发布冒烟测试验证 |
 | R7 | 状态表与实际脱节 | 路线图沦为又一份误导性文档 | 状态更新纳入提交前检查（见 §2） |

@@ -17,7 +17,7 @@
 
 **注意**：消费本库的应用**不发布**（`IsPackable=false`）。本文档只涉及本仓产出的包。
 
-> `netstandard2.1` 有意**不**作为目标。它在 `0.1.0` 工作中被移除，因为没有任何未 EOL 的宿主会解析该资产，它永远无法被运行测试覆盖。保留下来的每个目标都有在 CI 中真正运行它的宿主。见 [roadmap.md](roadmap.md) §6.11。
+> `netstandard2.1` 有意**不**作为目标。它在 `RM-0.0.14` 工作中被移除，因为没有任何未 EOL 的宿主会解析该资产，它永远无法被运行测试覆盖。保留下来的每个目标都有在 CI 中真正运行它的宿主。见 [roadmap.md](roadmap.md) §6.1。
 
 ---
 
@@ -52,6 +52,8 @@ flowchart LR
 
 四个包**在每个里程碑内共用同一个版本号**，不存在每包独立版本：一个里程碑要么全部发布，要么只发布已经存在的包（`DevTrove.Crypto.Abstractions` 与 `DevTrove.Crypto.Tls` 分别从 `0.1.0` 与 `0.6.0` 开始出现）。
 
+**`0.x` 期间不提供 API 兼容承诺。** 次版本可能破坏公开 API；这类变更会在 `CHANGELOG.zh-CN.md` 中显著标注，且永不出现在 patch 版本里。面向消费者的表述在 [README.zh-CN.md](../README.zh-CN.md)，它随每个包一同发布。
+
 | 场景 | 版本动作 |
 |---|---|
 | 新增 API（向后兼容） | Minor 递增 |
@@ -68,8 +70,9 @@ flowchart LR
 <PackageReference Include="DevTrove.Crypto" Version="[0.1.0, )" />
 ```
 
-- 使用**下界约束**（`[x.y.z, )`），允许消费方升级到兼容的更高版本
+- 使用**下界约束**（`[x.y.z, )`），允许消费方升级到兼容的更高版本。`ProjectReference` 打包时产出的正是这个：无括号的最小版本，语义相同
 - 若某版本引入了不兼容变更，则同时提升下界并递增自身的 Major
+- **库处于 `0.x` 时，仅有下界是不够的**：浮动范围可能拉进破坏性的次版本。消费方应锁定确切版本（或自行加上上界），直至 `1.0.0` —— 见 [README.zh-CN.md](../README.zh-CN.md)
 
 ### 3.3 预发布版本
 
@@ -77,7 +80,7 @@ flowchart LR
 
 ### 3.4 版本线起点
 
-`0.0.1`–`0.0.13` **仅为工作项编号**：不打包、不打 tag、不发布。首次真实发布为 `0.1.0`。`0.x` 期间允许破坏性变更，但必须在 CHANGELOG 中显著标注。见 [roadmap.md §3](roadmap.md)。
+`0.0.1`–`0.0.14` **仅为工作项编号**：不打包、不打 tag、不发布。首个公开发布为 `0.1.0`，即第一个交付可用能力的里程碑 —— 纯重构性质的工作项不单独发布。`0.x` 期间允许破坏性变更，但必须在 CHANGELOG 中显著标注。见 [roadmap.md §3](roadmap.md)。
 
 ---
 
@@ -102,7 +105,7 @@ flowchart LR
 
 **建议**：启用 SourceLink，使使用方可直接跳转到源码。
 
-> `<Version>`（`0.1.0-dev`）、各包显式 `<PackageId>` 与 SourceLink（Microsoft.SourceLink.GitHub）已声明。`dotnet pack` 产出 `DevTrove.Crypto.Abstractions.<version>.nupkg`、`DevTrove.Crypto.Core.<version>.nupkg`、`DevTrove.Crypto.<version>.nupkg`，含 README + 各 TFM 的 lib/ 与 .xml；对应的 snupkg 在 pdb 内嵌入 SourceLink JSON。
+> `<Version>`（`0.1.0-dev`，预备首发时推进）、各包显式 `<PackageId>` 与 SourceLink（Microsoft.SourceLink.GitHub）已声明。`dotnet pack` 产出 `DevTrove.Crypto.Abstractions.<version>.nupkg`、`DevTrove.Crypto.Core.<version>.nupkg`、`DevTrove.Crypto.<version>.nupkg`，含 README + 各 TFM 的 lib/ 与 .xml；对应的 snupkg 在 pdb 内嵌入 SourceLink JSON。
 >
 > 打包出来的 `DevTrove.Crypto.Core` 必须在其 `.nuspec` 中声明 `<dependency id="DevTrove.Crypto.Abstractions" />`。`ProjectReference` 并不总能变成 NuGet 依赖，所以这一项靠**解包 `.nupkg` 验证**，而不是假定 —— 见 §8。
 
@@ -137,7 +140,7 @@ netstandard2.0;net8.0;net9.0;net10.0
 - 守卫符号必须**按 API 分别选**，不能用一个笼统符号：`Convert.FromHexString` 在所有 `netstandard` 目标上都不存在，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 只在 `netstandard2.0` 上缺失。该目标上的 `Span<T>` 来自 `System.Memory` 包
 - 测试矩阵必须覆盖该目标 —— 也确实覆盖了：`net48` 宿主会解析 `netstandard2.0` 资产并对它跑契约测试，因此该资产是**运行验证**而非仅构建验证
 
-> `netstandard2.1` 有意缺席。没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证；已在 `0.1.0` 中从目标集合移除。见 [roadmap.md](roadmap.md) §6.11。
+> `netstandard2.1` 有意缺席。没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证；已在 `RM-0.0.14` 工作中从目标集合移除。见 [roadmap.md](roadmap.md) §6.1。
 
 ---
 

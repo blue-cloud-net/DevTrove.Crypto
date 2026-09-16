@@ -31,7 +31,7 @@ External dependency: **tongsuo**. Tests fail (not skip) when it is missing. See 
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — planned, `0.1.0`)
+│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — work item `RM-0.0.14`)
 │  ├─ DevTrove.Crypto/               metapackage (no source — see roadmap `RM-0.0.2`)
 │  ├─ DevTrove.Crypto.Core/          implementation
 │  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned, `0.6.0` — not present yet)
@@ -107,7 +107,7 @@ The version is declared once in `Directory.Packages.props`, like every other pac
 
 This target is **staying** — this is a NuGet library and the compatibility surface is part of the product. `netstandard2.1` is gone: no non-EOL host resolves that asset, so it could never be runtime-verified (see [nuget.md §5](nuget.md)).
 
-Polyfills land under the path the `0.1.0` target layout names `Compat/`, and the guard symbol is chosen **per API** — `Convert.FromHexString` needs `NETSTANDARD2_0`, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0`. See `RM-0.1.0-01`.
+Polyfills land under the path the `RM-0.0.14` target layout names `Compat/`, and the guard symbol is chosen **per API** — `Convert.FromHexString` needs `NETSTANDARD2_0`, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0`. See `RM-0.0.14a`.
 
 ---
 
@@ -141,8 +141,8 @@ One consequence is worth stating because it bites at pack time: a `ProjectRefere
 | Tested | Why |
 |---|---|
 | Default `Cbc` / `Pkcs7` | The defaults are real, shipped behaviour |
-| ECB makes `Encrypt` throw | A guard in the base class, exercised only through a concrete subclass |
-| The four BCL-compatible modes through `AsSymmetricAlgorithm()` | The adapter is fully concrete and is the deliverable of `RM-0.1.0-05` |
+| ECB encrypts block by block, with no IV | ECB chains nothing, so the base class can implement it without a subclass override; the XML comment warns that ECB is insecure (decision D15) |
+| The four BCL-compatible modes through `AsSymmetricAlgorithm()` | The adapter is fully concrete and is the deliverable of `RM-0.0.14e` |
 | GCM / CTR throw `NotSupportedException` | Documents where the BCL bridge stops |
 | `DigestBase` chunked `Update` equals one-shot `ComputeHash` | Buffer management is inherited logic |
 | `AsymmetricKeyBase.Dispose` clears key material | `standards.md §3.8` makes this a hard rule |
@@ -377,7 +377,7 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 
 # 4. Build + test
 #    Contract tests need nothing else; interop tests need tongsuo.
-#    RM-0.1.0-01 still gates `netstandard2.0`.
+#    RM-0.0.14a still gates `netstandard2.0`.
 dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 

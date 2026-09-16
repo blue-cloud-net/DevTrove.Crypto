@@ -31,7 +31,7 @@
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 计划中，`0.1.0`）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 工作项 `RM-0.0.14`）
 │  ├─ DevTrove.Crypto/              门面包（无源码 —— 见 roadmap `RM-0.0.2`）
 │  ├─ DevTrove.Crypto.Core/         实现
 │  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0` —— 尚不存在）
@@ -107,7 +107,7 @@ DevTrove.Crypto/
 
 该目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。`netstandard2.1` 已移除：没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证（见 [nuget.md §5](nuget.md)）。
 
-polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫符号**按 API 分别选取** —— `Convert.FromHexString` 需要 `NETSTANDARD2_0`，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致。见 `RM-0.1.0-01`。
+polyfill 落在 `RM-0.0.14` 目标布局中命名的 `Compat/` 目录下，且守卫符号**按 API 分别选取** —— `Convert.FromHexString` 需要 `NETSTANDARD2_0`，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致。见 `RM-0.0.14a`。
 
 ---
 
@@ -141,8 +141,8 @@ polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫
 | 测试对象 | 理由 |
 |---|---|
 | 默认 `Cbc` / `Pkcs7` | 默认值是真实交付的行为 |
-| ECB 使 `Encrypt` 抛错 | 基类里的守卫，只能通过具体子类触发 |
-| 四种 BCL 兼容模式经 `AsSymmetricAlgorithm()` | 适配器是全 concrete 的，也是 `RM-0.1.0-05` 的交付物 |
+| ECB 逐块独立加密、无 IV | ECB 不做任何链式处理，基类无需子类覆写即可实现；XML 注释按 D15 告警其不安全 |
+| 四种 BCL 兼容模式经 `AsSymmetricAlgorithm()` | 适配器是全 concrete 的，也是 `RM-0.0.14e` 的交付物 |
 | GCM / CTR 抛 `NotSupportedException` | 明确 BCL 桥接的边界 |
 | `DigestBase` 分块 `Update` 等于一次性 `ComputeHash` | 缓冲区管理是被继承的逻辑 |
 | `AsymmetricKeyBase.Dispose` 清零密钥材料 | `standards.md §3.8` 把它定成了硬规则 |
@@ -381,7 +381,7 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 
 # 4. 构建 + 测试
 #    契约测试不需任何其他依赖；互操作测试需 tongsuo。
-#    `netstandard2.0` 仍受 RM-0.1.0-01 阻塞。
+#    `netstandard2.0` 仍受 RM-0.0.14a 阻塞。
 dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 

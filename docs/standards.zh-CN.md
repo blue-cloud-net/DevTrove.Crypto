@@ -273,7 +273,7 @@ Conventional Commits，**英文类型前缀 + 中文描述**：
 
 ### 9.3 提交前检查
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.1.0-01` 落地前预期会失败；新代码须 0 警告
+- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.0.14a` 落地前预期会失败；新代码须 0 警告
 
 ### 3.2.1 互操作测试类命名
 

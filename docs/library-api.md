@@ -6,7 +6,9 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 
 > **Sections 2–9 describe code that is being rebuilt.** `DevTrove.Crypto.Core` currently holds no source: the Web-era implementation was removed and is being reconstructed against the contracts in §1. Those sections are kept as the target index and are not a claim that the types exist today.
 
-> **Contracts are the exception** — §1 names the assembly that `0.1.0` actually delivers.
+> **Contracts are the exception** — §1 names the assembly that `RM-0.0.14` actually builds; it ships with the first release, `0.1.0`.
+
+> **API stability.** The library is in `0.x`, so nothing in this index is a compatibility promise: public types and members may change in any minor release. `1.0.0` freezes the surface (`RM-1.0.0-01`).
 
 ---
 
@@ -14,7 +16,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 
 A **separate assembly** with **no package dependencies at all** — not even BouncyCastle. Consumers can compile against this surface alone. Directory layout is flat, so each namespace maps onto one directory: `Symmetric/`, `Asymmetric/`, `Hash/`, `X509/`.
 
-> `RM-0.1.0-01`–`-05` deliver this assembly in `0.1.0`. BCL adapters sit next to the family they adapt rather than in a separate `Interop/` directory.
+> `RM-0.0.14a`–`e` build this assembly; it ships with the first release, `0.1.0`. BCL adapters sit next to the family they adapt rather than in a separate `Interop/` directory.
 
 ### 1.1 Symmetric (`DevTrove.Crypto.Abstractions.Symmetric`)
 
@@ -23,7 +25,7 @@ A **separate assembly** with **no package dependencies at all** — not even Bou
 | `CipherModeKind` | enum | `Cbc` / `Cfb` / `Ofb` / `Ctr` / `Ecb` / `Gcm` — expresses CTR and AEAD, which the BCL's closed `CipherMode` enum cannot |
 | `PaddingKind` | enum | `None` / `Pkcs7` / `Zeros` / `AnsiX923` |
 | `ISymmetricBlockCipher` | interface | Block-size, key-size, mode, padding, nonce and tag sizes; `Encrypt` / `Decrypt` |
-| `SymmetricBlockCipher` | abstract class | Mode dispatch and padding; defaults `Cbc` + `Pkcs7`; **ECB makes `Encrypt` throw `InvalidOperationException`**; `Init` / `EncryptBlock` / `DecryptBlock` are left to the concrete algorithm |
+| `SymmetricBlockCipher` | abstract class | Mode dispatch and padding; defaults `Cbc` + `Pkcs7`; CBC / CFB / OFB and ECB are implemented — **ECB encrypts each block independently with no IV, and its XML docs warn that it is insecure**; `Ctr` / `Gcm` throw `NotSupportedException` until a family implements them; `Init` / `EncryptBlock` / `DecryptBlock` are left to the concrete algorithm |
 | `SymmetricBlockCipherInteropExtensions` | static class | `AsSymmetricAlgorithm()`. CBC / CFB / OFB / ECB bridge to the BCL; **GCM and CTR throw `NotSupportedException`** |
 
 ### 1.2 Hash (`DevTrove.Crypto.Abstractions.Hash`)
@@ -44,7 +46,7 @@ A **separate assembly** with **no package dependencies at all** — not even Bou
 | `IAsymmetricKey` | interface | Key metadata: algorithm and size |
 | `IPrivateKey` / `IPublicKey` | interface | Read-only key views |
 | `AsymmetricKeyBase` | abstract class | Holds key material and **clears it on disposal** |
-| `SignatureAlgorithmKind` | enum | The signature algorithms, so a default can be derived from the private key instead of hard-coding `SHA256WITHRSA` (`RM-0.3.0-03`) |
+| `SignatureAlgorithmKind` | enum | The signature algorithms, so a default can be derived from the private key instead of hard-coding `SHA256WITHRSA` (`RM-0.2.0-03`) |
 
 Capabilities are separate interfaces rather than one base class because X25519 only agrees keys and Ed25519 only signs.
 
@@ -164,7 +166,7 @@ These wrap BouncyCastle types so that `Core` can keep them out of its own public
 | `EnumDisplayNameCache<TEnum>` | Cached resource-string lookup for enum display |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` convenience overloads |
 
-### 5.1 Signing-algorithm default rule (`RM-0.3.0-03`)
+### 5.1 Signing-algorithm default rule (`RM-0.2.0-03`)
 
 Any public signing method that accepts an optional `signatureAlgorithm` (e.g. `Certificate.GenerateSelfSigned`, `Certificate.SignCsr`, `Certificate.SignPublicKey`, `CertificateRevocationList.Generate`, `CertificateSigningRequest.Generate` overloads) **must derive the default from the private-key algorithm**, never hard-code `SHA256WITHRSA` or any other fixed OID:
 
@@ -182,13 +184,13 @@ Callers must remain able to override explicitly; the default only exists so that
 
 ## 6. Resource files
 
-Resource files are not shipped in the `0.1.x` restructuring. Enum display names go through the trimmed/AOT-aware resolver added by `RM-0.0.12`.
+Resource files land with `RM-0.0.14`: `Resources/CryptoUtilCore*.resx` plus `Common/EnumDisplayNameCache<TEnum>`, whose reflection entry point carries a `DynamicallyAccessedMembers` annotation so that trimmed and AOT-compiled consumers keep resolving enum display names (`RM-0.0.12`, decision D25). The resource keys are consumed by the X.509 enums once those land in `0.5.0`; until then the mechanism is exercised through test-local enums.
 
 ---
 
 ## 7. Reserved namespace — `DevTrove.Crypto.Tls`
 
-The namespace is reserved for the TLS probe engine. No public types exist today; the package is scheduled for `0.6.0` ([roadmap.md](roadmap.md) §6.19). The list below is a **design target**, not an API commitment.
+The namespace is reserved for the TLS probe engine. No public types exist today; the package is scheduled for `0.6.0` ([roadmap.md](roadmap.md) §6.18). The list below is a **design target**, not an API commitment.
 
 | Planned entity (per [tls-scanner.md §12](tls-scanner.md)) | Purpose |
 |---|---|

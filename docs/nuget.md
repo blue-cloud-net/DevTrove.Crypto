@@ -17,7 +17,7 @@ This document describes the package boundaries, versioning strategy and release 
 
 **Note**: applications that consume this library are **not** published — they are `IsPackable=false`. This document covers only the packages produced by this repository.
 
-> `netstandard2.1` is deliberately **not** a target. It was dropped during the `0.1.0` work because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Every target that remains has a host that actually runs it in CI. See [roadmap.md](roadmap.md) §6.11.
+> `netstandard2.1` is deliberately **not** a target. It was dropped during the `RM-0.0.14` work because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Every target that remains has a host that actually runs it in CI. See [roadmap.md](roadmap.md) §6.1.
 
 ---
 
@@ -52,6 +52,8 @@ flowchart LR
 
 The four packages **share a single version number per milestone**. There is no separate version per package: a milestone either ships all of them or ships only those that already exist (`DevTrove.Crypto.Abstractions` and `DevTrove.Crypto.Tls` appear for the first time in `0.1.0` and `0.6.0` respectively).
 
+**No API compatibility promise during `0.x`.** A minor bump may break the public API; such changes are highlighted in `CHANGELOG.md` and never appear in a patch release. The consumer-facing statement lives in [README.md](../README.md), which ships inside every package.
+
 | Scenario | Version action |
 |---|---|
 | New API (backward compatible) | Minor bump |
@@ -70,8 +72,9 @@ Version numbers are independent of any consumer's version. See [roadmap.md §3](
 <PackageReference Include="DevTrove.Crypto" Version="[0.1.0, )" />
 ```
 
-- Use a **lower-bound constraint** (`[x.y.z, )`) to permit consumers to upgrade to compatible newer versions.
+- Use a **lower-bound constraint** (`[x.y.z, )`) to permit consumers to upgrade to compatible newer versions. This is what a `ProjectReference` emits when packing: an unbracketed minimum version, which carries the same meaning.
 - If a version introduces an incompatible change, bump the lower bound and the own Major simultaneously.
+- **While the library is `0.x`, a lower bound is not enough on its own**: a floating range can pick up a breaking minor. Consumers should pin the exact version (or add an upper bound themselves) until `1.0.0` — see [README.md](../README.md).
 
 ### 3.3 Pre-release versions
 
@@ -79,7 +82,7 @@ Early versions use `-dev` / `-preview` suffixes (e.g. `0.1.0-dev`) to avoid bein
 
 ### 3.4 Where the version line starts
 
-`0.0.1`–`0.0.13` are **work-item numbers only**: they are never packaged, tagged or published. The first real release is `0.1.0`. Breaking changes are allowed throughout `0.x` but must be flagged in CHANGELOG. See [roadmap.md §3](roadmap.md).
+`0.0.1`–`0.0.14` are **work-item numbers only**: they are never packaged, tagged or published. The first public release is `0.1.0`, the first milestone that delivers usable capability — a pure-restructuring work item is not released on its own. Breaking changes are allowed throughout `0.x` but must be flagged in CHANGELOG. See [roadmap.md §3](roadmap.md).
 
 ---
 
@@ -104,7 +107,7 @@ Each publishable package **must** declare the following in `Directory.Build.prop
 
 **Recommendation**: enable SourceLink so consumers can jump straight to the source.
 
-> `<Version>` (`0.1.0-dev`), per-package `<PackageId>` and SourceLink (Microsoft.SourceLink.GitHub) are declared. `dotnet pack` produces `DevTrove.Crypto.Abstractions.<version>.nupkg`, `DevTrove.Crypto.Core.<version>.nupkg`, `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every target framework; the matching snupkg embeds SourceLink JSON in its pdb.
+> `<Version>` (`0.1.0-dev`, advanced while preparing the first release), per-package `<PackageId>` and SourceLink (Microsoft.SourceLink.GitHub) are declared. `dotnet pack` produces `DevTrove.Crypto.Abstractions.<version>.nupkg`, `DevTrove.Crypto.Core.<version>.nupkg`, `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every target framework; the matching snupkg embeds SourceLink JSON in its pdb.
 >
 > The packed `DevTrove.Crypto.Core` must declare `<dependency id="DevTrove.Crypto.Abstractions" />` in its `.nuspec`. A `ProjectReference` does not always turn into a NuGet dependency, so this is checked by unpacking the `.nupkg` rather than assumed — see §8.
 
@@ -139,7 +142,7 @@ netstandard2.0;net8.0;net9.0;net10.0
 - The guard symbol must be chosen **per API**, not with one blanket symbol: `Convert.FromHexString` is missing from every `netstandard` target, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` is absent only from `netstandard2.0`. `Span<T>` comes from the `System.Memory` package on this target.
 - The test matrix must cover this target — and it does: a `net48` host resolves the `netstandard2.0` asset and runs the contract tests against it, so this asset is **runtime-verified**, not merely build-verified.
 
-> `netstandard2.1` is intentionally absent. No non-EOL host resolves that asset, so it could never be runtime-verified; it was removed from the target set during `0.1.0`. See [roadmap.md](roadmap.md) §6.11.
+> `netstandard2.1` is intentionally absent. No non-EOL host resolves that asset, so it could never be runtime-verified; it was removed from the target set during the `RM-0.0.14` work. See [roadmap.md](roadmap.md) §6.1.
 
 ---
 

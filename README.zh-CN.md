@@ -32,6 +32,8 @@ dotnet add package DevTrove.Crypto.Core
 
 想要契约面而不想要 BouncyCastle 实现时，可单独引用 `DevTrove.Crypto.Abstractions` —— 它不依赖任何包。
 
+> **预发布阶段。** 库处于 `0.x`，公共 API 可能随次版本变更。请锁定确切版本，并先阅读[状态](#状态)一节。
+
 ---
 
 ## 快速上手
@@ -75,7 +77,7 @@ sm2.GenerateKeyPair();
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 计划中，`0.1.0`）
+│  ├─ DevTrove.Crypto.Abstractions/  契约（零依赖 —— 工作项 `RM-0.0.14`）
 │  ├─ DevTrove.Crypto/              门面包（无源码）
 │  ├─ DevTrove.Crypto.Core/         实现
 │  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 `0.6.0`）
@@ -114,13 +116,21 @@ dotnet test  DevTrove.Crypto.slnx -c Release
 
 互操作测试依赖外部工具 **tongsuo**。缺失时测试**直接失败而非跳过**（见 [docs/standards.md](docs/standards.md)）。
 
-> 构建与打包目前均不可信：三处目标框架声明彼此不一致（`RM-0.0.1`），两个 `netstandard` 目标从未产出过程序集（`RM-0.1.0-01`）。见 [docs/roadmap.md](docs/roadmap.md)。
+> 构建与打包目前均不可信：三处目标框架声明彼此不一致（`RM-0.0.1`），两个 `netstandard` 目标从未产出过程序集（`RM-0.0.14a`）。见 [docs/roadmap.md](docs/roadmap.md)。
 
 ---
 
 ## 状态
 
-**早期开发**。`0.0.1`–`0.0.13` 仅为工作项编号 —— 不打包、不发布；首次真实发布为 `0.1.0`。每个条目的当前状态见 [`docs/roadmap.md`](docs/roadmap.md)。
+**早期开发 —— 公共 API 尚不稳定。** 库处于 `0.x`，在 `1.0.0` 之前不提供向后兼容承诺：
+
+- `0.0.1`–`0.0.14` **仅为工作项编号** —— 不打包、不打 tag、不发布。
+- 首次公开发布为 `0.1.0`，也是第一个真正可用的版本（对称算法）；抽象层（`RM-0.0.14`）随它一同出货，而不是单独发布一个版本。
+- **允许在次版本之间发生破坏性变更**（`0.1.0` → `0.2.0`），并在 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md) 中显著标注；修订版本（patch）永不承载破坏性变更。
+- 库处于 `0.x` 期间请**锁定确切版本**，不要依赖浮动范围。
+- `1.0.0` 冻结公开类型面（`RM-1.0.0-01`）。
+
+每个条目的当前状态见 [`docs/roadmap.md`](docs/roadmap.md)。
 
 ---
 

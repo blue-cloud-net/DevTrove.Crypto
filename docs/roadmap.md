@@ -46,9 +46,12 @@ SemVer. `0.x` allows breaking changes.
 | Rule | Detail |
 |---|---|
 | `0.0.x` are **work-item numbers only** | Never packaged, tagged or published. The repository has never shipped a package. |
-| First real release | `0.1.0` |
+| **Release gate** | Only a milestone that delivers usable capability is tagged and published. A pure-restructuring work item (`RM-0.0.14`) is not released on its own — its output ships with the first release. |
+| First public release | `0.1.0` — the first version a consumer can actually use (symmetric algorithms). |
 | Package versions | The four packages share one version number per milestone. `DevTrove.Crypto.Tls` does not exist before `0.6.0`, so it does not participate in earlier milestones. |
-| Pre-release | Non-final builds use `-dev` / `-preview` suffixes. |
+| Pre-release | Non-final builds use `-dev` / `-preview` suffixes. The version line is prepared as `0.1.0-dev`. |
+
+**`0.x` carries no API compatibility promise.** A breaking change is allowed in any minor bump (`0.1.0` → `0.2.0`) and is highlighted in `CHANGELOG.md`; a patch release never breaks the API. The dependency range a package declares is a **lower bound only** (see [nuget.md §3.2](nuget.md)), so a floating range can pull in a breaking minor — consumers should pin the exact version while the library is `0.x`. `1.0.0` freezes the public type surface (`RM-1.0.0-01`). The same statement in consumer-facing wording lives in [README.md](../README.md), which is the readme shipped inside every package.
 
 The library is **independently versioned**. Consumers declare a minimum compatible version (see [nuget.md §3.2](nuget.md)).
 
@@ -58,17 +61,19 @@ The library is **independently versioned**. Consumers declare a minimum compatib
 
 | Version | Theme | Sub-items | Status |
 |---|---|---|---|
-| `RM-0.0.1`, `0.0.2`, `0.0.3`, `0.0.4`, `0.0.5`, `0.0.6`, `0.0.7`, `0.0.9`, `0.0.10`, `0.0.12`, `0.0.13` | Baseline corrections (work items) | 11 | 🟡 |
-| `0.1.0` | Abstraction layer | 5 | ⬜ |
-| `0.2.0` | Symmetric algorithms | 4 | ⬜ |
-| `0.3.0` | Asymmetric algorithms | 3 | ⬜ |
-| `0.4.0` | Hashes and derivation | 4 | ⬜ |
+| `RM-0.0.1`, `0.0.2`, `0.0.3`, `0.0.4`, `0.0.5`, `0.0.6`, `0.0.7`, `0.0.9`, `0.0.10`, `0.0.12`, `0.0.13`, `0.0.14` | Baseline corrections (work items) | 12 | 🟡 |
+| `0.1.0` | Symmetric algorithms | 4 | ⬜ |
+| `0.2.0` | Asymmetric algorithms | 3 | ⬜ |
+| `0.3.0` | Hashes, MACs and randomness | 3 | ⬜ |
+| `0.4.0` | Key derivation | 1 | ⬜ |
 | `0.5.0` | PKI capability completion | 9 | ⬜ |
 | `0.6.0` | TLS probe L1 + NTLS fingerprint | 11 | ⬜ |
 | `0.7.0` | TLS probe L2 + ShangMi | 9 | ⬜ |
 | `1.0.0` | Stable API + PKIX | 5 | ⬜ |
 
-Milestones are split by **cryptographic family** rather than by mixed "primitive" batches, so each version carries a single theme and the abstraction landed in `0.1.0` is implemented against family by family.
+Milestones are split by **cryptographic family** rather than by mixed "primitive" batches, so each version carries a single theme. The abstraction layer is a work item (`RM-0.0.14`) rather than a release, and every family implements its contracts as it lands.
+
+The first public release is therefore `0.1.0` (**symmetric algorithms**), not the abstraction layer: a release carrying no callable implementation would be a dead shell, and a NuGet package ID, once pushed, cannot be withdrawn.
 
 ---
 
@@ -93,7 +98,7 @@ Each row is one sub-item. `Evidence` names the concrete way the acceptance crite
 
 `Directory.Build.props` declares the TFM set; every csproj agrees with it, and each target is verified individually.
 
-> The set was reduced from five targets to **four** during the `0.1.0` work. `netstandard2.1` was dropped because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Each of the remaining four targets has a host that actually runs it — see `RM-0.1.0-01`.
+> The set was reduced from five targets to **four** during the `RM-0.0.14` work. `netstandard2.1` was dropped because no non-EOL host resolves that asset, so it could never be covered by a runtime test. Each of the remaining four targets has a host that actually runs it — see `RM-0.0.14a`.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
@@ -121,7 +126,7 @@ No `<Version>`, `<PackageId>` or SourceLink exists, although `nuget.md §4` call
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.4 | Declare `<Version>`, `<PackageId>`, SourceLink and `RepositoryUrl` correctly | `dotnet pack` produces the intended version; `.nupkg` contains README + XML docs | ✅ | `<Version>0.0.1-dev</Version>` written into props; both packages declare their own `<PackageId>`; Microsoft.SourceLink.GitHub wired in; `dotnet pack` produces `DevTrove.Crypto.Core.<version>.nupkg` and `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every TFM; the matching snupkg embeds the SourceLink JSON in its pdb |
+| RM-0.0.4 | Declare `<Version>`, `<PackageId>`, SourceLink and `RepositoryUrl` correctly | `dotnet pack` produces the intended version; `.nupkg` contains README + XML docs | ✅ | `<Version>` written into props (later advanced to `0.1.0-dev` while preparing the first release); both packages declare their own `<PackageId>`; Microsoft.SourceLink.GitHub wired in; `dotnet pack` produces `DevTrove.Crypto.Core.<version>.nupkg` and `DevTrove.Crypto.<version>.nupkg`, each shipping README + `lib/` + `.xml` for every TFM; the matching snupkg embeds the SourceLink JSON in its pdb |
 
 ### 6.5 `RM-0.0.5` — solution file
 
@@ -166,7 +171,7 @@ The entire `tests/data/` tree is generated by scripts and **ignored by Git** —
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.10 | Add a **tracked** `tests/fixtures/ntls/` for captured handshake bytes; add `ocsp/` to the generated set; add matching `TestData` helpers; document the fixture inventory in [development-guide.md §8](development-guide.md) rather than in ignored files | Captured fixtures live outside the ignored directory and are version-controlled; the generated set is reproducible by re-running the scripts | 🟡 | Added `tests/fixtures/README.md` and `tests/fixtures/ntls/README.md`; `git check-ignore -v tests/fixtures/*` does not match while `tests/data/*` stays ignored; development-guide §8 already lists the fixture inventory; once RM-0.1.0-01 restores Core, add the `ocsp/` generation section and `TestData` accessors |
+| RM-0.0.10 | Add a **tracked** `tests/fixtures/ntls/` for captured handshake bytes; add `ocsp/` to the generated set; add matching `TestData` helpers; document the fixture inventory in [development-guide.md §8](development-guide.md) rather than in ignored files | Captured fixtures live outside the ignored directory and are version-controlled; the generated set is reproducible by re-running the scripts | 🟡 | Added `tests/fixtures/README.md` and `tests/fixtures/ntls/README.md`; `git check-ignore -v tests/fixtures/*` does not match while `tests/data/*` stays ignored; development-guide §8 already lists the fixture inventory; once `RM-0.0.14` restores Core, add the `ocsp/` generation section and `TestData` accessors |
 
 ### 6.10 `RM-0.0.12` — trimming and AOT compatibility (net8.0 and later only)
 
@@ -174,7 +179,7 @@ Enum display names resolve through `[Display(ResourceType = typeof(RS))]` and a 
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.12 | Mark the net8.0+ targets as trim/AOT compatible and annotate the resource lookup path | Publishing an AOT test app succeeds and enum display names still resolve | 🟡 | `Directory.Build.props` sets `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial` for the `net8.0` / `net9.0` / `net10.0` TFMs via an `IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')` condition; an in-props XML comment constrains the enum-display-name lookup to use an `IsDynamicCodeSupported` guard. AOT publish + smoke test land once RM-0.1.0-01 restores Core (which carries the enum display name resolver) |
+| RM-0.0.12 | Mark the net8.0+ targets as trim/AOT compatible and annotate the resource lookup path | Publishing an AOT test app succeeds and enum display names still resolve | 🟡 | `Directory.Build.props` sets `IsAotCompatible=true` + `IsTrimmable=true` + `EnableTrimmed=true` + `TrimMode=partial` for the `net8.0` / `net9.0` / `net10.0` TFMs via an `IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')` condition; an in-props XML comment constrains the enum-display-name lookup to use an `IsDynamicCodeSupported` guard. AOT publish + smoke test land once `RM-0.0.14` restores Core (which carries the enum display name resolver) |
 
 The netstandard target carries no AOT metadata: it serves the compatibility surface, while `net8.0` and later serve the AOT surface.
 
@@ -193,53 +198,62 @@ The netstandard target carries no AOT metadata: it serves the compatibility surf
 
 ---
 
-### 6.12 `0.1.0` — Abstraction layer
+### 6.12 `RM-0.0.14` — Abstraction layer (work item)
 
-No new capability and no algorithm implementation. This milestone settles the contract surface: a new leaf assembly carries the interfaces and abstract base types that every later milestone implements against. The library has never been published, so the shape change is free.
-
-| ID | Sub-item | Acceptance | Status | Evidence |
-|---|---|---|---|---|
-| RM-0.1.0-01 | Create the `DevTrove.Crypto.Abstractions` assembly (own package, zero-dependency leaf, 4 TFMs, package metadata); Core structure rework (directories and namespaces `Algorithms` / `Asn1` / `Interop` / `Compat`; BouncyCastle types removed from the public surface; one `Interop` extension per type; unified `*Crypto` naming); naming and layout follow-through (`GlobalUsings`, mirrored test directories, `library-api.md` rewritten, `architecture.md` §4 / §5 redrawn); add the missing polyfills / package references for `netstandard2.0` and choose the guard symbol per API | Each of the 4 TFMs builds (including `netstandard2.0`); no `DevTrove.Crypto.Crypto.*` or `DevTrove.Crypto.BouncyCastle.*` namespace remains; no `GetBouncyCastle*` member is public; every `#if` matches the API it protects | ⬜ | `dotnet build -f <tfm>` plus a `grep` over `src/` for the old namespaces |
-| RM-0.1.0-02 | Symmetric and hash abstractions: `ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | CTR and AEAD modes are expressible without BCL enums; defaults are `Cbc` and `Pkcs7`; ECB makes `Encrypt` throw `InvalidOperationException` | ⬜ | Unit tests over the enum value sets and the base-class contract |
-| RM-0.1.0-03 | Asymmetric capability interfaces: `ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | Each capability is its own interface, so no single-inheritance constraint is imposed; `AsymmetricKeyBase` clears key material on disposal | ⬜ | Interface-inventory test + disposal test |
-| RM-0.1.0-04 | X.509 abstractions: `ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | All four interfaces are implementable by a single stub; **no implementation type ships in this milestone** (implementations land in `0.5.0`) | ⬜ | Stub-implementation test |
-| RM-0.1.0-05 | BCL adapters `AsSymmetricAlgorithm()` / `AsHashAlgorithm()`; release readiness | CBC / CFB / OFB / ECB produce the same result through the adapter as through the stub, while GCM / CTR throw `NotSupportedException`; all 4 TFMs green; packed artifacts complete and carrying the `DevTrove.Crypto.Abstractions` dependency; a clean consumer project restores and calls the API | ⬜ | Unit tests + `dotnet pack` + consumer smoke test |
-
----
-
-### 6.13 `0.2.0` — Symmetric algorithms
+No new capability and no algorithm implementation — this is a **baseline work item**, not a release. It settles the contract surface: a new leaf assembly carries the interfaces and abstract base types that every later milestone implements against. The library has never been published, so the shape change is free, and nothing is tagged or pushed here: the assembly ships with the first release (`0.1.0`).
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.2.0-01 | Migrate AES and SM4 onto the `0.1.0` abstraction; align their mode sets; ECB supported by both with CBC as the default and an explicit warning in the XML docs; remove the .NET 8-only overrides | Both algorithms expose the same mode set; `CryptoStream` interop still works through the adapter | ⬜ | Mode matrix tests + interop tests |
-| RM-0.2.0-02 | Symmetric key object: algorithm + key + IV/Nonce + memory clearing | Keys are no longer raw `byte[]` in the public API; disposal clears key material | ⬜ | Disposal test |
-| RM-0.2.0-03 | Symmetric mode completion: AES-CTR, AES key wrap (RFC 3394), SM4-CTR, SM4-GCM | RFC 3394 and GCM test vectors pass | ⬜ | Known-answer tests |
-| RM-0.2.0-04 | CMAC and GMAC | Known-answer tests pass | ⬜ | Known-answer tests |
+| RM-0.0.14a | Create the `DevTrove.Crypto.Abstractions` assembly (own package, zero-dependency leaf, 4 TFMs, package metadata); Core structure rework (directories and namespaces `Algorithms` / `Asn1` / `Interop` / `Compat`; BouncyCastle types removed from the public surface; one `Interop` extension per type; unified `*Crypto` naming); naming and layout follow-through (`GlobalUsings`, mirrored test directories, `library-api.md` rewritten, `architecture.md` §4 / §5 redrawn); add the missing polyfills / package references for `netstandard2.0` and choose the guard symbol per API | Each of the 4 TFMs builds (including `netstandard2.0`); no `DevTrove.Crypto.Crypto.*` or `DevTrove.Crypto.BouncyCastle.*` namespace remains; no `GetBouncyCastle*` member is public; every `#if` matches the API it protects | ⬜ | `dotnet build -f <tfm>` plus a `grep` over `src/` for the old namespaces |
+| RM-0.0.14b | Symmetric and hash abstractions: `ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | CTR and AEAD modes are expressible without BCL enums; defaults are `Cbc` and `Pkcs7`; the base class implements CBC / CFB / OFB and ECB (ECB encrypts each block independently, with no IV, and its XML docs warn that it is insecure); `Ctr` / `Gcm` throw `NotSupportedException` until a family implements them | ⬜ | Unit tests over the enum value sets and the base-class contract |
+| RM-0.0.14c | Asymmetric capability interfaces: `ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | Each capability is its own interface, so no single-inheritance constraint is imposed; `AsymmetricKeyBase` clears key material on disposal | ⬜ | Interface-inventory test + disposal test |
+| RM-0.0.14d | X.509 abstractions: `ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | All four interfaces are implementable by a single stub; **no implementation type ships in this work item** (implementations land in `0.5.0`) | ⬜ | Stub-implementation test |
+| RM-0.0.14e | BCL adapters `AsSymmetricAlgorithm()` / `AsHashAlgorithm()`; publish readiness for the first release | CBC / CFB / OFB / ECB produce the same result through the adapter as through the stub, while GCM / CTR throw `NotSupportedException`; all 4 TFMs green; packed artifacts complete and carrying the `DevTrove.Crypto.Abstractions` dependency; a clean consumer project restores and calls the API | ⬜ | Unit tests + `dotnet pack` + consumer smoke test |
 
 ---
 
-### 6.14 `0.3.0` — Asymmetric algorithms
+### 6.13 `0.1.0` — Symmetric algorithms
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.3.0-01 | Migrate RSA, ECDSA, DSA and SM2 onto the `0.1.0` capability interfaces; each algorithm implements exactly the capabilities it has | Each algorithm exposes only the capabilities it really has | ⬜ | Interface-inventory test |
-| RM-0.3.0-02 | Add Ed25519, Ed448 and X25519 (X448 optional). X25519 only agrees keys and Ed25519 only signs, which is why capabilities are separate interfaces rather than one base class | Sign and key-agreement round-trips against reference vectors | ⬜ | Known-answer tests |
-| RM-0.3.0-03 | Derive the default signature algorithm from the private key instead of hard-coding `SHA256WITHRSA` | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without the caller naming an algorithm | ⬜ | Per-key-type unit tests |
+| RM-0.1.0-01 | Migrate AES and SM4 onto the `RM-0.0.14` abstraction; align their mode sets; ECB supported by both with CBC as the default and an explicit warning in the XML docs; remove the .NET 8-only overrides | Both algorithms expose the same mode set; `CryptoStream` interop still works through the adapter | ⬜ | Mode matrix tests + interop tests |
+| RM-0.1.0-02 | Symmetric key object: algorithm + key + IV/Nonce + memory clearing | Keys are no longer raw `byte[]` in the public API; disposal clears key material | ⬜ | Disposal test |
+| RM-0.1.0-03 | Symmetric mode completion: AES-CTR, AES key wrap (RFC 3394), SM4-CTR, SM4-GCM | RFC 3394 and GCM test vectors pass | ⬜ | Known-answer tests |
+| RM-0.1.0-04 | CMAC and GMAC | Known-answer tests pass | ⬜ | Known-answer tests |
 
 ---
 
-### 6.15 `0.4.0` — Hashes and derivation
+### 6.14 `0.2.0` — Asymmetric algorithms
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.4.0-01 | Hash family: SHA-256/384/512 wrappers on the `0.1.0` digest abstraction | Every hash exposes the same shape as SM3 | ⬜ | API inventory |
-| RM-0.4.0-02 | HMAC: HMAC-SM3 plus HMAC-SHA256/384/512, without the BCL `HashName` reflection factory | Sign and verify against reference vectors | ⬜ | Known-answer tests |
-| RM-0.4.0-03 | KDF: HKDF-SHA256/384/512, PBKDF2, optional scrypt | RFC 5869 test vectors pass | ⬜ | Known-answer tests |
-| RM-0.4.0-04 | Single entry point for secure randomness | No ad-hoc randomness helper remains scattered across types | ⬜ | API inventory |
+| RM-0.2.0-01 | Migrate RSA, ECDSA, DSA and SM2 onto the `RM-0.0.14` capability interfaces; each algorithm implements exactly the capabilities it has | Each algorithm exposes only the capabilities it really has | ⬜ | Interface-inventory test |
+| RM-0.2.0-02 | Add Ed25519, Ed448 and X25519 (X448 optional). X25519 only agrees keys and Ed25519 only signs, which is why capabilities are separate interfaces rather than one base class | Sign and key-agreement round-trips against reference vectors | ⬜ | Known-answer tests |
+| RM-0.2.0-03 | Derive the default signature algorithm from the private key instead of hard-coding `SHA256WITHRSA` | No `SHA256WITHRSA` literal remains; EC / DSA / SM2 sign without the caller naming an algorithm | ⬜ | Per-key-type unit tests |
 
 ---
 
-### 6.16 `0.5.0` — PKI capability completion
+### 6.15 `0.3.0` — Hashes, MACs and randomness
+
+| ID | Sub-item | Acceptance | Status | Evidence |
+|---|---|---|---|---|
+| RM-0.3.0-01 | Hash family: SHA-256/384/512 wrappers on the `RM-0.0.14` digest abstraction | Every hash exposes the same shape as SM3 | ⬜ | API inventory |
+| RM-0.3.0-02 | HMAC: HMAC-SM3 plus HMAC-SHA256/384/512, without the BCL `HashName` reflection factory | Sign and verify against reference vectors | ⬜ | Known-answer tests |
+| RM-0.3.0-03 | Single entry point for secure randomness | No ad-hoc randomness helper remains scattered across types | ⬜ | API inventory |
+
+---
+
+### 6.16 `0.4.0` — Key derivation
+
+Key derivation was split out of the former "hashes and derivation" milestone so that `0.3.0` stays scoped to hashing and message authentication. Its first consumers are PKCS#12 (PBES2 / PBKDF2, `RM-0.5.0-05`) and the TLS 1.3 key schedule.
+
+| ID | Sub-item | Acceptance | Status | Evidence |
+|---|---|---|---|---|
+| RM-0.4.0-01 | KDF: HKDF-SHA256/384/512, PBKDF2, optional scrypt | RFC 5869 test vectors pass | ⬜ | Known-answer tests |
+
+---
+
+### 6.17 `0.5.0` — PKI capability completion
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
@@ -255,7 +269,7 @@ No new capability and no algorithm implementation. This milestone settles the co
 
 ---
 
-### 6.17 `0.6.0` — TLS probe L1 and NTLS fingerprint
+### 6.18 `0.6.0` — TLS probe L1 and NTLS fingerprint
 
 The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 
@@ -275,7 +289,7 @@ The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 
 ---
 
-### 6.18 `0.7.0` — TLS probe L2 and ShangMi
+### 6.19 `0.7.0` — TLS probe L2 and ShangMi
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
@@ -291,7 +305,7 @@ The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 
 ---
 
-### 6.19 `1.0.0` — Stable API and PKIX
+### 6.20 `1.0.0` — Stable API and PKIX
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
@@ -323,7 +337,7 @@ The engine lives in `src/DevTrove.Crypto.Tls/`, which does not exist yet.
 | R1 | Building Tongsuo from source in CI lengthens the pipeline badly | Slow feedback, flaky jobs | Cache the build output and pin the version |
 | R2 | Unifying on Tongsuo stops validating interoperability against upstream OpenSSL | A regression specific to upstream OpenSSL goes unnoticed | Document the limitation; keep an optional, non-blocking cross-check |
 | R3 | Renormalising line endings across the tree produces a very large diff | History becomes harder to read | Commit the renormalisation separately and note it in the message |
-| R4 | Replacing the BCL abstractions touches many call sites in tests and docs | Large, error-prone refactor | Land `RM-0.3.0-03` first; adopt the new abstraction incrementally, one algorithm at a time |
+| R4 | Replacing the BCL abstractions touches many call sites in tests and docs | Large, error-prone refactor | Land `RM-0.2.0-03` first; adopt the new abstraction incrementally, one algorithm at a time |
 | R5 | GB/T 38636 (NTLS) details cannot be confirmed from public material | Detection verdicts may be inaccurate | Use captured real-site bytes as fixtures; mark uncertain verdicts explicitly |
 | R6 | A trimmed or AOT-compiled consumer loses enum display names | Silent degradation | Annotate the resource path; verify with an AOT publish smoke test |
 | R7 | The status table drifts from reality | The roadmap becomes another misleading document | Status updates are part of the pre-submission checklist (see §2) |

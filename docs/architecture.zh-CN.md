@@ -45,7 +45,7 @@ DevTrove.Crypto/
 │  ├─ DevTrove.Crypto.Abstractions/  契约：接口与抽象基类型（零依赖）
 │  ├─ DevTrove.Crypto/              门面包（元包，无源码，见 §3）
 │  ├─ DevTrove.Crypto.Core/         实现
-│  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 —— 见 [roadmap.md](roadmap.md) §6.19）
+│  └─ DevTrove.Crypto.Tls/          TLS 探测引擎（计划中 —— 见 [roadmap.md](roadmap.md) §6.18）
 ├─ tests/
 │  ├─ DevTrove.Crypto.Core.Tests/
 │  └─ DevTrove.Crypto.TestSupport/   tongsuo CLI 封装
@@ -61,10 +61,10 @@ DevTrove.Crypto/
 
 | 包 ID | 角色 | 说明 |
 |---|---|---|
-| `DevTrove.Crypto.Abstractions` | **契约**：对称、非对称、摘要与 X.509 四个面的接口与抽象基类型 | **计划中，`0.1.0`。** 依赖图的叶节点 —— 它不引用任何包，包括 BouncyCastle。 |
+| `DevTrove.Crypto.Abstractions` | **契约**：对称、非对称、摘要与 X.509 四个面的接口与抽象基类型 | **工作项 `RM-0.0.14`；随首个发布 `0.1.0` 出货。** 依赖图的叶节点 —— 它不引用任何包，包括 BouncyCastle。 |
 | `DevTrove.Crypto.Core` | **实现**：BouncyCastle 封装 —— 算法、密钥、ASN.1、X.509、CSR、PKCS#7/#12、CRL、OCSP 解析 | 真正承载代码的包。依赖 `DevTrove.Crypto.Abstractions`。 |
 | `DevTrove.Crypto` | **门面包（元包）**：仅 `ProjectReference` → Core；无源码、无公开 API 类型 | 使用方引用此包；Core（进而 Abstractions）自动引入 |
-| `DevTrove.Crypto.Tls` | **TLS 探测引擎** | **计划中。** 命名空间已预留，包排期在 `0.6.0`；当前不存在任何类型（见 [roadmap.md](roadmap.md) §6.19）。 |
+| `DevTrove.Crypto.Tls` | **TLS 探测引擎** | **计划中。** 命名空间已预留，包排期在 `0.6.0`；当前不存在任何类型（见 [roadmap.md](roadmap.md) §6.18）。 |
 
 ### 依赖图
 
@@ -85,7 +85,7 @@ flowchart LR
 
 > **`DevTrove.Crypto.Core` 当前不承载任何源码。** Web 时代的实现已被移除，正在按下面的契约重建，因此原先印在这里的目录树已不再描述任何真实存在的东西。本版有意不再罗列它。
 
-### 4.1 `DevTrove.Crypto.Abstractions`（`0.1.0` 落地）
+### 4.1 `DevTrove.Crypto.Abstractions`（由工作项 `RM-0.0.14` 建成，随 `0.1.0` 出货）
 
 采用**扁平**布局 —— 不设中间目录层，使命名空间与目录一一对应。
 
@@ -112,18 +112,18 @@ BCL 适配器就近放在它所适配的族旁边，而不另建 `Interop/` 目�
 
 | 目录 | 命名空间 | 落地版本 |
 |---|---|---|
-| `Asn1/` | `DevTrove.Crypto.Asn1` | `0.1.0` |
-| `Interop/` | `DevTrove.Crypto.Interop` | `0.1.0` |
-| `Compat/` | 仅内部 | `0.1.0` |
+| `Asn1/` | `DevTrove.Crypto.Asn1` | `RM-0.0.14` |
+| `Interop/` | `DevTrove.Crypto.Interop` | `RM-0.0.14` |
+| `Compat/` | 仅内部 | `RM-0.0.14` |
 | `X509/` | `DevTrove.Crypto.X509` | 已有 |
-| `Algorithms/Symmetric/` | `DevTrove.Crypto.Algorithms.Symmetric` | `0.2.0` |
-| `Algorithms/Asymmetric/` | `DevTrove.Crypto.Algorithms.Asymmetric` | `0.3.0` |
-| `Algorithms/Hash/` | `DevTrove.Crypto.Algorithms.Hash` | `0.4.0` |
+| `Algorithms/Symmetric/` | `DevTrove.Crypto.Algorithms.Symmetric` | `0.1.0` |
+| `Algorithms/Asymmetric/` | `DevTrove.Crypto.Algorithms.Asymmetric` | `0.2.0` |
+| `Algorithms/Hash/` | `DevTrove.Crypto.Algorithms.Hash` | `0.3.0` |
 | `Formats/` | `DevTrove.Crypto.Formats` | `0.5.0` |
 | `X509/Chain/` | `DevTrove.Crypto.X509.Chain` | `0.5.0` |
 | `X509/Ocsp/` | `DevTrove.Crypto.X509.Ocsp` | `0.5.0` |
 
-每一族的具体算法在上表所列版本落地，实现于 `0.1.0` 的契约之上。逐项状态见 [roadmap.md](roadmap.md) §6。
+每一族的具体算法在上表所列版本落地，实现于 `RM-0.0.14` 的契约之上。逐项状态见 [roadmap.md](roadmap.md) §6。
 
 ---
 
@@ -197,12 +197,12 @@ NTLS 完整握手（record layer + SM3 PRF + SM2 密钥交换 + SM4 记录保护
 | G2 | 无 PKIX 路径校验（不校验 `AuthorityKeyIdentifier`、`KeyUsage`、`BasicConstraints`、路径长度、策略与名称约束） | 可能把 PKIX 下本应被拒的链判为有效 | `1.0.0`（`RM-1.0.0-02`） |
 | G3 | 完全没有 OCSP 代码 | 无法给出吊销状态结论 | `0.5.0`（`RM-0.5.0-08`）；验签在 `0.7.0` 评估 |
 | G4 | 不支持 PKCS#7 / CMS | 无法消费 CMS SignedData | `0.5.0`（`RM-0.5.0-07`） |
-| G5 | 没有任何密钥派生函数（HKDF、PBKDF2、scrypt） | 调用方必须自行实现密钥派生 —— 最容易自研出错的一步 | `0.4.0`（`RM-0.4.0-03`） |
-| G6 | 不支持任何 HMAC | 无法计算消息认证码 | `0.4.0`（`RM-0.4.0-02`） |
-| G7 | 无 Ed25519 / Ed448 / X25519 系列 | 现代签名与密钥协商套件不可用 | `0.3.0`（`RM-0.3.0-02`） |
+| G5 | 没有任何密钥派生函数（HKDF、PBKDF2、scrypt） | 调用方必须自行实现密钥派生 —— 最容易自研出错的一步 | `0.4.0`（`RM-0.4.0-01`） |
+| G6 | 不支持任何 HMAC | 无法计算消息认证码 | `0.3.0`（`RM-0.3.0-02`） |
+| G7 | 无 Ed25519 / Ed448 / X25519 系列 | 现代签名与密钥协商套件不可用 | `0.2.0`（`RM-0.2.0-02`） |
 | G8 | 无格式自动识别（PEM / DER 等） | 调用方必须事先知道格式 | `0.5.0`（`RM-0.5.0-03`） |
-| G9 | `netstandard2.0` 无法构建 | 文档宣称的兼容面实际不存在 | `RM-0.1.0-01` |
-| G10 | 尚未发布任何契约 —— 接口面不存在 | 无从对稳定契约编程 | `0.1.0`（`RM-0.1.0-01`–`-05`） |
+| G9 | `netstandard2.0` 无法构建 | 文档宣称的兼容面实际不存在 | `RM-0.0.14a` |
+| G10 | 尚未发布任何契约 —— 接口面不存在 | 无从对稳定契约编程 | `RM-0.0.14a`–`e`；随首个发布 `0.1.0` 出货 |
 
 ### 7.2 会保留的限制
 
@@ -210,7 +210,7 @@ NTLS 完整握手（record layer + SM3 PRF + SM2 密钥交换 + SM4 记录保护
 |---|---|---|---|
 | L1 | NTLS 仅做**字节级指纹检测**，不做完整握手 | 无法验证国密栈的完整行为 | 需从零实现 TLS 1.2 子集（见 [tls-scanner.md §6.3](tls-scanner.md)） |
 | L2 | 不做 L3 漏洞探测（Heartbleed、CCS Injection、Ticketbleed） | 对这些类别不给出漏洞结论 | 明确不做；仅 ROBOT 在范围内 |
-| L3 | 非对称代理只暴露其算法真实具备的能力 | 并非每个非对称类型都能既签名又加密 | X25519 只做密钥协商，Ed25519 只做签名（见 [roadmap.md](roadmap.md) §6.16） |
+| L3 | 非对称代理只暴露其算法真实具备的能力 | 并非每个非对称类型都能既签名又加密 | X25519 只做密钥协商，Ed25519 只做签名（见 [roadmap.md](roadmap.md) §6.14） |
 
 每个缺口的当前状态见 [roadmap.md](roadmap.md)。
 
@@ -239,7 +239,7 @@ NTLS 完整握手（record layer + SM3 PRF + SM2 密钥交换 + SM4 记录保护
 | D17 | ECDH 返回原始共享密钥字节，KDF 由调用方决定 | 库不强加 KDF 选择 |
 | D18 | 测试夹具**只生成、不入库**：`tests/data/` 被整体忽略，由 `scripts/generate-test-*.sh` 重建（测试程序集的 module initializer 会按需自动调用）。夹具短有效期（≈1 年）。脚本产不出的抓取类数据 —— NTLS 握手字节 —— 放在**已入库**的 `tests/fixtures/` | CI 不依赖远程生成；断言不得依赖「当前有效」，也不得依赖「某夹具文件存在于仓库中」 |
 | D19 | 外部工具缺失时测试**失败**而非跳过（`CliToolGuard`） | 环境问题立刻暴露 |
-| D20 | **自建密码学抽象**，仅在需要 `CryptoStream` / `SslStream` / `X509Certificate2` 互操作处提供 BCL 适配器 | BCL 基类无法表达 CTR 与 AEAD（`CipherMode` 是封闭枚举），而 `TryEncryptEcbCore` 这类 .NET 8 专属虚方法在两个 `netstandard` 目标上不存在 —— 继承它们等于把库的能力集绑死在特定 TFM 上。见 [roadmap.md](roadmap.md) §6.14 |
+| D20 | **自建密码学抽象**，仅在需要 `CryptoStream` / `SslStream` / `X509Certificate2` 互操作处提供 BCL 适配器 | BCL 基类无法表达 CTR 与 AEAD（`CipherMode` 是封闭枚举），而 `TryEncryptEcbCore` 这类 .NET 8 专属虚方法在两个 `netstandard` 目标上不存在 —— 继承它们等于把库的能力集绑死在特定 TFM 上。见 [roadmap.md](roadmap.md) §6.13 |
 | D21 | BouncyCastle 类型不进入公开 API；互操作只经显式的 `Interop` 扩展方法 | 实现包应当可替换而不破坏消费方；此前有 9 个公开成员泄露了 BouncyCastle 类型 |
 | D22 | tongsuo 是**唯一**的外部工具（夹具与互操作测试） | 只需安装、pin 与缓存一个工具，且它同时覆盖标准算法与国密。代价是不再断言与上游 OpenSSL 的互操作 —— 已记入 [roadmap.md](roadmap.md) §8 风险 |
 | D23 | 算法代理统一命名为 `<Algorithm>Crypto`（`RsaCrypto`、`Sm2Crypto`、`Sm4Crypto` 等） | 一套命名规则覆盖全部算法；此前 `RsaCrypto` 与 `SM2` 的混搭毫无依据 |
@@ -260,7 +260,7 @@ NTLS 完整握手（record layer + SM3 PRF + SM2 密钥交换 + SM4 记录保护
 
 完整路线、逐项状态与证据见 [roadmap.md](roadmap.md)。
 
-- **`DevTrove.Crypto.Abstractions`**：未启动。排期 `0.1.0`；只承载契约，不含任何实现类型。
+- **`DevTrove.Crypto.Abstractions`**：未启动。工作项 `RM-0.0.14`；只承载契约，不含任何实现类型，随首个发布 `0.1.0` 出货。
 - **`DevTrove.Crypto.Core`**：当前不承载源码。Web 时代的 RSA / ECDSA / DSA / AES / SM2 / SM3 / SM4 与 X.509 / CSR / CRL / PKCS#12 代码已被移除，正在按上述契约重建。尚**不**支持 `netstandard2.0`，也没有证书链、OCSP、PKCS#7、KDF、MAC 与 Ed25519 / X25519 —— 见 §7.1。
 - **`DevTrove.Crypto`（门包）**：项目存在且无源码；现已继承共享 TFM 集合，不再固定单一框架。
 - **`DevTrove.Crypto.Tls`**：未启动。命名空间已预留，排期 `0.6.0`。

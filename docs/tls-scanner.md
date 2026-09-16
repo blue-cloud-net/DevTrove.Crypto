@@ -14,7 +14,7 @@ This document describes the design of `DevTrove.Crypto.Tls`: capability boundari
 | **L2** | L1 + A–F grading, client-simulation compatibility matrix, ALPN/HTTP2, certificate transparency, DNS CAA | ✅ Scheduled (`0.7.0`) |
 | **L3** | L2 + vulnerability probing (Heartbleed, CCS Injection, ROBOT, Ticketbleed, etc.) | ❌ Only ROBOT (see §9.3) |
 
-This document owns the **design**. The **schedule and per-item status** live in [roadmap.md](roadmap.md) §6.17 and §6.18.
+This document owns the **design**. The **schedule and per-item status** live in [roadmap.md](roadmap.md) §6.18 and §6.19.
 
 ---
 

@@ -32,6 +32,8 @@ Requires .NET 8.0 or later at runtime; for older runtimes (e.g. .NET Framework, 
 
 The `DevTrove.Crypto.Abstractions` package can be referenced on its own when you want the contract surface without the BouncyCastle-backed implementation — it depends on nothing.
 
+> **Pre-release.** The library is in `0.x`, so the public API may change between minor versions. Pin the exact version and read [Status](#status) before depending on it.
+
 ---
 
 ## Quick start
@@ -75,7 +77,7 @@ More examples are provided in the test projects under `tests/DevTrove.Crypto.Cor
 ```
 DevTrove.Crypto/
 ├─ src/
-│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — planned, `0.1.0`)
+│  ├─ DevTrove.Crypto.Abstractions/  contracts (zero dependencies — work item `RM-0.0.14`)
 │  ├─ DevTrove.Crypto/               metapackage (no source)
 │  ├─ DevTrove.Crypto.Core/          implementation
 │  └─ DevTrove.Crypto.Tls/           TLS probe engine (planned, `0.6.0`)
@@ -114,13 +116,21 @@ dotnet test  DevTrove.Crypto.slnx -c Release
 
 External dependency for interop tests: **tongsuo**. A missing tool causes interop tests to **fail**, not skip (per [docs/standards.md](docs/standards.md)).
 
-> Builds and packing are not trustworthy yet: the framework declarations disagree (`RM-0.0.1`) and the two `netstandard` targets have never produced an assembly (`RM-0.1.0-01`). See [docs/roadmap.md](docs/roadmap.md).
+> Builds and packing are not trustworthy yet: the framework declarations disagree (`RM-0.0.1`) and the two `netstandard` targets have never produced an assembly (`RM-0.0.14a`). See [docs/roadmap.md](docs/roadmap.md).
 
 ---
 
 ## Status
 
-**Early development.** `0.0.1`–`0.0.13` are work-item numbers only — they are never packaged or published. The first real release is `0.1.0`. Current status of every item is tracked in [docs/roadmap.md](docs/roadmap.md).
+**Early development — the public API is not stable yet.** The library is in `0.x` and no backward-compatibility promise applies until `1.0.0`:
+
+- `0.0.1`–`0.0.14` are **work-item numbers only** — never packaged, tagged or published.
+- The first public release is `0.1.0`, and it is the first version that is actually usable (symmetric algorithms). The abstraction layer (`RM-0.0.14`) ships with it rather than as a release of its own.
+- **Breaking changes are allowed between minor versions** (`0.1.0` → `0.2.0`), and are highlighted in [CHANGELOG.md](CHANGELOG.md). They never land in a patch release.
+- **Pin the exact version** while the library is `0.x`; do not rely on a floating range.
+- `1.0.0` freezes the public type surface (`RM-1.0.0-01`).
+
+Current status of every item is tracked in [docs/roadmap.md](docs/roadmap.md).
 
 ---
 

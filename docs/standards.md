@@ -275,7 +275,7 @@ One commit, one thing. No unrelated formatting changes mixed in.
 
 ### 9.3 Pre-submission checks
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` — expect failures until `RM-0.1.0-01` lands; warnings must be zero for new code.
+- `dotnet build DevTrove.Crypto.slnx -c Release` — expect failures until `RM-0.0.14a` lands; warnings must be zero for new code.
 
 ### 3.2.1 Interop test naming
 

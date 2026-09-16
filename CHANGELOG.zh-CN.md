@@ -6,7 +6,15 @@
 
 > 英文版本：[CHANGELOG.md](CHANGELOG.md)
 
+> **库处于 `0.x`：次版本之间允许破坏性变更，并在下方「变更」中列出。在 `1.0.0` 之前，任何内容都不构成兼容性承诺。**
+
 ## [未发布]
+
+### 变更（版本模型）
+
+- **版本线重排。** 抽象层是工作项（`RM-0.0.14`）而非一个发布版本，因此首个公开发布 `0.1.0` 交付的是对称算法 —— 第一个真正可用的版本。其后里程碑整体前移一位：非对称 `0.2.0`、哈希 / MAC / 随机数 `0.3.0`、密钥派生 `0.4.0`；`0.5.0` 及以后不变
+- **`<Version>` 推进为 `0.1.0-dev`**，预备首次发布
+- **在 `README.md` / `README.zh-CN.md`（随每个包一同发布的 readme）、`docs/nuget.md` 与 `docs/roadmap.md` 中明文写入 `0.x` API 不稳定性**
 
 ### 变更（仅库化重构）
 
@@ -20,7 +28,7 @@
 - **新增**：双语 `README.md` / `README.zh-CN.md`
 - **新增**：`AGENTS.md`（AI / 人贡献者工作流）
 - **文档**：重写 `docs/architecture.md` 为库内分层；更新 `docs/roadmap.md` 与 `docs/development-guide.md`
-- **说明**：5 TFM（`netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0`）当前暂用 3 TFM（`net8.0;net9.0;net10.0`），待 netstandard2.0 polyfill 完成后再恢复
+- **说明**：目标框架集合为 4 个（`netstandard2.0;net8.0;net9.0;net10.0`）；`netstandard2.1` 已移除，因为没有任何未 EOL 的宿主会解析该资产
 
 ### 已知限制
 
