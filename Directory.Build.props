@@ -26,7 +26,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <Version>0.0.1-dev</Version>
+    <Version>0.1.0-dev</Version>
   </PropertyGroup>
 
   <!-- ========== [SourceLink 与符号包] ==========
