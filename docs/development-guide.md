@@ -70,8 +70,9 @@ This keeps `dotnet build DevTrove.Crypto.slnx` working on Linux without the `Mic
 <LangVersion>latest</LangVersion>
 <Nullable>enable</Nullable>
 <ImplicitUsings>enable</ImplicitUsings>
-<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+<!-- TreatWarningsAsErrors / EnforceCodeStyleInBuild are intentionally OFF:
+     see standards.md §2.3. New code must still produce 0 warnings (§9.3). -->
 
 <!-- NuGet metadata baseline (override per-project as needed) -->
 <Authors>blue-cloud-net</Authors>

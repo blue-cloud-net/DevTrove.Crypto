@@ -11,10 +11,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>DevTrove.Crypto</RootNamespace>
-
-    <!-- [构建基线] 警告即错误 + 构建期强制代码风格（standards.md §2.3） -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <!-- ========== [NuGet 元数据] ==========

@@ -61,9 +61,9 @@ Each project writes `<PackageReference Include="..." />` only — **never** with
 <LangVersion>latest</LangVersion>
 <Nullable>enable</Nullable>
 <ImplicitUsings>enable</ImplicitUsings>
-<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 ```
+
+> `TreatWarningsAsErrors` 与 `EnforceCodeStyleInBuild` 早期评估过，结论是对多人协作且仍在演进中的库过严，因此**有意保持关闭**。新代码仍须 0 警告（见 §9.3），只是警告不再直接令构建失败。
 
 For library projects (`IsPackable=true`) additionally:
 

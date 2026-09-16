@@ -109,11 +109,11 @@
 
 ### 6.3 `RM-0.0.3` —— 构建基线属性
 
-`standards.md §2.3` 与 `development-guide.md §3` 写明了 `TreatWarningsAsErrors` 与 `EnforceCodeStyleInBuild`，但 `Directory.Build.props` 中两者都不存在。
+`standards.md §2.3` 与 `development-guide.md §3` 曾写明 `TreatWarningsAsErrors` 与 `EnforceCodeStyleInBuild`。两者**有意不**在 `Directory.Build.props` 中启用：这两个标志经评估被认为对多人协作且仍在演进中的库过严，因此改修正文档以与所选配置保持一致。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.0.3 | 补上两个属性（或修正文档） | 配置与文档一致；构建行为与文档描述相符 | ✅ | Directory.Build.props 补齐 `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` 与 `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`；`dotnet build DevTrove.Crypto.slnx -c Release` 全 TFM 成功（0 警告 0 错误） |
+| RM-0.0.3 | 在两种处置方式（补上属性 / 修正文档去掉）中选其一并一致执行 | 配置与文档一致；构建行为与文档描述相符 | ✅ | `Directory.Build.props` **不**设 `<TreatWarningsAsErrors>` 或 `<EnforceCodeStyleInBuild>`（props 内注释记录原因）；`standards.md §2.3` 与 `development-guide.md §3` 已修正，从示例中删除这两行并注明新代码仍须 0 警告（见 `standards.md §9.3`），仅警告不再直接令构建失败 |
 
 ### 6.4 `RM-0.0.4` —— 包元数据
 

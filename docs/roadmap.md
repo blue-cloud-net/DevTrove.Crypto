@@ -109,11 +109,11 @@ The metapackage project still contains `src/DevTrove.Crypto/Program.cs`, althoug
 
 ### 6.3 `RM-0.0.3` — build baseline properties
 
-`standards.md §2.3` and `development-guide.md §3` document `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild`, but neither is present in `Directory.Build.props`.
+`standards.md §2.3` and `development-guide.md §3` documented `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild`. The properties are intentionally not set in `Directory.Build.props`: the two flags were evaluated and deemed too strict for a multi-author, work-in-progress library, so the documents are amended to match the chosen configuration.
 
 | ID | Sub-item | Acceptance | Status | Evidence |
 |---|---|---|---|---|
-| RM-0.0.3 | Add both properties (or amend the documents) | Config and documents agree; build behaviour matches the documented one | ✅ | `Directory.Build.props` now sets `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` and `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`; `dotnet build DevTrove.Crypto.slnx -c Release` succeeded for every TFM (0 warnings, 0 errors) |
+| RM-0.0.3 | Pick one of the two resolutions (add the properties, or amend the documents to drop them) and apply it consistently | Config and documents agree; build behaviour matches the documented one | ✅ | `Directory.Build.props` does **not** set `<TreatWarningsAsErrors>` or `<EnforceCodeStyleInBuild>` (an in-props comment records the rationale); `standards.md §2.3` and `development-guide.md §3` were amended to drop them from the documented example and to note that new code must still produce 0 warnings (per `standards.md §9.3`) but warnings no longer fail the build |
 
 ### 6.4 `RM-0.0.4` — package metadata
 

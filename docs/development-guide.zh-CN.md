@@ -70,8 +70,9 @@ DevTrove.Crypto/
 <LangVersion>latest</LangVersion>
 <Nullable>enable</Nullable>
 <ImplicitUsings>enable</ImplicitUsings>
-<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+<!-- TreatWarningsAsErrors / EnforceCodeStyleInBuild 有意保持关闭：
+     见 standards.md §2.3。新代码仍须 0 警告（§9.3）。 -->
 
 <!-- NuGet 元数据基线（按项目覆盖） -->
 <Authors>blue-cloud-net</Authors>
