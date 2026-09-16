@@ -58,7 +58,7 @@
 
 | 版本 | 主题 | 子项数 | 状态 |
 |---|---|---|---|
-| `RM-0.0.1` – `RM-0.0.13` | 基线修正（工作项） | 13 | 🟡 |
+| `RM-0.0.1`, `0.0.2`, `0.0.3`, `0.0.4`, `0.0.5`, `0.0.6`, `0.0.7`, `0.0.9`, `0.0.10`, `0.0.12`, `0.0.13` | 基线修正（工作项） | 11 | 🟡 |
 | `0.1.0` | 抽象层 | 5 | ⬜ |
 | `0.2.0` | 对称算法 | 4 | ⬜ |
 | `0.3.0` | 非对称算法 | 3 | ⬜ |
@@ -81,7 +81,7 @@
 | 新建 `docs/standards.md` 与 `docs/library-api.md` | ✅ | README 与 AGENTS.md 已引用 |
 | 删除 Web 时代的 `docs/v0.1/` | ✅ | — |
 | 文档重构：独立库口径、版本线、状态追踪 | 🚧 | 有意不归属任何版本 |
-| 删除 `OpenSslCli`，成员并入 `TongsuoCli`，更新 `CliToolGuard` 措辞，并把 `*OpenSslInteropTests` 改名为 `*InteropTests` | ⬜ | 测试辅助收口；不承载版本号 |
+| 删除 `OpenSslCli`，成员并入 `TongsuoCli`，更新 `CliToolGuard` 措辞，并把 `*OpenSslInteropTests` 改名为 `*InteropTests` | ✅ | 已删除 `OpenSslCli.cs` 与 `OpenSslResult.cs`；`TongsuoCli.cs` 承载并入后的 RSA/EC/DSA/SM2 成员；`CliToolGuard.cs` 措辞改为仅指 tongsuo；`OpenSslResult` 重命名为 `TongsuoCliResult`；`standards.md §3.2.1` 规定 `*InteropTests` 后缀；三个 TFM（`net8.0` / `net9.0` / `net10.0`）均构建 0 警告 0 错误；`grep -rn 'OpenSslCli\|OpenSslResult' src/ tests/ scripts/` 无输出 |
 
 ---
 
@@ -147,30 +147,20 @@
 |---|---|---|---|---|
 | RM-0.0.7 | 为 TestSupport 补上 `net9.0` | 三个 TFM 均可还原与构建 | ✅ | `dotnet build tests/DevTrove.Crypto.TestSupport/DevTrove.Crypto.TestSupport.csproj -c Release -f net8.0` / `net9.0` / `net10.0` 均成功（0 警告 0 错误） |
 
-### 6.8 `RM-0.0.8` —— 默认签名算法
-
-5 处公开签名的 `signatureAlgorithm` 默认值被硬编码为 `SHA256WITHRSA`：`Certificate.GenerateSelfSigned`、`Certificate.SignCsr`、`Certificate.SignPublicKey`、`CertificateRevocationList.Generate`、`CertificateSigningRequest.Generate`（两个重载）。这迫使 EC / DSA / SM2 调用方必须显式传入算法，不传则默认值错误。
-
-| ID | 子项 | 验收 | 状态 | 证据 |
-|---|---|---|---|---|
-| RM-0.0.8 | 默认值按私钥算法推导 | 不再残留 `SHA256WITHRSA` 字面量；EC / DSA / SM2 无需显式指定算法即可签名 | 🟡 | 约束写入 `library-api.md` §4.1（按私钥推导的默认签名算法对照表）；当前空 Core 下 `grep -rn SHA256WITHRSA src/ tests/` 已 0 输出；待 RM-0.1.0-01 重建 Core 后落地代码与按密钥类型的单元测试 |
-
-本项落在 **`RM-0.3.0` 内**，不在 `0.1.0`：`0.1.0` 的抽象只定义 `SignatureAlgorithmKind`，而「按私钥推导」本身与需要它的非对称算法一起实现。
-
-### 6.9 `RM-0.0.9` —— 外部工具统一为 tongsuo
+### 6.8 `RM-0.0.9` —— 外部工具统一为 tongsuo
 
 夹具脚本与互操作测试当前同时依赖 `openssl` 与 `tongsuo`。此后 tongsuo 是唯一外部工具，脚本也必须改用 `TONGSUO_PATH`。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
 | RM-0.0.9a | `generate-test-{keys,certs,csrs,crl,pfx}.sh` 改用 `TONGSUO_PATH` 而非 `openssl` | `scripts/` 内不再出现 `openssl` 调用 | ✅ | 6 个脚本 `openssl` → `${TONGSUO_BIN}`；`temp_openssl.cnf` → `temp_ext.cnf`；`grep -c openssl scripts/*.sh` 全 0 |
-| RM-0.0.9b | `generate-test-certs.sh` 补 SM2 自签名证书段（当前仅有一行注释） | SM2 证书夹具可由脚本复现 | ⬜ | 在干净的 `tests/data/` 上重跑脚本 |
-| RM-0.0.9c | `generate-test-crl.sh` 补 SM2 CRL 段（当前完全没有） | SM2 CRL 夹具可复现 | ⬜ | 重跑脚本 |
+| RM-0.0.9b | `generate-test-certs.sh` 补 SM2 自签名证书段 | SM2 证书夹具可由脚本复现 | ✅ | 脚本新增 SM2 `[6/7]` 段，使用 `-sm3` 与 `-sigopt sm2_id:1234567812345678`；干净 `tests/data/` 上 `tongsuo x509 -in sm2-selfsigned.pem -text -noout` 读回 `Signature Algorithm: SM2-with-SM3` 且 `Issuer == Subject` |
+| RM-0.0.9c | `generate-test-crl.sh` 补 SM2 CRL 段 | SM2 CRL 夹具可复现 | ✅ | 脚本新增 SM2 `[4/4]` 段，调用 `gen_crl` 时传 `default_md=sm3`；干净 `tests/data/` 上 `tongsuo crl -in sm2.crl -text -noout` 读回 `Signature Algorithm: SM2-with-SM3` 与吊销序列号 `5E01` |
 | RM-0.0.9d | 取消「独立 SM 脚本」概念；`TestDataGenerator` 按正常顺序生成 SM2 | `SmCertScript` 常量与其专属 `try/catch` 已删除 | ✅ | 仓库中已无 `generate-test-sm-certs*` 脚本、无 `SmCertScript` 常量；`grep -rn generate-test-sm-certs` 无输出 |
 | RM-0.0.9e | tongsuo 缺失时构建失败，而非跳过并警告 | 工具不可用时脚本以非零码退出 | ✅ | 6 个脚本在 `set -e` 后插入守卫：`TONGSUO_PATH` 默认 `/opt/tongsuo/bin/tongsuo`；不可执行时输出错误到 stderr 并 exit 127；`TONGSUO_PATH=/nonexistent/tongsuo bash scripts/generate-test-pfx.sh` 即触发 |
 | RM-0.0.9f | CI 从源码编译 tongsuo，pin 版本并缓存产物 | 干净 runner 上集成阶段通过 | 🟡 | `ci.yml` 新增 `tongsuo` job：从 Tongsuo 8.4.0 编译并安装到 `/opt/tongsuo`；`actions/cache@v4` 键 `tongsuo-\$OS-v8.4.0`；`build` job `needs: tongsuo` 并向 fixtures/integration 步骤注入 `TONGSUO_PATH`；端到端验证待 CI 实跑 |
 
-### 6.10 `RM-0.0.10` —— 夹具目录与说明
+### 6.9 `RM-0.0.10` —— 夹具目录与说明
 
 整个 `tests/data/` 由脚本生成并被 **Git 忽略** —— 没有任何夹具入库，连各目录的 `README.md` 也不入库。`TestData` 只为 5 个生成目录提供访问方法。脚本产不出的数据必须另找一个**可入库**的位置。
 
@@ -178,20 +168,7 @@
 |---|---|---|---|---|
 | RM-0.0.10 | 新增**可入库**的 `tests/fixtures/ntls/` 放抓取的握手字节；把 `ocsp/` 加进生成集；补对应 `TestData` 方法；夹具清单写进 [development-guide.md §8](development-guide.md) 而非被忽略的文件里 | 抓取类夹具位于被忽略目录之外且受版本控制；生成集可由脚本重建 | 🟡 | 已新增 `tests/fixtures/README.md` 与 `tests/fixtures/ntls/README.md`；`git check-ignore -v tests/fixtures/*` 无匹配，`tests/data/*` 仍被忽略；development-guide §8 已含夹具清单；待 0.1.0 重建 Core 后补 `ocsp/` 生成段与 `TestData` 访问器 |
 
-### 6.11 `RM-0.0.11` —— `netstandard2.0` 真正可构建
-
-没有任何 netstandard 目标产出过程序集。`Convert.FromHexString`、`RandomNumberGenerator.GetBytes(int)`、`AsSpan` 在 `netstandard2.0` 下均无保护地使用。
-
-> `netstandard2.1` 已从 TFM 集合中移除（`RM-0.1.0-01`），因此本项现在只覆盖一个 netstandard 目标。守卫符号也不能一刀切：`HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 上存在、在 `netstandard2.0` 上不存在，而 `Convert.FromHexString` 两者都没有。需按 API 分别选符号。
-
-| ID | 子项 | 验收 | 状态 | 证据 |
-|---|---|---|---|---|
-| RM-0.0.11b | 为 `netstandard2.0` 补齐缺失的 polyfill / 包引用，并按 API 分别选择守卫符号 | `dotnet build -f netstandard2.0` 成功；每个 `#if` 与其保护的 API 匹配 | ⬜ | 构建输出 + 逐个守卫复核 |
-| RM-0.0.11c | 修正把 polyfill 写成位于 `Compat/`（实际不存在）的文档 | 文档与实际文件布局一致；`Compat/` 仅在 `architecture.md` 的目标布局表与本子项描述中出现 | 🟡 | architecture / architecture.zh-CN / development-guide / development-guide.zh-CN 中旧「polyfill 在 `Compat/`」叙述段已清理；`architecture.md` §4.1 目标布局表保留 `Compat/`（0.1.0 内部目标目录）。11b 代码动作待 `RM-0.1.0-01` 重建 Core 后执行 |
-
-在 `RM-0.2.0-01` 移除 SM4 实现中 .NET 8 专属的 `TryEncryptEcbCore` / `TryEncryptCbcCore` 重写之前，先用 `#if NET8_0_OR_GREATER` 作为临时桥接。
-
-### 6.12 `RM-0.0.12` —— 裁剪与 AOT 兼容（仅 net8.0 及以后）
+### 6.10 `RM-0.0.12` —— 裁剪与 AOT 兼容（仅 net8.0 及以后）
 
 枚举显示名经由 `[Display(ResourceType = typeof(RS))]` 与生成的 `ResourceManager` 解析，二者都走反射。
 
@@ -201,7 +178,7 @@
 
 netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以后承担 AOT 面。
 
-### 6.13 `RM-0.0.13` —— 编码规则对齐
+### 6.11 `RM-0.0.13` —— 编码规则对齐
 
 `standards.md §2.4` 写明 LF 行尾、文件末尾换行与各扩展名缩进，但 `.editorconfig` 设的是 `end_of_line = crlf`、`insert_final_newline = false`，且没有为 Markdown、XML、JSON、YAML 定义任何段落。`.gitattributes` 也不存在，尽管 `standards.md §2.1` 列出了它。
 
@@ -216,13 +193,13 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.14 `0.1.0` —— 抽象层
+### 6.12 `0.1.0` —— 抽象层
 
 不新增能力，也不做任何算法实现。本里程碑只落定契约面：新建一个叶节点程序集，承载后续每个里程碑都要实现于其上的接口与抽象基类。库从未发布，因此形态变更零外部成本。
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
-| RM-0.1.0-01 | 新建 `DevTrove.Crypto.Abstractions` 程序集（独立包、零依赖叶节点、4 TFM、包元数据）；Core 结构重整（目录与命名空间 `Algorithms` / `Asn1` / `Interop` / `Compat`；BouncyCastle 类型撤出公开面；每类型一个 `Interop` 扩展；统一 `*Crypto` 命名）；命名与布局配套（`GlobalUsings`、测试目录镜像、`library-api.md` 重写、`architecture.md` §4 / §5 重绘） | 4 个 TFM 各自构建成功；不再残留 `DevTrove.Crypto.Crypto.*` 或 `DevTrove.Crypto.BouncyCastle.*` 命名空间；无公开的 `GetBouncyCastle*` 成员 | ⬜ | `dotnet build -f <tfm>` 加对 `src/` 检索旧命名空间 |
+| RM-0.1.0-01 | 新建 `DevTrove.Crypto.Abstractions` 程序集（独立包、零依赖叶节点、4 TFM、包元数据）；Core 结构重整（目录与命名空间 `Algorithms` / `Asn1` / `Interop` / `Compat`；BouncyCastle 类型撤出公开面；每类型一个 `Interop` 扩展；统一 `*Crypto` 命名）；命名与布局配套（`GlobalUsings`、测试目录镜像、`library-api.md` 重写、`architecture.md` §4 / §5 重绘）；为 `netstandard2.0` 补齐缺失的 polyfill / 包引用并按 API 分别选择守卫符号 | 4 个 TFM 各自构建成功（含 `netstandard2.0`）；不再残留 `DevTrove.Crypto.Crypto.*` 或 `DevTrove.Crypto.BouncyCastle.*` 命名空间；无公开的 `GetBouncyCastle*` 成员；每个 `#if` 与其保护的 API 匹配 | ⬜ | `dotnet build -f <tfm>` 加对 `src/` 检索旧命名空间 |
 | RM-0.1.0-02 | 对称与摘要抽象：`ISymmetricBlockCipher` / `SymmetricBlockCipher` / `CipherModeKind` / `PaddingKind` / `IDigest` / `DigestBase` | 无需 BCL 枚举即可表达 CTR 与 AEAD 模式；默认 `Cbc` + `Pkcs7`；ECB 时 `Encrypt` 抛 `InvalidOperationException` | ⬜ | 覆盖枚举值集合与基类契约的单元测试 |
 | RM-0.1.0-03 | 非对称能力接口：`ISigner` / `IKeyEncipherment` / `IKeyAgreement` / `IAsymmetricKey` / `IPrivateKey` / `IPublicKey` / `AsymmetricKeyBase` / `SignatureAlgorithmKind` | 每个能力独立成接口，不施加单一继承约束；`AsymmetricKeyBase` 释放时清零密钥材料 | ⬜ | 接口清单测试 + 释放行为测试 |
 | RM-0.1.0-04 | X.509 抽象：`ICertificate` / `ICertificateReader` / `ICertificateWriter` / `IDistinguishedName` | 四个接口可被单一 stub 实现，证明其可实现；**本里程碑不交付任何实现类型**（实现落在 `0.5.0`） | ⬜ | stub 实现测试 |
@@ -230,7 +207,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.15 `0.2.0` —— 对称算法
+### 6.13 `0.2.0` —— 对称算法
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -241,17 +218,17 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.16 `0.3.0` —— 非对称算法
+### 6.14 `0.3.0` —— 非对称算法
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
 | RM-0.3.0-01 | 将 RSA、ECDSA、DSA、SM2 迁到 `0.1.0` 的能力接口；每个算法只实现其真实具备的能力 | 每个算法只暴露它真正具备的能力 | ⬜ | 接口清单测试 |
 | RM-0.3.0-02 | 新增 Ed25519、Ed448、X25519（X448 可选）。X25519 只做密钥协商、Ed25519 只做签名，这正是能力拆成独立接口而非单一基类的原因 | 签名与密钥协商对照参考向量的往返正确 | ⬜ | 已知答案测试 |
-| RM-0.3.0-03 | `RM-0.0.8`：默认签名算法按私钥推导，不再硬编码 `SHA256WITHRSA` | 不再残留 `SHA256WITHRSA` 字面量；EC / DSA / SM2 无需调用方指定算法即可签名 | ⬜ | 按密钥类型的单元测试 |
+| RM-0.3.0-03 | 默认签名算法按私钥推导，不再硬编码 `SHA256WITHRSA` | 不再残留 `SHA256WITHRSA` 字面量；EC / DSA / SM2 无需调用方指定算法即可签名 | ⬜ | 按密钥类型的单元测试 |
 
 ---
 
-### 6.17 `0.4.0` —— 哈希与派生
+### 6.15 `0.4.0` —— 哈希与派生
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -262,7 +239,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.18 `0.5.0` —— PKI 能力补齐
+### 6.16 `0.5.0` —— PKI 能力补齐
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -278,7 +255,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.19 `0.6.0` —— TLS 探测 L1 与 NTLS 指纹
+### 6.17 `0.6.0` —— TLS 探测 L1 与 NTLS 指纹
 
 引擎位于 `src/DevTrove.Crypto.Tls/`，该目录目前尚不存在。
 
@@ -298,7 +275,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.20 `0.7.0` —— TLS 探测 L2 与国密
+### 6.18 `0.7.0` —— TLS 探测 L2 与国密
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -314,7 +291,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 
 ---
 
-### 6.21 `1.0.0` —— 稳定 API 与 PKIX
+### 6.19 `1.0.0` —— 稳定 API + PKIX
 
 | ID | 子项 | 验收 | 状态 | 证据 |
 |---|---|---|---|---|
@@ -346,7 +323,7 @@ netstandard 目标不承载 AOT 元数据：它承担兼容面，`net8.0` 及以
 | R1 | CI 从源码编译 tongsuo 显著拉长流水线 | 反馈变慢、任务不稳定 | 缓存编译产物并 pin 版本 |
 | R2 | 统一到 tongsuo 后不再验证与上游 OpenSSL 的互操作 | 上游 OpenSSL 特有的回归会被漏掉 | 文档如实说明；保留一个可选、不阻塞的交叉校验 |
 | R3 | 全仓行尾重规范化产生极大 diff | 历史更难读 | 单独提交并在提交信息中注明 |
-| R4 | 替换 BCL 抽象会触及测试与文档中的大量调用点 | 重构面大、易出错 | 先落地 `RM-0.0.8`；按算法逐个迁移到新抽象 |
+| R4 | 替换 BCL 抽象会触及测试与文档中的大量调用点 | 重构面大、易出错 | 先落地 `RM-0.3.0-03`；按算法逐个迁移到新抽象 |
 | R5 | GB/T 38636（NTLS）细节无法从公开资料确认 | 检测判定可能不准 | 以抓取的真实站点字节为夹具；不确定项显式标注 |
 | R6 | 经裁剪或 AOT 编译的消费方丢失枚举显示名 | 静默降级 | 为资源解析路径加注；用 AOT 发布冒烟测试验证 |
 | R7 | 状态表与实际脱节 | 路线图沦为又一份误导性文档 | 状态更新纳入提交前检查（见 §2） |

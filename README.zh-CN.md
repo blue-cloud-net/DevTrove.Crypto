@@ -114,7 +114,7 @@ dotnet test  DevTrove.Crypto.slnx -c Release
 
 互操作测试依赖外部工具 **tongsuo**。缺失时测试**直接失败而非跳过**（见 [docs/standards.md](docs/standards.md)）。
 
-> 构建与打包目前均不可信：三处目标框架声明彼此不一致（`RM-0.0.1`），两个 `netstandard` 目标从未产出过程序集（`RM-0.0.11`）。见 [docs/roadmap.md](docs/roadmap.md)。
+> 构建与打包目前均不可信：三处目标框架声明彼此不一致（`RM-0.0.1`），两个 `netstandard` 目标从未产出过程序集（`RM-0.1.0-01`）。见 [docs/roadmap.md](docs/roadmap.md)。
 
 ---
 

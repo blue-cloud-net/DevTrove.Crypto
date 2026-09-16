@@ -200,7 +200,7 @@ Two different things live here, and conflating them is what produced the previou
 | G6 | No HMAC of any kind | `0.4.0` (`RM-0.4.0-02`) |
 | G7 | No Ed25519 / Ed448 / X25519 family | Modern signature and key-agreement suites unavailable | `0.3.0` (`RM-0.3.0-02`) |
 | G8 | No format auto-detection (PEM / DER and friends) | Callers must know the format before calling | `0.5.0` (`RM-0.5.0-03`) |
-| G9 | `netstandard2.0` does not build | The advertised compatibility surface does not exist | `RM-0.0.11` |
+| G9 | `netstandard2.0` does not build | The advertised compatibility surface does not exist | `RM-0.1.0-01` |
 | G10 | No published contracts — the interface surface does not exist yet | Nothing can be compiled against a stable contract | `0.1.0` (`RM-0.1.0-01`–`-05`) |
 
 ### 7.2 Limitations that stay

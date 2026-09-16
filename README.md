@@ -114,7 +114,7 @@ dotnet test  DevTrove.Crypto.slnx -c Release
 
 External dependency for interop tests: **tongsuo**. A missing tool causes interop tests to **fail**, not skip (per [docs/standards.md](docs/standards.md)).
 
-> Builds and packing are not trustworthy yet: the framework declarations disagree (`RM-0.0.1`) and the two `netstandard` targets have never produced an assembly (`RM-0.0.11`). See [docs/roadmap.md](docs/roadmap.md).
+> Builds and packing are not trustworthy yet: the framework declarations disagree (`RM-0.0.1`) and the two `netstandard` targets have never produced an assembly (`RM-0.1.0-01`). See [docs/roadmap.md](docs/roadmap.md).
 
 ---
 

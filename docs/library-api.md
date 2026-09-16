@@ -44,7 +44,7 @@ A **separate assembly** with **no package dependencies at all** — not even Bou
 | `IAsymmetricKey` | interface | Key metadata: algorithm and size |
 | `IPrivateKey` / `IPublicKey` | interface | Read-only key views |
 | `AsymmetricKeyBase` | abstract class | Holds key material and **clears it on disposal** |
-| `SignatureAlgorithmKind` | enum | The signature algorithms, so a default can be derived from the private key instead of hard-coding `SHA256WITHRSA` (`RM-0.0.8`) |
+| `SignatureAlgorithmKind` | enum | The signature algorithms, so a default can be derived from the private key instead of hard-coding `SHA256WITHRSA` (`RM-0.3.0-03`) |
 
 Capabilities are separate interfaces rather than one base class because X25519 only agrees keys and Ed25519 only signs.
 
@@ -164,7 +164,7 @@ These wrap BouncyCastle types so that `Core` can keep them out of its own public
 | `EnumDisplayNameCache<TEnum>` | Cached resource-string lookup for enum display |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` convenience overloads |
 
-### 5.1 Signing-algorithm default rule (`RM-0.0.8`)
+### 5.1 Signing-algorithm default rule (`RM-0.3.0-03`)
 
 Any public signing method that accepts an optional `signatureAlgorithm` (e.g. `Certificate.GenerateSelfSigned`, `Certificate.SignCsr`, `Certificate.SignPublicKey`, `CertificateRevocationList.Generate`, `CertificateSigningRequest.Generate` overloads) **must derive the default from the private-key algorithm**, never hard-code `SHA256WITHRSA` or any other fixed OID:
 

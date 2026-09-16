@@ -46,7 +46,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 | `IAsymmetricKey` | interface | 密钥元数据：算法与长度 |
 | `IPrivateKey` / `IPublicKey` | interface | 只读密钥视图 |
 | `AsymmetricKeyBase` | abstract class | 持有密钥材料，**并在释放时清零** |
-| `SignatureAlgorithmKind` | enum | 签名算法枚举，使默认值可按私钥推导，而不硬编码 `SHA256WITHRSA`（`RM-0.0.8`） |
+| `SignatureAlgorithmKind` | enum | 签名算法枚举，使默认值可按私钥推导，而不硬编码 `SHA256WITHRSA`（`RM-0.3.0-03`） |
 
 能力拆成独立接口而非单一基类，是因为 X25519 只做密钥协商、Ed25519 只做签名。
 
@@ -166,7 +166,7 @@ Public API index for `DevTrove.Crypto`. Generated manually from `src/**` — eac
 | `EnumDisplayNameCache<TEnum>` | 枚举显示名的资源字符串缓存查找 |
 | `ArgumentNullExceptionExtensions` | `ThrowIfNull(...)` 便捷重载 |
 
-### 5.1 签名算法默认值规则（`RM-0.0.8`）
+### 5.1 签名算法默认值规则（`RM-0.3.0-03`）
 
 任何接受可选 `signatureAlgorithm` 的公开签名方法（如 `Certificate.GenerateSelfSigned`、`Certificate.SignCsr`、`Certificate.SignPublicKey`、`CertificateRevocationList.Generate`、`CertificateSigningRequest.Generate` 的两个重载）**必须按私钥算法推导默认值**，不得硬编码 `SHA256WITHRSA` 或其它固定 OID：
 
