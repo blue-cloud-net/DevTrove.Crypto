@@ -273,7 +273,11 @@ Conventional Commits，**英文类型前缀 + 中文描述**：
 
 ### 9.3 提交前检查
 
-- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.0.11` 落地前预期会失败；新代码须 0 警告
+- `dotnet build DevTrove.Crypto.slnx -c Release` —— 在 `RM-0.1.0-01` 落地前预期会失败；新代码须 0 警告
+
+### 3.2.1 互操作测试类命名
+
+互操作测试类以 `InteropTests` 结尾，不带 `OpenSsl` 前缀（外部工具统一为 tongsuo；测试类名不应再携带历史工具名）。
 - `dotnet test DevTrove.Crypto.slnx -c Release` —— 全绿（或明确标注为预存缺陷）
 - 新增/修改的 public 成员有中文 XML 文档注释
 - 触及 `README.md` / `CHANGELOG.md` ⇒ 同步 `.zh-CN.md`

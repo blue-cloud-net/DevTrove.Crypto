@@ -107,7 +107,7 @@ The version is declared once in `Directory.Packages.props`, like every other pac
 
 This target is **staying** — this is a NuGet library and the compatibility surface is part of the product. `netstandard2.1` is gone: no non-EOL host resolves that asset, so it could never be runtime-verified (see [nuget.md §5](nuget.md)).
 
-Polyfills land under the path the `0.1.0` target layout names `Compat/`, and the guard symbol is chosen **per API** — `Convert.FromHexString` needs `NETSTANDARD2_0`, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0`. See `RM-0.0.11`.
+Polyfills land under the path the `0.1.0` target layout names `Compat/`, and the guard symbol is chosen **per API** — `Convert.FromHexString` needs `NETSTANDARD2_0`, while `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` differs between `netstandard2.1` and `netstandard2.0`. See `RM-0.1.0-01`.
 
 ---
 
@@ -158,7 +158,7 @@ Interop tests (key / certificate / CSR / CRL / PKCS#12 generation and parsing, p
 | Version requirement | a build supporting SM2 / SM3 / SM4 |
 | Purpose | (a) interop test: generate with tongsuo → parse with this library, and the reverse; (b) fallback generation for fixtures |
 
-**Upstream OpenSSL is no longer used.** Tongsuo is a fork and is command-compatible, but it is not the same implementation — so interoperability against upstream OpenSSL is no longer asserted. That trade-off is recorded as risk R2 in [roadmap.md §8](roadmap.md). An optional, non-blocking cross-check against upstream OpenSSL is the documented escape hatch. The former `OpenSslCli` helper is merged into `TongsuoCli` — tracked as an unversioned baseline item in [roadmap.md §5](roadmap.md).
+**Upstream OpenSSL is no longer used.** Tongsuo is a fork and is command-compatible, but it is not the same implementation — so interoperability against upstream OpenSSL is no longer asserted. That trade-off is recorded as risk R2 in [roadmap.md §8](roadmap.md). An optional, non-blocking cross-check against upstream OpenSSL is the documented escape hatch.
 
 ### 5.3 Tools-missing behavior (important)
 
@@ -377,7 +377,7 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 
 # 4. Build + test
 #    Contract tests need nothing else; interop tests need tongsuo.
-#    RM-0.0.11 still gates `netstandard2.0`.
+#    RM-0.1.0-01 still gates `netstandard2.0`.
 dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 

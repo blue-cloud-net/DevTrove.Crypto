@@ -22,7 +22,7 @@ public static class TongsuoCli
     /// <param name="stdin">标准输入数据。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>执行结果。</returns>
-    public static async Task<OpenSslResult> ExecuteAsync(
+    public static async Task<TongsuoCliResult> ExecuteAsync(
         string arguments,
         string? stdin = null,
         CancellationToken cancellationToken = default)
@@ -38,7 +38,7 @@ public static class TongsuoCli
 
         var result = await cmd.ExecuteBufferedAsync(cancellationToken);
 
-        return new OpenSslResult
+        return new TongsuoCliResult
         {
             ExitCode = result.ExitCode,
             StandardOutput = result.StandardOutput,
@@ -49,13 +49,13 @@ public static class TongsuoCli
     /// <summary>
     /// 获取 tongsuo 版本信息。
     /// </summary>
-    public static Task<OpenSslResult> GetVersionAsync(CancellationToken cancellationToken = default)
+    public static Task<TongsuoCliResult> GetVersionAsync(CancellationToken cancellationToken = default)
         => ExecuteAsync("version", cancellationToken: cancellationToken);
 
     /// <summary>
     /// 执行通用的 tongsuo 命令。
     /// </summary>
-    public static Task<OpenSslResult> ExecuteCommandAsync(
+    public static Task<TongsuoCliResult> ExecuteCommandAsync(
         string command,
         CancellationToken cancellationToken = default)
         => ExecuteAsync(command, cancellationToken: cancellationToken);
@@ -67,7 +67,7 @@ public static class TongsuoCli
     /// </summary>
     /// <param name="privateKeyPath">私钥输出路径。</param>
     /// <param name="publicKeyPath">公钥输出路径（可选）。</param>
-    public static async Task<OpenSslResult> GenerateSm2KeyPairAsync(
+    public static async Task<TongsuoCliResult> GenerateSm2KeyPairAsync(
         string privateKeyPath,
         string? publicKeyPath = null,
         CancellationToken cancellationToken = default)
@@ -94,7 +94,7 @@ public static class TongsuoCli
     /// <param name="keyPath">密钥文件路径。</param>
     /// <param name="isPublicKey">是否为公钥。</param>
     /// <param name="format">密钥格式（PEM 或 DER）。</param>
-    public static Task<OpenSslResult> ViewKeyInfoAsync(
+    public static Task<TongsuoCliResult> ViewKeyInfoAsync(
         string keyPath,
         bool isPublicKey = false,
         string format = "PEM",
@@ -118,7 +118,7 @@ public static class TongsuoCli
     /// <param name="privateKeyPath">私钥路径。</param>
     /// <param name="signaturePath">签名输出路径。</param>
     /// <param name="userId">用户 ID（默认 "1234567812345678"，与 BouncyCastle 一致）。</param>
-    public static Task<OpenSslResult> SignWithSm2Async(
+    public static Task<TongsuoCliResult> SignWithSm2Async(
         string dataPath,
         string privateKeyPath,
         string signaturePath,
@@ -136,7 +136,7 @@ public static class TongsuoCli
     /// <param name="signaturePath">签名文件。</param>
     /// <param name="publicKeyPath">公钥路径。</param>
     /// <param name="userId">用户 ID（必须与签名时一致）。</param>
-    public static Task<OpenSslResult> VerifyWithSm2Async(
+    public static Task<TongsuoCliResult> VerifyWithSm2Async(
         string dataPath,
         string signaturePath,
         string publicKeyPath,
@@ -154,7 +154,7 @@ public static class TongsuoCli
     /// <summary>
     /// 使用 SM2 公钥加密数据。
     /// </summary>
-    public static Task<OpenSslResult> EncryptWithSm2Async(
+    public static Task<TongsuoCliResult> EncryptWithSm2Async(
         string inputPath,
         string outputPath,
         string publicKeyPath,
@@ -166,7 +166,7 @@ public static class TongsuoCli
     /// <summary>
     /// 使用 SM2 私钥解密数据。
     /// </summary>
-    public static Task<OpenSslResult> DecryptWithSm2Async(
+    public static Task<TongsuoCliResult> DecryptWithSm2Async(
         string inputPath,
         string outputPath,
         string privateKeyPath,
@@ -187,7 +187,7 @@ public static class TongsuoCli
     /// <param name="subject">证书主体（如 "/CN=sm2-test.example.cn"）。</param>
     /// <param name="days">有效期天数。</param>
     /// <param name="subjectAlternativeNames">SAN，如 "DNS:sm2-test.example.cn,DNS:www.sm2-test.example.cn"。</param>
-    public static Task<OpenSslResult> GenerateSm2SelfSignedCertificateAsync(
+    public static Task<TongsuoCliResult> GenerateSm2SelfSignedCertificateAsync(
         string privateKeyPath,
         string certificatePath,
         string subject,
@@ -209,7 +209,7 @@ public static class TongsuoCli
     /// <summary>
     /// 使用 SM2 私钥生成 CSR。
     /// </summary>
-    public static Task<OpenSslResult> GenerateSm2CsrAsync(
+    public static Task<TongsuoCliResult> GenerateSm2CsrAsync(
         string privateKeyPath,
         string csrPath,
         string subject,
@@ -229,7 +229,7 @@ public static class TongsuoCli
     /// <summary>
     /// 查看证书详细信息（x509 -text）。
     /// </summary>
-    public static Task<OpenSslResult> X509InfoAsync(
+    public static Task<TongsuoCliResult> X509InfoAsync(
         string certificatePath,
         string format = "PEM",
         CancellationToken cancellationToken = default)
@@ -241,7 +241,7 @@ public static class TongsuoCli
     /// <summary>
     /// 查看 CSR 详细信息并验证签名（req -text -verify）。
     /// </summary>
-    public static Task<OpenSslResult> ReqInfoAsync(
+    public static Task<TongsuoCliResult> ReqInfoAsync(
         string csrPath,
         string format = "PEM",
         CancellationToken cancellationToken = default)
@@ -308,7 +308,7 @@ public static class TongsuoCli
     /// <summary>
     /// 使用已初始化的 CA 数据库生成 SM2 CRL（tongsuo ca -gencrl）。
     /// </summary>
-    public static Task<OpenSslResult> GenerateSm2CrlAsync(
+    public static Task<TongsuoCliResult> GenerateSm2CrlAsync(
         string configPath,
         string crlPath,
         CancellationToken cancellationToken = default)
@@ -317,7 +317,7 @@ public static class TongsuoCli
     /// <summary>
     /// 查看 CRL 详细信息（crl -text）。
     /// </summary>
-    public static Task<OpenSslResult> CrlInfoAsync(
+    public static Task<TongsuoCliResult> CrlInfoAsync(
         string crlPath,
         string format = "PEM",
         CancellationToken cancellationToken = default)
@@ -333,7 +333,7 @@ public static class TongsuoCli
     /// <summary>
     /// 将 PEM 私钥转换为 DER (PKCS#8)。
     /// </summary>
-    public static Task<OpenSslResult> ConvertPrivateKeyPemToDerAsync(
+    public static Task<TongsuoCliResult> ConvertPrivateKeyPemToDerAsync(
         string pemPath,
         string derPath,
         CancellationToken cancellationToken = default)
@@ -342,7 +342,7 @@ public static class TongsuoCli
     /// <summary>
     /// 将 DER 私钥转换为 PEM。
     /// </summary>
-    public static Task<OpenSslResult> ConvertPrivateKeyDerToPemAsync(
+    public static Task<TongsuoCliResult> ConvertPrivateKeyDerToPemAsync(
         string derPath,
         string pemPath,
         CancellationToken cancellationToken = default)
@@ -351,7 +351,7 @@ public static class TongsuoCli
     /// <summary>
     /// 将 PEM 公钥转换为 DER (SPKI)。
     /// </summary>
-    public static Task<OpenSslResult> ConvertPublicKeyPemToDerAsync(
+    public static Task<TongsuoCliResult> ConvertPublicKeyPemToDerAsync(
         string pemPath,
         string derPath,
         CancellationToken cancellationToken = default)
@@ -360,7 +360,7 @@ public static class TongsuoCli
     /// <summary>
     /// 将 DER 公钥转换为 PEM。
     /// </summary>
-    public static Task<OpenSslResult> ConvertPublicKeyDerToPemAsync(
+    public static Task<TongsuoCliResult> ConvertPublicKeyDerToPemAsync(
         string derPath,
         string pemPath,
         CancellationToken cancellationToken = default)

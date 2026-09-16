@@ -107,7 +107,7 @@ DevTrove.Crypto/
 
 该目标**保留** —— 这是 NuGet 库，兼容面本身就是产品的一部分。`netstandard2.1` 已移除：没有任何未 EOL 的宿主会解析该资产，它永远无法被运行验证（见 [nuget.md §5](nuget.md)）。
 
-polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫符号**按 API 分别选取** —— `Convert.FromHexString` 需要 `NETSTANDARD2_0`，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致。见 `RM-0.0.11`。
+polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫符号**按 API 分别选取** —— `Convert.FromHexString` 需要 `NETSTANDARD2_0`，而 `HashAlgorithm.HashCore(ReadOnlySpan<byte>)` 在 `netstandard2.1` 与 `netstandard2.0` 上并不一致。见 `RM-0.1.0-01`。
 
 ---
 
@@ -158,7 +158,7 @@ polyfill 落在 `0.1.0` 目标布局中命名的 `Compat/` 目录下，且守卫
 | 版本要求 | 需支持 SM2 / SM3 / SM4 |
 | 用途 | ① 互操作测试：用 tongsuo 生成 → 用本库解析（反向亦然）；② 夹具兜底生成 |
 
-**不再使用上游 OpenSSL。** tongsuo 是其分支且命令兼容，但并非同一实现 —— 因此不再断言与上游 OpenSSL 的互操作。这一取舍已记为 [roadmap.md §8](roadmap.md) 的风险 R2；针对上游 OpenSSL 的可选、非阻塞交叉校验是备选出路。原先的 `OpenSslCli` 助手将并入 `TongsuoCli` —— 作为无版本基线条目跟踪，见 [roadmap.md §5](roadmap.md)。
+**不再使用上游 OpenSSL。** tongsuo 是其分支且命令兼容，但并非同一实现 —— 因此不再断言与上游 OpenSSL 的互操作。这一取舍已记为 [roadmap.md §8](roadmap.md) 的风险 R2；针对上游 OpenSSL 的可选、非阻塞交叉校验是备选出路。
 
 ### 5.3 工具缺失时的行为（重要）
 
@@ -381,7 +381,7 @@ export TONGSUO_PATH=/opt/tongsuo/bin/tongsuo
 
 # 4. 构建 + 测试
 #    契约测试不需任何其他依赖；互操作测试需 tongsuo。
-#    `netstandard2.0` 仍受 RM-0.0.11 阻塞。
+#    `netstandard2.0` 仍受 RM-0.1.0-01 阻塞。
 dotnet build DevTrove.Crypto.slnx -c Release
 dotnet test  tests/DevTrove.Crypto.Abstractions.Tests -c Release --framework net10.0
 

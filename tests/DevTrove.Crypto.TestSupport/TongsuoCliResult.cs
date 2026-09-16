@@ -1,9 +1,9 @@
 namespace DevTrove.Crypto.TestSupport;
 
 /// <summary>
-/// OpenSSL / tongsuo 命令执行结果。
+/// tongsuo 命令执行结果。
 /// </summary>
-public class OpenSslResult
+public class TongsuoCliResult
 {
     /// <summary>
     /// 退出码。

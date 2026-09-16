@@ -4,8 +4,8 @@ using CliWrap.Buffered;
 namespace DevTrove.Crypto.TestSupport;
 
 /// <summary>
-/// CLI 工具可用性守卫。
-/// 当 openssl / tongsuo 在当前环境不可用时，直接使相关测试失败（而非跳过）。
+/// 外部 CLI 工具可用性守卫（当前唯一外部工具为 tongsuo）。
+/// 当 tongsuo 在当前环境不可用时，直接使相关测试失败（而非跳过）。
 /// </summary>
 public static class CliToolGuard
 {
